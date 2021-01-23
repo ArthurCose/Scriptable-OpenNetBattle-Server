@@ -33,7 +33,11 @@ impl Area {
   }
 
   pub fn move_player(&mut self, id: &String, x: f64, y: f64, z: f64) -> std::io::Result<()> {
-    if self.players.contains_key(id) {
+    if let Some(player) = self.players.get_mut(id) {
+      player.x = x;
+      player.y = y;
+      player.z = z;
+
       let buf = build_packet(ServerPacket::NaviWalkTo {
         ticket: id.clone(),
         x,
