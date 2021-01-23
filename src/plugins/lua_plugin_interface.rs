@@ -141,29 +141,37 @@ macro_rules! create_map_table {
   ($lua_ctx: ident, $scope: ident, $area_ref: ident) => {{
     let map_table = $lua_ctx.create_table()?;
 
-    let get_tile = $scope.create_function(|_, ()| {
-      let mut area = $area_ref.borrow_mut();
-      Ok(area.get_map().get_width())
-    })?;
-    map_table.set("get_width", get_tile)?;
+    map_table.set(
+      "get_width",
+      $scope.create_function(|_, ()| {
+        let mut area = $area_ref.borrow_mut();
+        Ok(area.get_map().get_width())
+      })?,
+    )?;
 
-    let get_tile = $scope.create_function(|_, ()| {
-      let mut area = $area_ref.borrow_mut();
-      Ok(area.get_map().get_height())
-    })?;
-    map_table.set("get_height", get_tile)?;
+    map_table.set(
+      "get_height",
+      $scope.create_function(|_, ()| {
+        let mut area = $area_ref.borrow_mut();
+        Ok(area.get_map().get_height())
+      })?,
+    )?;
 
-    let get_tile = $scope.create_function(|_, (x, y): (usize, usize)| {
-      let mut area = $area_ref.borrow_mut();
-      Ok(area.get_map().get_tile(x, y))
-    })?;
-    map_table.set("get_tile", get_tile)?;
+    map_table.set(
+      "get_tile",
+      $scope.create_function(|_, (x, y): (usize, usize)| {
+        let mut area = $area_ref.borrow_mut();
+        Ok(area.get_map().get_tile(x, y))
+      })?,
+    )?;
 
-    let set_tile = $scope.create_function(|_, (x, y, id): (usize, usize, String)| {
-      let mut area = $area_ref.borrow_mut();
-      Ok(area.get_map().set_tile(x, y, id))
-    })?;
-    map_table.set("set_tile", set_tile)?;
+    map_table.set(
+      "set_tile",
+      $scope.create_function(|_, (x, y, id): (usize, usize, String)| {
+        let mut area = $area_ref.borrow_mut();
+        Ok(area.get_map().set_tile(x, y, id))
+      })?,
+    )?;
 
     map_table
   }};
