@@ -35,7 +35,7 @@ impl Area {
     self.players.values()
   }
 
-  pub fn move_player(&mut self, id: &String, x: f64, y: f64, z: f64) -> std::io::Result<()> {
+  pub fn move_player(&mut self, id: &String, x: f64, y: f64, z: f64) {
     if let Some(player) = self.players.get_mut(id) {
       player.x = x;
       player.y = y;
@@ -48,13 +48,11 @@ impl Area {
         z,
       });
 
-      self.broadcast(&buf)?;
+      self.broadcast(&buf);
     }
-
-    Ok(())
   }
 
-  pub fn set_player_avatar(&mut self, id: &String, avatar_id: u16) -> std::io::Result<()> {
+  pub fn set_player_avatar(&mut self, id: &String, avatar_id: u16) {
     if let Some(player) = self.players.get_mut(id) {
       player.avatar_id = avatar_id;
 
@@ -63,36 +61,30 @@ impl Area {
         avatar_id,
       });
 
-      self.broadcast(&buf)?;
+      self.broadcast(&buf);
     }
-
-    Ok(())
   }
 
-  pub fn set_player_emote(&mut self, id: &String, emote_id: u8) -> std::io::Result<()> {
+  pub fn set_player_emote(&mut self, id: &String, emote_id: u8) {
     if self.players.contains_key(id) {
       let buf = build_packet(ServerPacket::NaviEmote {
         ticket: id.clone(),
         emote_id,
       });
 
-      self.broadcast(&buf)?;
+      self.broadcast(&buf);
     }
-
-    Ok(())
   }
 
-  pub(crate) fn add_player(&mut self, player: Player) -> std::io::Result<()> {
+  pub(crate) fn add_player(&mut self, player: Player) {
     // player join packet
     let buf = build_packet(ServerPacket::NaviConnected {
       ticket: player.ticket.clone(),
     });
 
-    self.broadcast(&buf)?;
+    self.broadcast(&buf);
 
     self.players.insert(player.ticket.clone(), player);
-
-    Ok(())
   }
 
   pub(crate) fn mark_player_ready(&mut self, id: &String) {
@@ -101,26 +93,22 @@ impl Area {
     }
   }
 
-  pub fn remove_player(&mut self, id: &String) -> std::io::Result<()> {
+  pub fn remove_player(&mut self, id: &String) {
     if let Some(_) = self.players.remove(id) {
       let buf = build_packet(ServerPacket::NaviDisconnected { ticket: id.clone() });
 
-      self.broadcast(&buf)?;
+      self.broadcast(&buf);
     }
-
-    Ok(())
   }
 
-  pub fn add_bot(&mut self, bot: Bot) -> std::io::Result<()> {
+  pub fn add_bot(&mut self, bot: Bot) {
     let buf = build_packet(ServerPacket::NaviConnected {
       ticket: bot.id.clone(),
     });
 
-    self.broadcast(&buf)?;
+    self.broadcast(&buf);
 
     self.bots.insert(bot.id.clone(), bot);
-
-    Ok(())
   }
 
   pub fn get_bot(&self, id: &String) -> Option<&Bot> {
@@ -131,7 +119,7 @@ impl Area {
     self.bots.values()
   }
 
-  pub fn move_bot(&mut self, id: &String, x: f64, y: f64, z: f64) -> std::io::Result<()> {
+  pub fn move_bot(&mut self, id: &String, x: f64, y: f64, z: f64) {
     if let Some(bot) = self.bots.get_mut(id) {
       bot.x = x;
       bot.y = y;
@@ -144,13 +132,11 @@ impl Area {
         z,
       });
 
-      self.broadcast(&buf)?;
+      self.broadcast(&buf);
     }
-
-    Ok(())
   }
 
-  pub fn set_bot_avatar(&mut self, id: &String, avatar_id: u16) -> std::io::Result<()> {
+  pub fn set_bot_avatar(&mut self, id: &String, avatar_id: u16) {
     if let Some(bot) = self.bots.get_mut(id) {
       bot.avatar_id = avatar_id;
 
@@ -159,53 +145,46 @@ impl Area {
         avatar_id,
       });
 
-      self.broadcast(&buf)?;
+      self.broadcast(&buf);
     }
-
-    Ok(())
   }
 
-  pub fn set_bot_emote(&mut self, id: &String, emote_id: u8) -> std::io::Result<()> {
+  pub fn set_bot_emote(&mut self, id: &String, emote_id: u8) {
     if self.bots.contains_key(id) {
       let buf = build_packet(ServerPacket::NaviEmote {
         ticket: id.clone(),
         emote_id,
       });
 
-      self.broadcast(&buf)?;
+      self.broadcast(&buf);
     }
-
-    Ok(())
   }
 
-  pub fn remove_bot(&mut self, id: &String) -> std::io::Result<()> {
+  pub fn remove_bot(&mut self, id: &String) {
     if let Some(_) = self.bots.remove(id) {
       let buf = build_packet(ServerPacket::NaviDisconnected { ticket: id.clone() });
 
-      self.broadcast(&buf)?;
+      self.broadcast(&buf);
     }
-
-    Ok(())
   }
 
-  pub(crate) fn broadcast_map_changes(&mut self) -> std::io::Result<()> {
+  pub(crate) fn broadcast_map_changes(&mut self) {
     if self.map.is_dirty() {
       let buf = build_packet(ServerPacket::MapData {
         map_data: self.map.render(),
       });
 
-      self.broadcast(&buf)?;
+      self.broadcast(&buf);
     }
-
-    Ok(())
   }
 
-  fn broadcast(&self, buf: &[u8]) -> std::io::Result<()> {
+  fn broadcast(&self, buf: &[u8]) {
     for player in self.players.values() {
       if player.ready {
-        self.socket.send_to(buf, player.socket_address)?;
+        if let Err(err) = self.socket.send_to(buf, player.socket_address) {
+          println!("{:#}", err);
+        }
       }
     }
-    Ok(())
   }
 }

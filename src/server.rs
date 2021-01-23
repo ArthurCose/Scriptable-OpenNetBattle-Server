@@ -76,8 +76,7 @@ impl Server {
         }
       }
 
-      // todo: handle possible errors
-      let _ = self.area.broadcast_map_changes();
+      self.area.broadcast_map_changes();
     }
   }
 
@@ -108,7 +107,7 @@ impl Server {
             println!("Received Logout packet from {}", socket_address);
           }
 
-          self.disconnect_player(&socket_address)?;
+          self.disconnect_player(&socket_address);
         }
         ClientPacket::Position { x, y, z } => {
           if self.log_packets {
@@ -119,7 +118,7 @@ impl Server {
             plugin.handle_player_move(&mut self.area, player_id, x, y, z);
           }
 
-          self.area.move_player(player_id, x, y, z)?;
+          self.area.move_player(player_id, x, y, z);
         }
         ClientPacket::LoadedMap { map_id: _ } => {
           if self.log_packets {
@@ -142,7 +141,7 @@ impl Server {
             plugin.handle_player_avatar_change(&mut self.area, player_id, form_id);
           }
 
-          self.area.set_player_avatar(player_id, form_id)?;
+          self.area.set_player_avatar(player_id, form_id);
         }
         ClientPacket::Emote { emote_id } => {
           if self.log_packets {
@@ -153,7 +152,7 @@ impl Server {
             plugin.handle_player_emote(&mut self.area, player_id, emote_id);
           }
 
-          self.area.set_player_emote(player_id, emote_id)?;
+          self.area.set_player_emote(player_id, emote_id);
         }
       }
     } else {
@@ -171,7 +170,7 @@ impl Server {
             println!("Received Login packet from {}", socket_address);
           }
 
-          self.add_player(socket_address)?;
+          self.add_player(socket_address);
 
           // login packet
           if let Some(player_id) = self.player_id_map.get(&socket_address) {
@@ -196,7 +195,7 @@ impl Server {
     Ok(())
   }
 
-  fn add_player(&mut self, socket_address: std::net::SocketAddr) -> std::io::Result<()> {
+  fn add_player(&mut self, socket_address: std::net::SocketAddr) {
     use uuid::Uuid;
 
     let player = Player {
@@ -213,9 +212,7 @@ impl Server {
       .player_id_map
       .insert(socket_address, player.ticket.clone());
 
-    self.area.add_player(player)?;
-
-    Ok(())
+    self.area.add_player(player);
   }
 
   fn connect_player(&mut self, socket_address: &std::net::SocketAddr) -> std::io::Result<()> {
@@ -283,15 +280,13 @@ impl Server {
     Ok(())
   }
 
-  fn disconnect_player(&mut self, socket_address: &std::net::SocketAddr) -> std::io::Result<()> {
+  fn disconnect_player(&mut self, socket_address: &std::net::SocketAddr) {
     if let Some(player_id) = self.player_id_map.remove(&socket_address) {
-      self.area.remove_player(&player_id)?;
+      self.area.remove_player(&player_id);
 
       for plugin in &mut self.plugin_interfaces {
         plugin.handle_player_disconnect(&mut self.area, &player_id);
       }
     }
-
-    Ok(())
   }
 }

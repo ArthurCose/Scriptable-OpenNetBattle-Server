@@ -74,7 +74,7 @@ macro_rules! create_bot_table {
             z,
           };
 
-          let _ = area.add_bot(bot);
+          area.add_bot(bot);
 
           Ok(())
         },
@@ -86,8 +86,7 @@ macro_rules! create_bot_table {
       $scope.create_function(|_, id: String| {
         let mut area = $area_ref.borrow_mut();
 
-        // ignore network errors
-        let _ = area.remove_bot(&id);
+        area.remove_bot(&id);
 
         Ok(())
       })?,
@@ -113,8 +112,7 @@ macro_rules! create_bot_table {
       $scope.create_function(|_, (id, x, y, z): (String, f64, f64, f64)| {
         let mut area = $area_ref.borrow_mut();
 
-        // ignore network errors
-        let _ = area.move_bot(&id, x, y, z);
+        area.move_bot(&id, x, y, z);
 
         Ok(())
       })?,
@@ -131,8 +129,7 @@ macro_rules! create_bot_table {
           )));
         }
 
-        // ignore network errors
-        let _ = area.set_bot_avatar(&id, avatar_id);
+        area.set_bot_avatar(&id, avatar_id);
 
         Ok(())
       })?,
@@ -149,8 +146,7 @@ macro_rules! create_bot_table {
           )));
         }
 
-        // ignore network errors
-        let _ = area.set_bot_emote(&id, emote_id);
+        area.set_bot_emote(&id, emote_id);
 
         Ok(())
       })?,
