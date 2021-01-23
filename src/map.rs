@@ -85,8 +85,10 @@ impl Map {
       }
     }
 
-    self.data[y][x] = id;
-    self.cached = false;
+    if self.data[y][x] != id {
+      self.data[y][x] = id;
+      self.cached = false;
+    }
   }
 
   pub fn is_dirty(&self) -> bool {
@@ -104,6 +106,7 @@ impl Map {
       lines.append(&mut rows);
 
       self.cached_string = lines.join("\n");
+      self.cached = true;
     }
 
     self.cached_string.clone()
