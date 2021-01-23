@@ -46,6 +46,10 @@ impl Server {
     use std::sync::mpsc;
     use std::time::Instant;
 
+    for plugin_interface in &mut self.plugin_interfaces {
+      plugin_interface.init(&mut self.area);
+    }
+
     let (tx, rx) = mpsc::channel();
     create_clock_thread(tx.clone());
     create_socket_thread(tx, self.socket.try_clone()?, self.log_packets);

@@ -15,9 +15,50 @@ pub struct LuaPluginInterface {
   player_emote_listeners: Vec<std::path::PathBuf>,
 }
 
+// abusing macro to auto resolve lifetime
+macro_rules! create_map_table {
+  ($lua_ctx: ident, $scope: ident, $area_ref: ident) => {{
+    let map_table = $lua_ctx.create_table()?;
+
+    map_table.set(
+      "get_width",
+      $scope.create_function(|_, ()| {
+        let mut area = $area_ref.borrow_mut();
+        Ok(area.get_map().get_width())
+      })?,
+    )?;
+
+    map_table.set(
+      "get_height",
+      $scope.create_function(|_, ()| {
+        let mut area = $area_ref.borrow_mut();
+        Ok(area.get_map().get_height())
+      })?,
+    )?;
+
+    map_table.set(
+      "get_tile",
+      $scope.create_function(|_, (x, y): (usize, usize)| {
+        let mut area = $area_ref.borrow_mut();
+        Ok(area.get_map().get_tile(x, y))
+      })?,
+    )?;
+
+    map_table.set(
+      "set_tile",
+      $scope.create_function(|_, (x, y, id): (usize, usize, String)| {
+        let mut area = $area_ref.borrow_mut();
+        Ok(area.get_map().set_tile(x, y, id))
+      })?,
+    )?;
+
+    map_table
+  }};
+}
+
 impl LuaPluginInterface {
   pub fn new() -> LuaPluginInterface {
-    let mut plugin_interface = LuaPluginInterface {
+    let plugin_interface = LuaPluginInterface {
       scripts: HashMap::<std::path::PathBuf, Lua>::new(),
       tick_listeners: Vec::new(),
       player_join_listeners: Vec::new(),
@@ -27,26 +68,20 @@ impl LuaPluginInterface {
       player_emote_listeners: Vec::new(),
     };
 
-    plugin_interface.init();
-
     plugin_interface
   }
 
-  fn init(&mut self) {
-    if let Err(err) = self.load_scripts() {
-      println!("Failed to load lua scripts: {}", err);
-    }
-  }
-
-  fn load_scripts(&mut self) -> std::io::Result<()> {
+  fn load_scripts(&mut self, area_ref: &mut Area) -> std::io::Result<()> {
     use std::fs::{read_dir, read_to_string};
+
+    let area_ref = RefCell::new(area_ref);
 
     for wrapped_dir_entry in read_dir("./scripts")? {
       let dir_path = wrapped_dir_entry?.path();
       let script_path = dir_path.join("main.lua");
 
       if let Ok(script) = read_to_string(script_path) {
-        if let Err(err) = self.load_script(dir_path.clone(), script) {
+        if let Err(err) = self.load_script(&area_ref, dir_path.clone(), script) {
           println!("Failed to load script \"{}\": {}", dir_path.display(), err)
         }
       }
@@ -55,13 +90,24 @@ impl LuaPluginInterface {
     Ok(())
   }
 
-  fn load_script(&mut self, script_dir: std::path::PathBuf, script: String) -> rlua::Result<()> {
+  fn load_script(
+    &mut self,
+    area_ref: &RefCell<&mut Area>,
+    script_dir: std::path::PathBuf,
+    script: String,
+  ) -> rlua::Result<()> {
     let lua_env = Lua::new();
 
     lua_env.context(|lua_ctx| {
-      lua_ctx.load(&script).exec()?;
-
       let globals = lua_ctx.globals();
+
+      lua_ctx.scope(|scope| -> rlua::Result<()> {
+        globals.set("Map", create_map_table!(lua_ctx, scope, area_ref))?;
+
+        lua_ctx.load(&script).exec()?;
+
+        Ok(())
+      })?;
 
       if let Ok(_) = globals.get::<_, rlua::Function>("tick") {
         self.tick_listeners.push(script_dir.clone());
@@ -136,48 +182,13 @@ macro_rules! create_event_handler {
   }};
 }
 
-// abusing macro to auto resolve lifetime
-macro_rules! create_map_table {
-  ($lua_ctx: ident, $scope: ident, $area_ref: ident) => {{
-    let map_table = $lua_ctx.create_table()?;
-
-    map_table.set(
-      "get_width",
-      $scope.create_function(|_, ()| {
-        let mut area = $area_ref.borrow_mut();
-        Ok(area.get_map().get_width())
-      })?,
-    )?;
-
-    map_table.set(
-      "get_height",
-      $scope.create_function(|_, ()| {
-        let mut area = $area_ref.borrow_mut();
-        Ok(area.get_map().get_height())
-      })?,
-    )?;
-
-    map_table.set(
-      "get_tile",
-      $scope.create_function(|_, (x, y): (usize, usize)| {
-        let mut area = $area_ref.borrow_mut();
-        Ok(area.get_map().get_tile(x, y))
-      })?,
-    )?;
-
-    map_table.set(
-      "set_tile",
-      $scope.create_function(|_, (x, y, id): (usize, usize, String)| {
-        let mut area = $area_ref.borrow_mut();
-        Ok(area.get_map().set_tile(x, y, id))
-      })?,
-    )?;
-
-    map_table
-  }};
-}
-
 impl PluginInterface for LuaPluginInterface {
+  fn init(&mut self, area: &mut Area) {
+    if let Err(err) = self.load_scripts(area) {
+      println!("Failed to load lua scripts: {}", err);
+    }
+  }
+
   fn tick(&mut self, area: &mut Area, delta_time: f64) {
     create_event_handler!(self, area, "", "tick", delta_time);
   }
