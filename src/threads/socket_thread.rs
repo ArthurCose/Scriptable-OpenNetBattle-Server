@@ -10,7 +10,6 @@ pub fn create_socket_thread(tx: mpsc::Sender<ThreadMessage>, socket: UdpSocket, 
     let mut buf = [0; MAX_BUFFER_LEN];
 
     let wrapped_packet = socket.recv_from(&mut buf);
-    println!("still running");
 
     match wrapped_packet {
       Ok((number_of_bytes, src_addr)) => {
