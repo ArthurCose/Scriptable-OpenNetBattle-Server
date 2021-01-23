@@ -64,9 +64,10 @@ impl Map {
       self.width = x + 1;
 
       for row in &mut self.data {
-        let capacity_difference = self.width - row.capacity();
+        // capacity check needed for "attempt to subtract with overflow" fix
+        if row.capacity() < self.width {
+          let capacity_difference = self.width - row.capacity();
 
-        if capacity_difference > 0 {
           row.reserve(capacity_difference);
         }
 
