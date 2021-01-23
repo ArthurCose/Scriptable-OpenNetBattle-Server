@@ -107,11 +107,9 @@ macro_rules! create_event_handler {
         if let Some(lua_env) = $self.scripts.get_mut(script_dir) {
           // enter the lua context
 
-          lua_env.context(|lua_ctx|-> rlua::Result<()> {
-            let globals = lua_ctx.globals();
-            let fn_name = concat!($prefix, $event);
-
+          lua_env.context(|lua_ctx: rlua::Context |-> rlua::Result<()> {
             lua_ctx.scope(|scope| -> rlua::Result<()> {
+              let globals = lua_ctx.globals();
 
               let map_table = lua_ctx.create_table()?;
 
@@ -127,19 +125,21 @@ macro_rules! create_event_handler {
               })?;
               map_table.set("get_height", get_tile)?;
 
-              let get_tile = scope.create_function(|_, (x, y) : (usize, usize)| {
+              let get_tile = scope.create_function(|_, (x, y): (usize, usize)| {
                 let mut area = area_ref.borrow_mut();
                 Ok(area.get_map().get_tile(x, y))
               })?;
               map_table.set("get_tile", get_tile)?;
 
-              let set_tile = scope.create_function(|_, (x, y, id) : (usize, usize, String)| {
+              let set_tile = scope.create_function(|_, (x, y, id): (usize, usize, String)| {
                 let mut area = area_ref.borrow_mut();
                 Ok(area.get_map().set_tile(x, y, id))
               })?;
               map_table.set("set_tile", set_tile)?;
 
               globals.set("Map", map_table)?;
+
+              let fn_name = concat!($prefix, $event);
 
               if let Ok(func) = globals.get::<_, rlua::Function>(fn_name) {
                 if let Err(err) = func.call::<_, ()>(($($args, )*)) {
