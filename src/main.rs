@@ -1,5 +1,4 @@
 mod area;
-mod map;
 mod packets;
 mod player;
 mod plugins;

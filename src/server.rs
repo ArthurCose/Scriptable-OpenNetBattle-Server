@@ -1,5 +1,5 @@
 use crate::area::Area;
-use crate::map::Map;
+use crate::area::Map;
 use crate::packets::{build_packet, ClientPacket, ServerPacket};
 use crate::player::Player;
 use crate::plugins::{LuaPluginInterface, PluginInterface};

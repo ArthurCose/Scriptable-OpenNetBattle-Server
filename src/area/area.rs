@@ -1,4 +1,4 @@
-use crate::map::Map;
+use super::map::Map;
 use crate::packets::{build_packet, ServerPacket};
 use crate::player::Player;
 use std::collections::HashMap;
