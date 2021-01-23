@@ -63,8 +63,6 @@ impl LuaPluginInterface {
 
       let globals = lua_ctx.globals();
 
-      globals.set("Map", lua_ctx.create_table()?)?;
-
       if let Ok(_) = globals.get::<_, rlua::Function>("tick") {
         self.tick_listeners.push(script_dir.clone());
       }
@@ -114,17 +112,34 @@ macro_rules! create_event_handler {
             let fn_name = concat!($prefix, $event);
 
             lua_ctx.scope(|scope| -> rlua::Result<()> {
+
+              let map_table = lua_ctx.create_table()?;
+
+              let get_tile = scope.create_function(|_, ()| {
+                let mut area = area_ref.borrow_mut();
+                Ok(area.get_map().get_width())
+              })?;
+              map_table.set("get_width", get_tile)?;
+
+              let get_tile = scope.create_function(|_, ()| {
+                let mut area = area_ref.borrow_mut();
+                Ok(area.get_map().get_height())
+              })?;
+              map_table.set("get_height", get_tile)?;
+
               let get_tile = scope.create_function(|_, (x, y) : (usize, usize)| {
                 let mut area = area_ref.borrow_mut();
                 Ok(area.get_map().get_tile(x, y))
               })?;
-              globals.set("Map.get_tile", get_tile)?;
+              map_table.set("get_tile", get_tile)?;
 
               let set_tile = scope.create_function_mut(|_, (x, y, id) : (usize, usize, String)| {
                 let mut area = area_ref.borrow_mut();
                 Ok(area.get_map().set_tile(x, y, id))
               })?;
-              globals.set("set_tile", set_tile)?;
+              map_table.set("set_tile", set_tile)?;
+
+              globals.set("Map", map_table)?;
 
               if let Ok(func) = globals.get::<_, rlua::Function>(fn_name) {
                 if let Err(err) = func.call::<_, ()>(($($args, )*)) {
