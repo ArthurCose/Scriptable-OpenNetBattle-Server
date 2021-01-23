@@ -1,3 +1,5 @@
+use super::{TILE_HEIGHT, TILE_WIDTH};
+
 #[derive(Debug)]
 pub enum ClientPacket {
   Ping,
@@ -17,8 +19,8 @@ pub fn parse_client_packet(buf: &[u8]) -> Option<ClientPacket> {
       username: read_string(&mut work_buf)?,
     }),
     1 => Some(ClientPacket::Position {
-      x: read_f64(&mut work_buf)?,
-      y: read_f64(&mut work_buf)?,
+      x: read_f64(&mut work_buf)? / TILE_WIDTH * 2.0,
+      y: read_f64(&mut work_buf)? / TILE_HEIGHT,
       z: read_f64(&mut work_buf)?,
     }),
     2 => Some(ClientPacket::Logout),
