@@ -31,12 +31,11 @@ impl Server {
 
     let rc_socket = Rc::new(socket);
 
-    let bytes = include_bytes!("../map.txt");
-    let map_str = std::str::from_utf8(bytes).unwrap();
+    let map_string = std::fs::read_to_string("map.txt").expect("Failed to read map.txt");
 
     Server {
       player_id_map: HashMap::new(),
-      area: Area::new(rc_socket.clone(), Map::from(String::from(map_str))),
+      area: Area::new(rc_socket.clone(), Map::from(String::from(map_string))),
       plugin_interfaces: vec![Box::new(LuaPluginInterface::new())],
       socket: rc_socket,
       log_packets: false,
