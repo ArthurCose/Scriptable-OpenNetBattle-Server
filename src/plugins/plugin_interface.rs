@@ -1,6 +1,6 @@
 use crate::area::Area;
 
-pub trait Plugin {
+pub trait PluginInterface {
   fn tick(&mut self, area: &mut Area, delta_time: f64);
   fn handle_player_join(&mut self, area: &mut Area, player_id: &String);
   fn handle_player_disconnect(&mut self, area: &mut Area, player_id: &String);

@@ -2,7 +2,7 @@ use crate::area::Area;
 use crate::map::Map;
 use crate::packets::{build_packet, ClientPacket, ServerPacket};
 use crate::player::Player;
-use crate::plugins::{LuaPlugin, Plugin};
+use crate::plugins::{LuaPluginInterface, PluginInterface};
 use crate::threads::{create_clock_thread, create_socket_thread, ThreadMessage};
 use std::collections::HashMap;
 use std::net::UdpSocket;
@@ -13,7 +13,7 @@ const OBN_PORT: usize = 8765;
 pub struct Server {
   player_id_map: HashMap<std::net::SocketAddr, String>,
   area: Area,
-  plugins: Vec<Box<dyn Plugin>>,
+  plugin_interfaces: Vec<Box<dyn PluginInterface>>,
   socket: Rc<UdpSocket>,
   log_packets: bool, // todo command line option
 }
@@ -37,7 +37,7 @@ impl Server {
     Server {
       player_id_map: HashMap::new(),
       area: Area::new(rc_socket.clone(), Map::from(String::from(map_str))),
-      plugins: vec![Box::new(LuaPlugin::new())],
+      plugin_interfaces: vec![Box::new(LuaPluginInterface::new())],
       socket: rc_socket,
       log_packets: false,
     }
@@ -61,7 +61,7 @@ impl Server {
           let elapsed_time = time.elapsed();
           time = Instant::now();
 
-          for plugin in &mut self.plugins {
+          for plugin in &mut self.plugin_interfaces {
             plugin.tick(&mut self.area, elapsed_time.as_secs_f64());
           }
         }
@@ -110,7 +110,7 @@ impl Server {
             println!("Received Position packet from {}", socket_address);
           }
 
-          for plugin in &mut self.plugins {
+          for plugin in &mut self.plugin_interfaces {
             plugin.handle_player_move(&mut self.area, player_id, x, y, z);
           }
 
@@ -133,7 +133,7 @@ impl Server {
             println!("Received Avatar Change packet from {}", socket_address);
           }
 
-          for plugin in &mut self.plugins {
+          for plugin in &mut self.plugin_interfaces {
             plugin.handle_player_avatar_change(&mut self.area, player_id, form_id);
           }
 
@@ -144,7 +144,7 @@ impl Server {
             println!("Received Emote packet from {}", socket_address);
           }
 
-          for plugin in &mut self.plugins {
+          for plugin in &mut self.plugin_interfaces {
             plugin.handle_player_emote(&mut self.area, player_id, emote_id);
           }
 
@@ -224,7 +224,7 @@ impl Server {
 
       self.socket.send_to(&buf, socket_address)?;
 
-      for plugin in &mut self.plugins {
+      for plugin in &mut self.plugin_interfaces {
         plugin.handle_player_join(&mut self.area, player_id);
       }
     }
@@ -262,7 +262,7 @@ impl Server {
     if let Some(player_id) = self.player_id_map.remove(&socket_address) {
       self.area.remove_player(&player_id)?;
 
-      for plugin in &mut self.plugins {
+      for plugin in &mut self.plugin_interfaces {
         plugin.handle_player_disconnect(&mut self.area, &player_id);
       }
     }

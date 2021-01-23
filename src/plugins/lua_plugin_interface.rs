@@ -1,11 +1,11 @@
-use super::plugin::Plugin;
+use super::plugin_interface::PluginInterface;
 use crate::area::Area;
 use paste::paste;
 use rlua::Lua;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-pub struct LuaPlugin {
+pub struct LuaPluginInterface {
   scripts: HashMap<std::path::PathBuf, Lua>,
   tick_listeners: Vec<std::path::PathBuf>,
   player_join_listeners: Vec<std::path::PathBuf>,
@@ -15,9 +15,9 @@ pub struct LuaPlugin {
   player_emote_listeners: Vec<std::path::PathBuf>,
 }
 
-impl LuaPlugin {
-  pub fn new() -> LuaPlugin {
-    let mut plugin = LuaPlugin {
+impl LuaPluginInterface {
+  pub fn new() -> LuaPluginInterface {
+    let mut plugin_interface = LuaPluginInterface {
       scripts: HashMap::<std::path::PathBuf, Lua>::new(),
       tick_listeners: Vec::new(),
       player_join_listeners: Vec::new(),
@@ -27,9 +27,9 @@ impl LuaPlugin {
       player_emote_listeners: Vec::new(),
     };
 
-    plugin.init();
+    plugin_interface.init();
 
-    plugin
+    plugin_interface
   }
 
   fn init(&mut self) {
@@ -147,7 +147,7 @@ macro_rules! create_event_handler {
   }};
 }
 
-impl Plugin for LuaPlugin {
+impl PluginInterface for LuaPluginInterface {
   fn tick(&mut self, area: &mut Area, delta_time: f64) {
     create_event_handler!(self, area, "", "tick", delta_time);
   }
