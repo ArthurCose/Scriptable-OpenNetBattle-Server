@@ -111,33 +111,7 @@ macro_rules! create_event_handler {
             lua_ctx.scope(|scope| -> rlua::Result<()> {
               let globals = lua_ctx.globals();
 
-              let map_table = lua_ctx.create_table()?;
-
-              let get_tile = scope.create_function(|_, ()| {
-                let mut area = area_ref.borrow_mut();
-                Ok(area.get_map().get_width())
-              })?;
-              map_table.set("get_width", get_tile)?;
-
-              let get_tile = scope.create_function(|_, ()| {
-                let mut area = area_ref.borrow_mut();
-                Ok(area.get_map().get_height())
-              })?;
-              map_table.set("get_height", get_tile)?;
-
-              let get_tile = scope.create_function(|_, (x, y): (usize, usize)| {
-                let mut area = area_ref.borrow_mut();
-                Ok(area.get_map().get_tile(x, y))
-              })?;
-              map_table.set("get_tile", get_tile)?;
-
-              let set_tile = scope.create_function(|_, (x, y, id): (usize, usize, String)| {
-                let mut area = area_ref.borrow_mut();
-                Ok(area.get_map().set_tile(x, y, id))
-              })?;
-              map_table.set("set_tile", set_tile)?;
-
-              globals.set("Map", map_table)?;
+              globals.set("Map", create_map_table!(lua_ctx, scope, area_ref))?;
 
               let fn_name = concat!($prefix, $event);
 
@@ -159,6 +133,39 @@ macro_rules! create_event_handler {
     if let Err(err) = call_lua() {
       println!("{:#}", err);
     }
+  }};
+}
+
+// abusing macro to auto resolve lifetime
+macro_rules! create_map_table {
+  ($lua_ctx: ident, $scope: ident, $area_ref: ident) => {{
+    let map_table = $lua_ctx.create_table()?;
+
+    let get_tile = $scope.create_function(|_, ()| {
+      let mut area = $area_ref.borrow_mut();
+      Ok(area.get_map().get_width())
+    })?;
+    map_table.set("get_width", get_tile)?;
+
+    let get_tile = $scope.create_function(|_, ()| {
+      let mut area = $area_ref.borrow_mut();
+      Ok(area.get_map().get_height())
+    })?;
+    map_table.set("get_height", get_tile)?;
+
+    let get_tile = $scope.create_function(|_, (x, y): (usize, usize)| {
+      let mut area = $area_ref.borrow_mut();
+      Ok(area.get_map().get_tile(x, y))
+    })?;
+    map_table.set("get_tile", get_tile)?;
+
+    let set_tile = $scope.create_function(|_, (x, y, id): (usize, usize, String)| {
+      let mut area = $area_ref.borrow_mut();
+      Ok(area.get_map().set_tile(x, y, id))
+    })?;
+    map_table.set("set_tile", set_tile)?;
+
+    map_table
   }};
 }
 
