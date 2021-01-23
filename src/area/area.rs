@@ -79,12 +79,12 @@ impl Area {
   pub(crate) fn add_player(&mut self, player: Player) {
     // player join packet
     let buf = build_packet(ServerPacket::NaviConnected {
-      ticket: player.ticket.clone(),
+      ticket: player.id.clone(),
     });
 
     self.broadcast(&buf);
 
-    self.players.insert(player.ticket.clone(), player);
+    self.players.insert(player.id.clone(), player);
   }
 
   pub(crate) fn mark_player_ready(&mut self, id: &String) {
