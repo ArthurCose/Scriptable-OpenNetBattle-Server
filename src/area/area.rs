@@ -28,6 +28,10 @@ impl Area {
     self.players.get(id)
   }
 
+  pub fn get_players(&self) -> std::collections::hash_map::Values<String, Player> {
+    self.players.values()
+  }
+
   pub fn move_player(&mut self, id: &String, x: f64, y: f64, z: f64) -> std::io::Result<()> {
     if self.players.contains_key(id) {
       let buf = build_packet(ServerPacket::NaviWalkTo {

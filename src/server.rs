@@ -234,18 +234,15 @@ impl Server {
       }
     }
 
-    for other_player_id in self.player_id_map.values() {
-      // assume existence if the player is in the id map
-      let other_player = self.area.get_player(other_player_id).unwrap();
-
+    for other_player in self.area.get_players() {
       let buf = build_packet(ServerPacket::NaviConnected {
-        ticket: other_player_id.clone(),
+        ticket: other_player.ticket.clone(),
       });
       self.socket.send_to(&buf, &socket_address)?;
 
       // trigger player spawning by sending position
       let buf = build_packet(ServerPacket::NaviWalkTo {
-        ticket: other_player_id.clone(),
+        ticket: other_player.ticket.clone(),
         x: other_player.x,
         y: other_player.y,
         z: other_player.z,
@@ -254,7 +251,7 @@ impl Server {
 
       // update avatar
       let buf = build_packet(ServerPacket::NaviSetAvatar {
-        ticket: other_player_id.clone(),
+        ticket: other_player.ticket.clone(),
         avatar_id: other_player.avatar_id,
       });
       self.socket.send_to(&buf, &socket_address)?;
