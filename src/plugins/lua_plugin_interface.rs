@@ -41,7 +41,7 @@ impl LuaPluginInterface {
   fn load_scripts(&mut self) -> std::io::Result<()> {
     use std::fs::{read_dir, read_to_string};
 
-    for wrapped_dir_entry in read_dir("./lua")? {
+    for wrapped_dir_entry in read_dir("./scripts")? {
       let dir_path = wrapped_dir_entry?.path();
       let script_path = dir_path.join("main.lua");
 
