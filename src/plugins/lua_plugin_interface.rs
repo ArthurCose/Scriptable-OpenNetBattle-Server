@@ -133,7 +133,7 @@ macro_rules! create_event_handler {
               })?;
               map_table.set("get_tile", get_tile)?;
 
-              let set_tile = scope.create_function_mut(|_, (x, y, id) : (usize, usize, String)| {
+              let set_tile = scope.create_function(|_, (x, y, id) : (usize, usize, String)| {
                 let mut area = area_ref.borrow_mut();
                 Ok(area.get_map().set_tile(x, y, id))
               })?;
