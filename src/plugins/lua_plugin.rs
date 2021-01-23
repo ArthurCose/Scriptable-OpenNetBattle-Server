@@ -1,5 +1,5 @@
 use super::plugin::Plugin;
-use crate::map::Map;
+use crate::area::Area;
 use paste::paste;
 use rlua::Lua;
 use std::cell::RefCell;
@@ -99,27 +99,30 @@ impl LuaPlugin {
 }
 
 macro_rules! create_event_handler {
-  ($self: ident, $map_ref: ident, $prefix: expr, $event: expr, $($args: expr), *) => {{
-    let mut call_lua = || -> rlua::Result<()> {
+  ($self: ident, $area: ident, $prefix: expr, $event: expr, $($args: expr), *) => {{
+    let call_lua = || -> rlua::Result<()> {
+      let area_ref = RefCell::new($area);
+
       // loop over scripts
       for script_dir in &paste! { $self.[<$event _listeners>] } {
         // grab the lua_env (should always be true)
         if let Some(lua_env) = $self.scripts.get_mut(script_dir) {
           // enter the lua context
+
           lua_env.context(|lua_ctx|-> rlua::Result<()> {
             let globals = lua_ctx.globals();
             let fn_name = concat!($prefix, $event);
 
             lua_ctx.scope(|scope| -> rlua::Result<()> {
               let get_tile = scope.create_function(|_, (x, y) : (usize, usize)| {
-                let map = $map_ref.borrow();
-                Ok(map.get_tile(x, y))
+                let mut area = area_ref.borrow_mut();
+                Ok(area.get_map().get_tile(x, y))
               })?;
               globals.set("Map.get_tile", get_tile)?;
 
               let set_tile = scope.create_function_mut(|_, (x, y, id) : (usize, usize, String)| {
-                let mut map = $map_ref.borrow_mut();
-                Ok(map.set_tile(x, y, id))
+                let mut area = area_ref.borrow_mut();
+                Ok(area.get_map().set_tile(x, y, id))
               })?;
               globals.set("set_tile", set_tile)?;
 
@@ -145,45 +148,55 @@ macro_rules! create_event_handler {
 }
 
 impl Plugin for LuaPlugin {
-  fn tick(&mut self, map: &mut RefCell<Map>, delta_time: f64) {
-    create_event_handler!(self, map, "", "tick", delta_time);
+  fn tick(&mut self, area: &mut Area, delta_time: f64) {
+    create_event_handler!(self, area, "", "tick", delta_time);
   }
 
-  fn handle_player_join(&mut self, map: &mut RefCell<Map>, ticket: String) {
-    create_event_handler!(self, map, "handle_", "player_join", ticket.clone());
+  fn handle_player_join(&mut self, area: &mut Area, player_id: &String) {
+    create_event_handler!(self, area, "handle_", "player_join", player_id.clone());
   }
 
-  fn handle_player_disconnect(&mut self, map: &mut RefCell<Map>, ticket: String) {
-    create_event_handler!(self, map, "handle_", "player_disconnect", ticket.clone());
-  }
-
-  fn handle_player_move(&mut self, map: &mut RefCell<Map>, ticket: String, x: f64, y: f64, z: f64) {
-    create_event_handler!(self, map, "handle_", "player_move", ticket.clone(), x, y, z);
-  }
-
-  fn handle_player_avatar_change(
-    &mut self,
-    map: &mut RefCell<Map>,
-    ticket: String,
-    avatar_id: u16,
-  ) {
+  fn handle_player_disconnect(&mut self, area: &mut Area, player_id: &String) {
     create_event_handler!(
       self,
-      map,
+      area,
+      "handle_",
+      "player_disconnect",
+      player_id.clone()
+    );
+  }
+
+  fn handle_player_move(&mut self, area: &mut Area, player_id: &String, x: f64, y: f64, z: f64) {
+    create_event_handler!(
+      self,
+      area,
+      "handle_",
+      "player_move",
+      player_id.clone(),
+      x,
+      y,
+      z
+    );
+  }
+
+  fn handle_player_avatar_change(&mut self, area: &mut Area, player_id: &String, avatar_id: u16) {
+    create_event_handler!(
+      self,
+      area,
       "handle_",
       "player_avatar_change",
-      ticket.clone(),
+      player_id.clone(),
       avatar_id
     );
   }
 
-  fn handle_player_emote(&mut self, map: &mut RefCell<Map>, ticket: String, emote_id: u8) {
+  fn handle_player_emote(&mut self, area: &mut Area, player_id: &String, emote_id: u8) {
     create_event_handler!(
       self,
-      map,
+      area,
       "handle_",
       "player_emote",
-      ticket.clone(),
+      player_id.clone(),
       emote_id
     );
   }

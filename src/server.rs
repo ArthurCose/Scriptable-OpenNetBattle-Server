@@ -1,29 +1,21 @@
+use crate::area::Area;
 use crate::map::Map;
 use crate::packets::{build_packet, ClientPacket, ServerPacket};
+use crate::player::Player;
 use crate::plugins::{LuaPlugin, Plugin};
 use crate::threads::{create_clock_thread, create_socket_thread, ThreadMessage};
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::net::UdpSocket;
+use std::rc::Rc;
 
 const OBN_PORT: usize = 8765;
 
 pub struct Server {
-  players: HashMap<std::net::SocketAddr, Player>,
-  map: RefCell<Map>,
+  player_id_map: HashMap<std::net::SocketAddr, String>,
+  area: Area,
   plugins: Vec<Box<dyn Plugin>>,
-  socket: UdpSocket,
+  socket: Rc<UdpSocket>,
   log_packets: bool, // todo command line option
-}
-
-struct Player {
-  socket_address: std::net::SocketAddr,
-  ticket: String,
-  avatar_id: u16,
-  x: f64,
-  y: f64,
-  z: f64,
-  ready: bool,
 }
 
 impl Server {
@@ -37,14 +29,16 @@ impl Server {
       Err(err) => panic!("UdpSocket.take_error failed: {:?}", err),
     }
 
+    let rc_socket = Rc::new(socket);
+
     let bytes = include_bytes!("../map.txt");
     let map_str = std::str::from_utf8(bytes).unwrap();
 
     Server {
-      players: HashMap::new(),
-      map: RefCell::new(Map::from(String::from(map_str))),
+      player_id_map: HashMap::new(),
+      area: Area::new(rc_socket.clone(), Map::from(String::from(map_str))),
       plugins: vec![Box::new(LuaPlugin::new())],
-      socket,
+      socket: rc_socket,
       log_packets: false,
     }
   }
@@ -68,7 +62,7 @@ impl Server {
           time = Instant::now();
 
           for plugin in &mut self.plugins {
-            plugin.tick(&mut self.map, elapsed_time.as_secs_f64());
+            plugin.tick(&mut self.area, elapsed_time.as_secs_f64());
           }
         }
         ThreadMessage::ClientPacket(src_addr, client_packet) => {
@@ -77,15 +71,8 @@ impl Server {
         }
       }
 
-      let mut map = self.map.borrow_mut();
-
-      if map.is_dirty() {
-        let buf = build_packet(ServerPacket::MapData {
-          map_data: map.render(),
-        });
-
-        let _ = self.broadcast(&buf);
-      }
+      // todo: handle possible errors
+      let _ = self.area.broadcast_map_changes();
     }
   }
 
@@ -94,7 +81,7 @@ impl Server {
     socket_address: std::net::SocketAddr,
     client_packet: ClientPacket,
   ) -> std::io::Result<()> {
-    if self.players.contains_key(&socket_address) {
+    if let Some(player_id) = self.player_id_map.get(&socket_address) {
       match client_packet {
         ClientPacket::Ping => {
           if self.log_packets {
@@ -123,23 +110,11 @@ impl Server {
             println!("Received Position packet from {}", socket_address);
           }
 
-          let player = self.players.get_mut(&socket_address).unwrap();
-          player.x = x;
-          player.y = y;
-          player.z = z;
-
           for plugin in &mut self.plugins {
-            plugin.handle_player_move(&mut self.map, player.ticket.clone(), x, y, z);
+            plugin.handle_player_move(&mut self.area, player_id, x, y, z);
           }
 
-          let buf = build_packet(ServerPacket::NaviWalkTo {
-            ticket: player.ticket.clone(),
-            x,
-            y,
-            z,
-          });
-
-          self.broadcast(&buf)?;
+          self.area.move_player(player_id, x, y, z)?;
         }
         ClientPacket::LoadedMap { map_id: _ } => {
           if self.log_packets {
@@ -148,7 +123,7 @@ impl Server {
 
           // map signal
           let buf = build_packet(ServerPacket::MapData {
-            map_data: self.map.borrow_mut().render(),
+            map_data: self.area.get_map().render(),
           });
 
           self.socket.send_to(&buf, socket_address)?;
@@ -158,37 +133,22 @@ impl Server {
             println!("Received Avatar Change packet from {}", socket_address);
           }
 
-          let player = self.players.get_mut(&socket_address).unwrap();
-          player.avatar_id = form_id;
-
           for plugin in &mut self.plugins {
-            plugin.handle_player_avatar_change(&mut self.map, player.ticket.clone(), form_id);
+            plugin.handle_player_avatar_change(&mut self.area, player_id, form_id);
           }
 
-          let buf = build_packet(ServerPacket::NaviSetAvatar {
-            ticket: player.ticket.clone(),
-            avatar_id: form_id,
-          });
-
-          self.broadcast(&buf)?;
+          self.area.set_player_avatar(player_id, form_id)?;
         }
         ClientPacket::Emote { emote_id } => {
           if self.log_packets {
             println!("Received Emote packet from {}", socket_address);
           }
 
-          let player = self.players.get(&socket_address).unwrap();
-
           for plugin in &mut self.plugins {
-            plugin.handle_player_emote(&mut self.map, player.ticket.clone(), emote_id);
+            plugin.handle_player_emote(&mut self.area, player_id, emote_id);
           }
 
-          let buf = build_packet(ServerPacket::NaviEmote {
-            ticket: player.ticket.clone(),
-            emote_id,
-          });
-
-          self.broadcast(&buf)?;
+          self.area.set_player_emote(player_id, emote_id)?;
         }
       }
     } else {
@@ -209,9 +169,9 @@ impl Server {
           self.add_player(socket_address)?;
 
           // login packet
-          if let Some(player) = self.players.get(&socket_address) {
+          if let Some(player_id) = self.player_id_map.get(&socket_address) {
             let buf = build_packet(ServerPacket::Login {
-              ticket: player.ticket.clone(),
+              ticket: player_id.clone(),
               error: 0,
             });
 
@@ -222,21 +182,12 @@ impl Server {
           if self.log_packets {
             println!("Received bad packet from {}", socket_address,);
             println!("{:?}", client_packet);
-            println!("Connected players: {:?}", self.players.keys());
+            println!("Connected players: {:?}", self.player_id_map.keys());
           }
         }
       }
     }
 
-    Ok(())
-  }
-
-  fn broadcast(&self, buf: &[u8]) -> std::io::Result<()> {
-    for player in self.players.values() {
-      if player.ready {
-        self.socket.send_to(buf, player.socket_address)?;
-      }
-    }
     Ok(())
   }
 
@@ -253,42 +204,43 @@ impl Server {
       ready: false,
     };
 
-    // player join packet
-    let buf = build_packet(ServerPacket::NaviConnected {
-      ticket: player.ticket.clone(),
-    });
-    self.broadcast(&buf)?;
+    self
+      .player_id_map
+      .insert(socket_address, player.ticket.clone());
 
-    self.players.insert(socket_address, player);
+    self.area.add_player(player)?;
 
     Ok(())
   }
 
   fn connect_player(&mut self, socket_address: &std::net::SocketAddr) -> std::io::Result<()> {
-    if let Some(player) = self.players.get_mut(&socket_address) {
-      player.ready = true;
+    if let Some(player_id) = self.player_id_map.get_mut(&socket_address) {
+      self.area.mark_player_ready(player_id);
 
       let buf = build_packet(ServerPacket::Login {
-        ticket: player.ticket.clone(),
+        ticket: player_id.clone(),
         error: 0,
       });
 
       self.socket.send_to(&buf, socket_address)?;
 
       for plugin in &mut self.plugins {
-        plugin.handle_player_join(&mut self.map, player.ticket.clone());
+        plugin.handle_player_join(&mut self.area, player_id);
       }
     }
 
-    for other_player in self.players.values() {
+    for other_player_id in self.player_id_map.values() {
+      // assume existence if the player is in the id map
+      let other_player = self.area.get_player(other_player_id).unwrap();
+
       let buf = build_packet(ServerPacket::NaviConnected {
-        ticket: other_player.ticket.clone(),
+        ticket: other_player_id.clone(),
       });
       self.socket.send_to(&buf, &socket_address)?;
 
       // trigger player spawning by sending position
       let buf = build_packet(ServerPacket::NaviWalkTo {
-        ticket: other_player.ticket.clone(),
+        ticket: other_player_id.clone(),
         x: other_player.x,
         y: other_player.y,
         z: other_player.z,
@@ -297,7 +249,7 @@ impl Server {
 
       // update avatar
       let buf = build_packet(ServerPacket::NaviSetAvatar {
-        ticket: other_player.ticket.clone(),
+        ticket: other_player_id.clone(),
         avatar_id: other_player.avatar_id,
       });
       self.socket.send_to(&buf, &socket_address)?;
@@ -307,15 +259,11 @@ impl Server {
   }
 
   fn disconnect_player(&mut self, socket_address: &std::net::SocketAddr) -> std::io::Result<()> {
-    if let Some(player) = self.players.remove(&socket_address) {
-      let buf = build_packet(ServerPacket::NaviDisconnected {
-        ticket: player.ticket.clone(),
-      });
-
-      self.broadcast(&buf)?;
+    if let Some(player_id) = self.player_id_map.remove(&socket_address) {
+      self.area.remove_player(&player_id)?;
 
       for plugin in &mut self.plugins {
-        plugin.handle_player_disconnect(&mut self.map, player.ticket.clone());
+        plugin.handle_player_disconnect(&mut self.area, &player_id);
       }
     }
 
