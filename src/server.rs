@@ -57,7 +57,9 @@ impl Server {
 
     loop {
       match rx.recv()? {
-        ThreadMessage::Tick => {
+        ThreadMessage::Tick(started) => {
+          started();
+
           let elapsed_time = time.elapsed();
           time = Instant::now();
 
