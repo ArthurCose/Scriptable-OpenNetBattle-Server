@@ -1,5 +1,5 @@
 use super::plugin_interface::PluginInterface;
-use crate::area::Area;
+use crate::area::{Area, Bot};
 use paste::paste;
 use rlua::Lua;
 use std::cell::RefCell;
@@ -56,6 +56,110 @@ macro_rules! create_map_table {
   }};
 }
 
+macro_rules! create_bot_table {
+  ($lua_ctx: ident, $scope: ident, $area_ref: ident) => {{
+    let bot_table = $lua_ctx.create_table()?;
+
+    bot_table.set(
+      "create_bot",
+      $scope.create_function(
+        |_, (id, avatar_id, x, y, z): (String, u16, f64, f64, f64)| {
+          let mut area = $area_ref.borrow_mut();
+
+          let bot = Bot {
+            id,
+            avatar_id,
+            x,
+            y,
+            z,
+          };
+
+          let _ = area.add_bot(bot);
+
+          Ok(())
+        },
+      )?,
+    )?;
+
+    bot_table.set(
+      "remove_bot",
+      $scope.create_function(|_, id: String| {
+        let mut area = $area_ref.borrow_mut();
+
+        // ignore network errors
+        let _ = area.remove_bot(&id);
+
+        Ok(())
+      })?,
+    )?;
+
+    bot_table.set(
+      "get_bot_position",
+      $scope.create_function(|_, id: String| {
+        let area = $area_ref.borrow();
+
+        if let Some(bot) = area.get_bot(&id) {
+          Ok(vec![bot.x, bot.y, bot.z])
+        } else {
+          Err(rlua::Error::RuntimeError(String::from(
+            "No bot matching that ID found.",
+          )))
+        }
+      })?,
+    )?;
+
+    bot_table.set(
+      "move_bot",
+      $scope.create_function(|_, (id, x, y, z): (String, f64, f64, f64)| {
+        let mut area = $area_ref.borrow_mut();
+
+        // ignore network errors
+        let _ = area.move_bot(&id, x, y, z);
+
+        Ok(())
+      })?,
+    )?;
+
+    bot_table.set(
+      "set_bot_avatar",
+      $scope.create_function(|_, (id, avatar_id): (String, u16)| {
+        let mut area = $area_ref.borrow_mut();
+
+        if let None = area.get_bot(&id) {
+          return Err(rlua::Error::RuntimeError(String::from(
+            "No bot matching that ID found.",
+          )));
+        }
+
+        // ignore network errors
+        let _ = area.set_bot_avatar(&id, avatar_id);
+
+        Ok(())
+      })?,
+    )?;
+
+    bot_table.set(
+      "set_bot_emote",
+      $scope.create_function(|_, (id, emote_id): (String, u8)| {
+        let mut area = $area_ref.borrow_mut();
+
+        if let None = area.get_bot(&id) {
+          return Err(rlua::Error::RuntimeError(String::from(
+            "No bot matching that ID found.",
+          )));
+        }
+
+        // ignore network errors
+        let _ = area.set_bot_emote(&id, emote_id);
+
+        Ok(())
+      })?,
+    )?;
+
+    bot_table
+  }};
+}
+
 impl LuaPluginInterface {
   pub fn new() -> LuaPluginInterface {
     let plugin_interface = LuaPluginInterface {
@@ -103,6 +207,7 @@ impl LuaPluginInterface {
 
       lua_ctx.scope(|scope| -> rlua::Result<()> {
         globals.set("Map", create_map_table!(lua_ctx, scope, area_ref))?;
+        globals.set("Bots", create_bot_table!(lua_ctx, scope, area_ref))?;
 
         lua_ctx.load(&script).exec()?;
 
@@ -158,6 +263,7 @@ macro_rules! create_event_handler {
               let globals = lua_ctx.globals();
 
               globals.set("Map", create_map_table!(lua_ctx, scope, area_ref))?;
+              globals.set("Bots", create_bot_table!(lua_ctx, scope, area_ref))?;
 
               let fn_name = concat!($prefix, $event);
 

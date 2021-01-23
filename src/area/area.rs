@@ -1,3 +1,4 @@
+use super::bot::Bot;
 use super::map::Map;
 use crate::packets::{build_packet, ServerPacket};
 use crate::player::Player;
@@ -9,6 +10,7 @@ pub struct Area {
   socket: Rc<UdpSocket>,
   map: Map,
   players: HashMap<String, Player>,
+  bots: HashMap<String, Bot>,
 }
 
 impl Area {
@@ -17,6 +19,7 @@ impl Area {
       socket,
       map,
       players: HashMap::new(),
+      bots: HashMap::new(),
     }
   }
 
@@ -100,6 +103,83 @@ impl Area {
 
   pub fn remove_player(&mut self, id: &String) -> std::io::Result<()> {
     if let Some(_) = self.players.remove(id) {
+      let buf = build_packet(ServerPacket::NaviDisconnected { ticket: id.clone() });
+
+      self.broadcast(&buf)?;
+    }
+
+    Ok(())
+  }
+
+  pub fn add_bot(&mut self, bot: Bot) -> std::io::Result<()> {
+    let buf = build_packet(ServerPacket::NaviConnected {
+      ticket: bot.id.clone(),
+    });
+
+    self.broadcast(&buf)?;
+
+    self.bots.insert(bot.id.clone(), bot);
+
+    Ok(())
+  }
+
+  pub fn get_bot(&self, id: &String) -> Option<&Bot> {
+    self.bots.get(id)
+  }
+
+  pub fn get_bots(&self) -> std::collections::hash_map::Values<String, Bot> {
+    self.bots.values()
+  }
+
+  pub fn move_bot(&mut self, id: &String, x: f64, y: f64, z: f64) -> std::io::Result<()> {
+    if let Some(bot) = self.bots.get_mut(id) {
+      bot.x = x;
+      bot.y = y;
+      bot.z = z;
+
+      let buf = build_packet(ServerPacket::NaviWalkTo {
+        ticket: id.clone(),
+        x,
+        y,
+        z,
+      });
+
+      self.broadcast(&buf)?;
+    }
+
+    Ok(())
+  }
+
+  pub fn set_bot_avatar(&mut self, id: &String, avatar_id: u16) -> std::io::Result<()> {
+    if let Some(bot) = self.bots.get_mut(id) {
+      bot.avatar_id = avatar_id;
+
+      let buf = build_packet(ServerPacket::NaviSetAvatar {
+        ticket: id.clone(),
+        avatar_id,
+      });
+
+      self.broadcast(&buf)?;
+    }
+
+    Ok(())
+  }
+
+  pub fn set_bot_emote(&mut self, id: &String, emote_id: u8) -> std::io::Result<()> {
+    if self.bots.contains_key(id) {
+      let buf = build_packet(ServerPacket::NaviEmote {
+        ticket: id.clone(),
+        emote_id,
+      });
+
+      self.broadcast(&buf)?;
+    }
+
+    Ok(())
+  }
+
+  pub fn remove_bot(&mut self, id: &String) -> std::io::Result<()> {
+    if let Some(_) = self.bots.remove(id) {
       let buf = build_packet(ServerPacket::NaviDisconnected { ticket: id.clone() });
 
       self.broadcast(&buf)?;

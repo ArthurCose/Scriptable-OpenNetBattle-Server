@@ -257,6 +257,29 @@ impl Server {
       self.socket.send_to(&buf, &socket_address)?;
     }
 
+    for bot in self.area.get_bots() {
+      let buf = build_packet(ServerPacket::NaviConnected {
+        ticket: bot.id.clone(),
+      });
+      self.socket.send_to(&buf, &socket_address)?;
+
+      // trigger player spawning by sending position
+      let buf = build_packet(ServerPacket::NaviWalkTo {
+        ticket: bot.id.clone(),
+        x: bot.x,
+        y: bot.y,
+        z: bot.z,
+      });
+      self.socket.send_to(&buf, &socket_address)?;
+
+      // update avatar
+      let buf = build_packet(ServerPacket::NaviSetAvatar {
+        ticket: bot.id.clone(),
+        avatar_id: bot.avatar_id,
+      });
+      self.socket.send_to(&buf, &socket_address)?;
+    }
+
     Ok(())
   }
 
