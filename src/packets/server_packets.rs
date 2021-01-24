@@ -68,8 +68,8 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
     ServerPacket::NaviWalkTo { ticket, x, y, z } => {
       write_u16(&mut buf, 1);
       buf.extend(ticket.as_bytes());
-      write_f64(&mut buf, x * TILE_WIDTH / 2.0);
-      write_f64(&mut buf, y * TILE_HEIGHT);
+      write_f64(&mut buf, f64::floor(x * TILE_WIDTH / 2.0));
+      write_f64(&mut buf, f64::floor(y * TILE_HEIGHT));
       write_f64(&mut buf, z);
     }
   }
