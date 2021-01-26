@@ -76,13 +76,18 @@ Players.get_player_avatar(id)
   - Custom asset? (background, mugshots, tiles, navis, etc)
     - Might be implemented with multiple or different packets.
       For example, tile assets may be sent with map data in the future.
+  - Transfer?
+    - Send the player to a different server.
+  - Reset Map
+    - Remove players, map tiles, etc.
+    - Allows for multiple areas with one server.
 - Serverbound
   - Interaction with Navi (Conversation)
   - Interaction with Tile (Interact)
   - Menu Response (for Message, MessageQuestion, etc)
     - Allows scripting the next action (textbox, camera movement, etc).
   - Map Loaded
-    - Instead of the current refresh map packet
+    - Instead of the current refresh map packet.
 
 Ordered reliable packets will be required as well, so bots don't hang on dropped responses, and so players dont miss messages or camera requests.
 
@@ -90,6 +95,9 @@ Ordered reliable packets will be required as well, so bots don't hang on dropped
 
 - Lock player when interacting with tagged tiles + navis
   - (When map format is adjusted to have this information)
+- Tagged warp tiles
+  - Link to other servers or locations on the same server.
+  - Should be optional so scripts can take full control.
 
 ## Building
 
