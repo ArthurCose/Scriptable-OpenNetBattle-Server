@@ -268,11 +268,15 @@ impl LuaPluginInterface {
 
     for wrapped_dir_entry in read_dir("./scripts")? {
       let dir_path = wrapped_dir_entry?.path();
-      let script_path = dir_path.join("main.lua");
+      let script_paths = [&dir_path, &dir_path.join("main.lua")];
 
-      if let Ok(script) = read_to_string(script_path) {
-        if let Err(err) = self.load_script(&area_ref, dir_path.clone(), script) {
-          println!("Failed to load script \"{}\": {}", dir_path.display(), err)
+      for script_path in &script_paths {
+        if let Ok(script) = read_to_string(script_path) {
+          if let Err(err) = self.load_script(&area_ref, dir_path.clone(), script) {
+            println!("Failed to load script \"{}\": {}", dir_path.display(), err)
+          }
+
+          break;
         }
       }
     }
