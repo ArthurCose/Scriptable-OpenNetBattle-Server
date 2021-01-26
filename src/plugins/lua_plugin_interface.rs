@@ -61,6 +61,17 @@ macro_rules! create_bot_table {
     let bot_table = $lua_ctx.create_table()?;
 
     bot_table.set(
+      "list_bots",
+      $scope.create_function(|_, ()| {
+        let area = $area_ref.borrow_mut();
+
+        let bot_ids: Vec<String> = area.get_bots().map(|bot| bot.id.clone()).collect();
+
+        Ok(bot_ids)
+      })?,
+    )?;
+
+    bot_table.set(
       "create_bot",
       $scope.create_function(
         |_, (id, avatar_id, x, y, z): (String, u16, f64, f64, f64)| {
@@ -79,6 +90,21 @@ macro_rules! create_bot_table {
           Ok(())
         },
       )?,
+    )?;
+
+    bot_table.set(
+      "is_bot",
+      $scope.create_function(|_, id: String| {
+        let area = $area_ref.borrow();
+
+        if let Some(bot) = area.get_bot(&id) {
+          Ok(vec![bot.x, bot.y, bot.z])
+        } else {
+          Err(rlua::Error::RuntimeError(String::from(
+            "No bot matching that ID found.",
+          )))
+        }
+      })?,
     )?;
 
     bot_table.set(
@@ -156,6 +182,70 @@ macro_rules! create_bot_table {
   }};
 }
 
+macro_rules! create_player_table {
+  ($lua_ctx: ident, $scope: ident, $area_ref: ident) => {{
+    let player_table = $lua_ctx.create_table()?;
+
+    player_table.set(
+      "list_players",
+      $scope.create_function(|_, ()| {
+        let area = $area_ref.borrow_mut();
+
+        let player_ids: Vec<String> = area.get_players().map(|player| player.id.clone()).collect();
+
+        Ok(player_ids)
+      })?,
+    )?;
+
+    player_table.set(
+      "is_player",
+      $scope.create_function(|_, id: String| {
+        let area = $area_ref.borrow();
+
+        if let Some(player) = area.get_player(&id) {
+          Ok(vec![player.x, player.y, player.z])
+        } else {
+          Err(rlua::Error::RuntimeError(String::from(
+            "No player matching that ID found.",
+          )))
+        }
+      })?,
+    )?;
+
+    player_table.set(
+      "get_player_position",
+      $scope.create_function(|_, id: String| {
+        let area = $area_ref.borrow();
+
+        if let Some(player) = area.get_player(&id) {
+          Ok(vec![player.x, player.y, player.z])
+        } else {
+          Err(rlua::Error::RuntimeError(String::from(
+            "No player matching that ID found.",
+          )))
+        }
+      })?,
+    )?;
+
+    player_table.set(
+      "get_player_avatar",
+      $scope.create_function(|_, id: String| {
+        let area = $area_ref.borrow_mut();
+
+        if let Some(player) = area.get_player(&id) {
+          Ok(vec![player.x, player.y, player.z])
+        } else {
+          Err(rlua::Error::RuntimeError(String::from(
+            "No player matching that ID found.",
+          )))
+        }
+      })?,
+    )?;
+
+    player_table
+  }};
+}
+
 impl LuaPluginInterface {
   pub fn new() -> LuaPluginInterface {
     let plugin_interface = LuaPluginInterface {
@@ -204,6 +294,7 @@ impl LuaPluginInterface {
       lua_ctx.scope(|scope| -> rlua::Result<()> {
         globals.set("Map", create_map_table!(lua_ctx, scope, area_ref))?;
         globals.set("Bots", create_bot_table!(lua_ctx, scope, area_ref))?;
+        globals.set("Players", create_player_table!(lua_ctx, scope, area_ref))?;
 
         lua_ctx.load(&script).exec()?;
 
@@ -260,6 +351,7 @@ macro_rules! create_event_handler {
 
               globals.set("Map", create_map_table!(lua_ctx, scope, area_ref))?;
               globals.set("Bots", create_bot_table!(lua_ctx, scope, area_ref))?;
+              globals.set("Players", create_player_table!(lua_ctx, scope, area_ref))?;
 
               let fn_name = concat!($prefix, $event);
 
