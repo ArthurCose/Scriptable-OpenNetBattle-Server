@@ -280,11 +280,11 @@ impl Server {
 
   fn disconnect_player(&mut self, socket_address: &std::net::SocketAddr) {
     if let Some(player_id) = self.player_id_map.remove(&socket_address) {
-      self.area.remove_player(&player_id);
-
       for plugin in &mut self.plugin_interfaces {
         plugin.handle_player_disconnect(&mut self.area, &player_id);
       }
+
+      self.area.remove_player(&player_id);
     }
   }
 }
