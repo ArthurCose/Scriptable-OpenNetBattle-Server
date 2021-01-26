@@ -20,7 +20,7 @@ pub struct Server {
 
 impl Server {
   pub fn new() -> Server {
-    let addr = format!("127.0.0.1:{}", OBN_PORT);
+    let addr = format!("0.0.0.0:{}", OBN_PORT);
     let socket = UdpSocket::bind(addr).expect("Couldn't bind to address");
 
     match socket.take_error() {
