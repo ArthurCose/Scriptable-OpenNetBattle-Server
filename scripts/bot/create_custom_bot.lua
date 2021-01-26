@@ -8,7 +8,7 @@ local function create_custom_bot(id, avatar_id, x, y, z)
     path = {},
     path_target_index = 1,
     talking_to = nil,
-    speed = 1,
+    speed = 1.2,
     size = .3
   }
 
