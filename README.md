@@ -54,6 +54,8 @@ Players.get_player_avatar(id)
 -- Players.move_player_camera(id, x, y)
 -- Players.slide_camera(id, x, y)
 -- Players.unlock_player_camera(id)
+-- Players.send_virus(id, data)
+-- Players.initiate_pvp(player_1_id, player_2_id, data)
 ```
 
 ## Proposed Changes for OpenNetBattle Client
@@ -70,6 +72,7 @@ Players.get_player_avatar(id)
   - Move camera (locks camera)
   - Slide camera (locks camera)
   - Unlock camera (focus back on player)
+  - Virus battle
   - Custom asset? (background, mugshots, tiles, navis, etc)
     - Might be implemented with multiple or different packets.
       For example, tile assets may be sent with map data in the future.
