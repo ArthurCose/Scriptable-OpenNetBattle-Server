@@ -87,3 +87,7 @@ Ordered reliable packets will be required as well, so bots don't hang on dropped
 
 - Lock player when interacting with tagged tiles + navis
   - (When map format is adjusted to have this information)
+
+## Building
+
+This project is built with Rust, so after installing Cargo, you can compile and run the project with `cargo run`.
