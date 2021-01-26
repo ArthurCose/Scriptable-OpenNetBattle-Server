@@ -120,11 +120,16 @@ macro_rules! create_bot_table {
 
     bot_table.set(
       "get_bot_position",
-      $scope.create_function(|_, id: String| {
+      $scope.create_function(|lua_ctx, id: String| {
         let area = $area_ref.borrow();
 
         if let Some(bot) = area.get_bot(&id) {
-          Ok(vec![bot.x, bot.y, bot.z])
+          let table = lua_ctx.create_table()?;
+          table.set("x", bot.x)?;
+          table.set("y", bot.y)?;
+          table.set("z", bot.z)?;
+
+          Ok(table)
         } else {
           Err(rlua::Error::RuntimeError(String::from(
             "No bot matching that ID found.",
@@ -214,11 +219,16 @@ macro_rules! create_player_table {
 
     player_table.set(
       "get_player_position",
-      $scope.create_function(|_, id: String| {
+      $scope.create_function(|lua_ctx, id: String| {
         let area = $area_ref.borrow();
 
         if let Some(player) = area.get_player(&id) {
-          Ok(vec![player.x, player.y, player.z])
+          let table = lua_ctx.create_table()?;
+          table.set("x", player.x)?;
+          table.set("y", player.y)?;
+          table.set("z", player.z)?;
+
+          Ok(table)
         } else {
           Err(rlua::Error::RuntimeError(String::from(
             "No player matching that ID found.",
