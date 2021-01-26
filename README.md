@@ -19,8 +19,10 @@ function handle_player_disconnect(player_id)
 function handle_player_move(player_id, x, y, z)
 function handle_player_avatar_change(player_id, avatar)
 function handle_player_emote(player_id, emote)
+-- function handle_tile_interaction(player_id, x, y, z)
 -- function handle_player_conversation(player_id, other_id)
 -- function handle_player_response(player_id, response) -- response is an index
+-- function handle_battle_completion(player_id, results)
 ```
 
 ### Global Tables
