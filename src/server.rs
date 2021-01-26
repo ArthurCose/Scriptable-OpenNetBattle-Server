@@ -100,7 +100,12 @@ impl Server {
             println!("Received second Login packet from {}", socket_address);
           }
 
-          self.connect_player(&socket_address)?;
+          let buf = build_packet(ServerPacket::Login {
+            ticket: player_id.clone(),
+            error: 0,
+          });
+
+          self.socket.send_to(&buf, socket_address)?;
         }
         ClientPacket::Logout => {
           if self.log_packets {
@@ -131,6 +136,8 @@ impl Server {
           });
 
           self.socket.send_to(&buf, socket_address)?;
+
+          self.connect_player(&socket_address)?;
         }
         ClientPacket::AvatarChange { form_id } => {
           if self.log_packets {
@@ -216,13 +223,6 @@ impl Server {
   fn connect_player(&mut self, socket_address: &std::net::SocketAddr) -> std::io::Result<()> {
     if let Some(player_id) = self.player_id_map.get_mut(&socket_address) {
       self.area.mark_player_ready(player_id);
-
-      let buf = build_packet(ServerPacket::Login {
-        ticket: player_id.clone(),
-        error: 0,
-      });
-
-      self.socket.send_to(&buf, socket_address)?;
 
       for plugin in &mut self.plugin_interfaces {
         plugin.handle_player_join(&mut self.area, player_id);
