@@ -44,7 +44,7 @@ Bots.set_bot_avatar(id, avatar_id)
 Bots.set_bot_emote(id, emote_id)
 
 Players.list_players()
-Player.is_player(id)
+Players.is_player(id)
 Players.get_player_position(id)
 Players.get_player_avatar(id)
 -- Players.lock_player(id)
