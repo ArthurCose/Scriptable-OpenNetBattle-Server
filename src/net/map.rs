@@ -14,35 +14,45 @@ impl Map {
       width: 0,
       height: 0,
       data: Vec::<Vec<String>>::new(),
-      cached: true,
-      cached_string: text.clone(),
+      cached: false,
+      cached_string: String::from(""),
     };
 
     let lines = text.split("\n");
     let mut i = 0;
 
     for line in lines {
+      if line.len() == 0 {
+        continue;
+      }
+
       if i == 0 {
         // name
         map.name = String::from(line);
-      } else if i == 1 {
-        // dimensions
-        let (width, height) = parse_width_and_height(line);
-        map.width = width;
-        map.height = height;
-
-        map.data.reserve(height);
       } else {
-        // data row
-        let v: Vec<String> = String::from(line)
+        let row: Vec<String> = String::from(line)
           .split(",")
           .map(|i| String::from(i))
           .collect();
 
-        map.data.push(v);
+        if map.width < row.len() {
+          map.width = row.len();
+        }
+
+        map.data.push(row);
       }
 
       i += 1;
+    }
+
+    map.height = map.data.len();
+
+    for row in &mut map.data {
+      if row.len() == map.width {
+        continue;
+      }
+
+      row.resize(map.width, String::from("0"));
     }
 
     map
@@ -72,30 +82,19 @@ impl Map {
 
   pub fn set_tile(&mut self, x: usize, y: usize, id: String) {
     if self.width <= x {
-      let old_width = self.width;
       self.width = x + 1;
 
       for row in &mut self.data {
-        // capacity check needed for "attempt to subtract with overflow" fix
-        if row.capacity() < self.width {
-          let capacity_difference = self.width - row.capacity();
-
-          row.reserve(capacity_difference);
-        }
-
-        for _ in old_width..self.width {
-          row.push(String::from(" "))
-        }
+        row.resize(self.width, String::from("0"));
       }
     }
 
     if self.height <= y {
-      let old_height = self.height;
       self.height = y + 1;
 
-      for _ in old_height..self.height {
-        self.data.push(vec![String::from("0"); self.width]);
-      }
+      self
+        .data
+        .resize(self.height, vec![String::from("0"); self.width]);
     }
 
     if self.data[y][x] != id {
@@ -124,20 +123,4 @@ impl Map {
 
     self.cached_string.clone()
   }
-}
-
-fn parse_width_and_height(line: &str) -> (usize, usize) {
-  let mut width = 0;
-  let mut height = 0;
-
-  let mut j = 0;
-  for n in String::from(line).split(" ") {
-    match j {
-      0 => width = n.parse().unwrap_or(0),
-      1 => height = n.parse().unwrap_or(0),
-      _ => break,
-    }
-    j += 1;
-  }
-  (width, height)
 }
