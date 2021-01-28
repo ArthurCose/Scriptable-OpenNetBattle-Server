@@ -1,6 +1,4 @@
-use super::area_api::add_area_api;
-use super::bot_api::add_bot_api;
-use super::player_api::add_player_api;
+use super::api::add_net_api;
 use crate::net::Net;
 use crate::plugins::PluginInterface;
 use paste::paste;
@@ -69,11 +67,7 @@ impl LuaPluginInterface {
 
       lua_ctx.scope(|scope| -> rlua::Result<()> {
         let api_table = lua_ctx.create_table()?;
-
-        add_player_api(&api_table, &scope, &net_ref)?;
-        add_area_api(&api_table, &scope, &net_ref)?;
-        add_bot_api(&api_table, &scope, &net_ref)?;
-
+        add_net_api(&api_table, &scope, &net_ref)?;
         globals.set("Net", api_table)?;
 
         lua_ctx.load(&script).exec()?;
@@ -128,12 +122,9 @@ macro_rules! create_event_handler {
           lua_env.context(|lua_ctx: rlua::Context |-> rlua::Result<()> {
             lua_ctx.scope(|scope| -> rlua::Result<()> {
               let globals = lua_ctx.globals();
+
               let api_table = lua_ctx.create_table()?;
-
-              add_player_api(&api_table, &scope, &net_ref)?;
-              add_area_api(&api_table, &scope, &net_ref)?;
-              add_bot_api(&api_table, &scope, &net_ref)?;
-
+              add_net_api(&api_table, &scope, &net_ref)?;
               globals.set("Net", api_table)?;
 
 
