@@ -226,7 +226,7 @@ impl Server {
       self.net.mark_player_ready(player_id);
 
       for plugin in &mut self.plugin_interfaces {
-        plugin.handle_player_join(&mut self.net, player_id);
+        plugin.handle_player_connect(&mut self.net, player_id);
       }
     }
 

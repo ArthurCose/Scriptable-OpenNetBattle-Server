@@ -8,7 +8,7 @@ use std::collections::HashMap;
 pub struct LuaPluginInterface {
   scripts: HashMap<std::path::PathBuf, Lua>,
   tick_listeners: Vec<std::path::PathBuf>,
-  player_join_listeners: Vec<std::path::PathBuf>,
+  player_connect_listeners: Vec<std::path::PathBuf>,
   player_disconnect_listeners: Vec<std::path::PathBuf>,
   player_move_listeners: Vec<std::path::PathBuf>,
   player_avatar_change_listeners: Vec<std::path::PathBuf>,
@@ -325,7 +325,7 @@ impl LuaPluginInterface {
     let plugin_interface = LuaPluginInterface {
       scripts: HashMap::<std::path::PathBuf, Lua>::new(),
       tick_listeners: Vec::new(),
-      player_join_listeners: Vec::new(),
+      player_connect_listeners: Vec::new(),
       player_disconnect_listeners: Vec::new(),
       player_move_listeners: Vec::new(),
       player_avatar_change_listeners: Vec::new(),
@@ -387,8 +387,8 @@ impl LuaPluginInterface {
         self.tick_listeners.push(script_dir.clone());
       }
 
-      if let Ok(_) = globals.get::<_, rlua::Function>("handle_player_join") {
-        self.player_join_listeners.push(script_dir.clone());
+      if let Ok(_) = globals.get::<_, rlua::Function>("handle_player_connect") {
+        self.player_connect_listeners.push(script_dir.clone());
       }
 
       if let Ok(_) = globals.get::<_, rlua::Function>("handle_player_disconnect") {
@@ -473,8 +473,8 @@ impl PluginInterface for LuaPluginInterface {
     create_event_handler!(self, net, "", "tick", delta_time);
   }
 
-  fn handle_player_join(&mut self, net: &mut Net, player_id: &String) {
-    create_event_handler!(self, net, "handle_", "player_join", player_id.clone());
+  fn handle_player_connect(&mut self, net: &mut Net, player_id: &String) {
+    create_event_handler!(self, net, "handle_", "player_connect", player_id.clone());
   }
 
   fn handle_player_disconnect(&mut self, net: &mut Net, player_id: &String) {

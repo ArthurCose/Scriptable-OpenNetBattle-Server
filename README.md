@@ -14,7 +14,7 @@ Commented functions are in development and require changes to the client (specif
 
 ```Lua
 function tick(delta_time)
-function handle_player_join(player_id)
+function handle_player_connect(player_id)
 
 -- For the following functions: internal values are not set until after execution
 -- this means Players.get_player_position(id) will provide the old position of the player, etc
