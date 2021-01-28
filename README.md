@@ -30,46 +30,57 @@ function handle_player_emote(player_id, emote)
 -- function handle_battle_completion(player_id, results)
 ```
 
-### Global Tables
+### Net API
+
+Interactions with the cyberworld are performed through functions attached to a global table called `Net`. The APIs defined below are those functions categorized by what they affect.
+
+#### Area API
 
 ```Lua
--- todo: make this all part of one table called Net?
-Areas.get_default_area()
--- Areas.create_area(area_id)
-Areas.get_width(area_id)
-Areas.get_height(area_id)
-Areas.get_tile(area_id, x, y)
-Areas.set_tile(area_id, x, y, id)
+Net.get_default_area()
+-- Net.create_area(area_id)
+Net.get_width(area_id)
+Net.get_height(area_id)
+Net.get_tile(area_id, x, y)
+Net.set_tile(area_id, x, y, id)
+```
 
-Bots.list_bots(area_id)
-Bots.create_bot(id, area_id, avatar_id, x, y, z)
-Bots.is_bot(id)
-Bots.remove_bot(id)
-Bots.get_bot_area(id)
-Bots.get_bot_position(id)
-Bots.move_bot(id, x, y, z)
-Bots.set_bot_avatar(id, avatar_id)
-Bots.set_bot_emote(id, emote_id)
--- Bots.transfer(id, area_id)
+#### Bot API
 
-Players.list_players(area_id)
-Players.is_player(id)
-Players.get_player_area(id)
-Players.get_player_position(id)
-Players.get_player_avatar(id)
--- Players.lock_player(id)
--- Players.unlock_player(id)
--- Players.move_player(id, x, y, z)
--- Players.send_player_message(id, message)
--- Players.send_player_question(id, question)
--- Players.send_player_menu(id, options)
--- Players.move_player_camera(id, x, y)
--- Players.slide_camera(id, x, y)
--- Players.unlock_player_camera(id)
--- Players.send_virus(id, data)
--- Players.initiate_pvp(player_1_id, player_2_id, data)
--- Players.transfer(id, area_id)
--- Players.transfer_server(id, server)
+```lua
+Net.list_bots(area_id)
+Net.create_bot(id, area_id, avatar_id, x, y, z)
+Net.is_bot(id)
+Net.remove_bot(id)
+Net.get_bot_area(id)
+Net.get_bot_position(id)
+Net.move_bot(id, x, y, z)
+Net.set_bot_avatar(id, avatar_id)
+Net.set_bot_emote(id, emote_id)
+-- Net.transfer(id, area_id)
+```
+
+#### Player API
+
+```lua
+Net.list_players(area_id)
+Net.is_player(id)
+Net.get_player_area(id)
+Net.get_player_position(id)
+Net.get_player_avatar(id)
+-- Net.lock_player(id)
+-- Net.unlock_player(id)
+-- Net.move_player(id, x, y, z)
+-- Net.send_player_message(id, message)
+-- Net.send_player_question(id, question)
+-- Net.send_player_menu(id, options)
+-- Net.move_player_camera(id, x, y)
+-- Net.slide_camera(id, x, y)
+-- Net.unlock_player_camera(id)
+-- Net.send_virus(id, data)
+-- Net.initiate_pvp(player_1_id, player_2_id, data)
+-- Net.transfer(id, area_id)
+-- Net.transfer_server(id, server)
 ```
 
 ## Proposed Changes for OpenNetBattle Client

@@ -30,293 +30,294 @@ fn create_player_error(id: &String) -> rlua::Error {
   )))
 }
 
-// abusing macro to auto resolve lifetime
-macro_rules! create_area_table {
-  ($lua_ctx: ident, $scope: ident, $net_ref: ident) => {{
-    let area_table = $lua_ctx.create_table()?;
+fn add_area_api<'a, 'b>(
+  api_table: &rlua::Table<'a>,
+  scope: &rlua::Scope<'a, 'b>,
+  net_ref: &'b RefCell<&mut Net>,
+) -> rlua::Result<()> {
+  api_table.set(
+    "get_default_area",
+    scope.create_function(move |_, ()| {
+      let net = net_ref.borrow();
 
-    area_table.set(
-      "get_default_area",
-      $scope.create_function(|_, ()| {
-        let net = $net_ref.borrow();
+      Ok(net.get_default_area_id().clone())
+    })?,
+  )?;
 
-        Ok(net.get_default_area_id().clone())
-      })?,
-    )?;
+  api_table.set(
+    "get_width",
+    scope.create_function(move |_, area_id: String| {
+      let mut net = net_ref.borrow_mut();
 
-    area_table.set(
-      "get_width",
-      $scope.create_function(|_, area_id: String| {
-        let mut net = $net_ref.borrow_mut();
+      if let Some(area) = net.get_area(&area_id) {
+        Ok(area.get_map().get_width())
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
 
-        if let Some(area) = net.get_area(&area_id) {
-          Ok(area.get_map().get_width())
-        } else {
-          Err(create_area_error(&area_id))
-        }
-      })?,
-    )?;
+  api_table.set(
+    "get_height",
+    scope.create_function(move |_, area_id: String| {
+      let mut net = net_ref.borrow_mut();
 
-    area_table.set(
-      "get_height",
-      $scope.create_function(|_, area_id: String| {
-        let mut net = $net_ref.borrow_mut();
+      if let Some(area) = net.get_area(&area_id) {
+        Ok(area.get_map().get_height())
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
 
-        if let Some(area) = net.get_area(&area_id) {
-          Ok(area.get_map().get_height())
-        } else {
-          Err(create_area_error(&area_id))
-        }
-      })?,
-    )?;
+  api_table.set(
+    "get_tile",
+    scope.create_function(move |_, (area_id, x, y): (String, usize, usize)| {
+      let mut net = net_ref.borrow_mut();
 
-    area_table.set(
-      "get_tile",
-      $scope.create_function(|_, (area_id, x, y): (String, usize, usize)| {
-        let mut net = $net_ref.borrow_mut();
+      if let Some(area) = net.get_area(&area_id) {
+        Ok(area.get_map().get_tile(x, y))
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
 
-        if let Some(area) = net.get_area(&area_id) {
-          Ok(area.get_map().get_tile(x, y))
-        } else {
-          Err(create_area_error(&area_id))
-        }
-      })?,
-    )?;
-
-    area_table.set(
-      "set_tile",
-      $scope.create_function(|_, (area_id, x, y, id): (String, usize, usize, String)| {
-        let mut net = $net_ref.borrow_mut();
+  api_table.set(
+    "set_tile",
+    scope.create_function(
+      move |_, (area_id, x, y, id): (String, usize, usize, String)| {
+        let mut net = net_ref.borrow_mut();
 
         if let Some(area) = net.get_area(&area_id) {
           Ok(area.get_map().set_tile(x, y, id))
         } else {
           Err(create_area_error(&area_id))
         }
-      })?,
-    )?;
+      },
+    )?,
+  )?;
 
-    area_table
-  }};
+  Ok(())
 }
 
-macro_rules! create_bot_table {
-  ($lua_ctx: ident, $scope: ident, $net_ref: ident) => {{
-    let bot_table = $lua_ctx.create_table()?;
+fn add_bot_api<'a, 'b>(
+  api_table: &rlua::Table<'a>,
+  scope: &rlua::Scope<'a, 'b>,
+  net_ref: &'b RefCell<&mut Net>,
+) -> rlua::Result<()> {
+  api_table.set(
+    "list_bots",
+    scope.create_function(move |_, area_id: String| {
+      let mut net = net_ref.borrow_mut();
 
-    bot_table.set(
-      "list_bots",
-      $scope.create_function(|_, area_id: String| {
-        let mut net = $net_ref.borrow_mut();
+      if let Some(area) = net.get_area(&area_id) {
+        let connected_bots = area.get_connected_bots();
+        let result: Vec<String> = connected_bots.iter().map(|id| id.clone()).collect();
 
-        if let Some(area) = net.get_area(&area_id) {
-          let connected_bots = area.get_connected_bots();
-          let result: Vec<String> = connected_bots.iter().map(|id| id.clone()).collect();
+        Ok(result)
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
 
-          Ok(result)
+  api_table.set(
+    "create_bot",
+    scope.create_function(
+      move |_, (id, area_id, avatar_id, x, y, z): (String, String, u16, f64, f64, f64)| {
+        let mut net = net_ref.borrow_mut();
+
+        if let Some(_) = net.get_area(&area_id) {
+          let bot = Bot {
+            id,
+            area_id,
+            avatar_id,
+            x,
+            y,
+            z,
+          };
+
+          net.add_bot(bot);
+
+          Ok(())
         } else {
-          Err(create_area_error(&area_id))
+          Err(create_area_error(&id))
         }
-      })?,
-    )?;
+      },
+    )?,
+  )?;
 
-    bot_table.set(
-      "create_bot",
-      $scope.create_function(
-        |_, (id, area_id, avatar_id, x, y, z): (String, String, u16, f64, f64, f64)| {
-          let mut net = $net_ref.borrow_mut();
+  api_table.set(
+    "is_bot",
+    scope.create_function(move |_, id: String| {
+      let net = net_ref.borrow();
 
-          if let Some(_) = net.get_area(&area_id) {
-            let bot = Bot {
-              id,
-              area_id,
-              avatar_id,
-              x,
-              y,
-              z,
-            };
+      if let Some(_) = net.get_bot(&id) {
+        Ok(true)
+      } else {
+        Ok(false)
+      }
+    })?,
+  )?;
 
-            net.add_bot(bot);
+  api_table.set(
+    "remove_bot",
+    scope.create_function(move |_, id: String| {
+      let mut net = net_ref.borrow_mut();
 
-            Ok(())
-          } else {
-            Err(create_area_error(&id))
-          }
-        },
-      )?,
-    )?;
+      net.remove_bot(&id);
 
-    bot_table.set(
-      "is_bot",
-      $scope.create_function(|_, id: String| {
-        let net = $net_ref.borrow();
+      Ok(())
+    })?,
+  )?;
 
-        if let Some(_) = net.get_bot(&id) {
-          Ok(true)
-        } else {
-          Ok(false)
-        }
-      })?,
-    )?;
+  api_table.set(
+    "get_bot_area",
+    scope.create_function(move |_, id: String| {
+      let net = net_ref.borrow_mut();
 
-    bot_table.set(
-      "remove_bot",
-      $scope.create_function(|_, id: String| {
-        let mut net = $net_ref.borrow_mut();
+      if let Some(bot) = net.get_bot(&id) {
+        Ok(bot.area_id.clone())
+      } else {
+        Err(create_bot_error(&id))
+      }
+    })?,
+  )?;
 
-        net.remove_bot(&id);
+  api_table.set(
+    "get_bot_position",
+    scope.create_function(move |lua_ctx, id: String| {
+      let net = net_ref.borrow();
 
-        Ok(())
-      })?,
-    )?;
+      if let Some(bot) = net.get_bot(&id) {
+        let table = lua_ctx.create_table()?;
+        table.set("x", bot.x)?;
+        table.set("y", bot.y)?;
+        table.set("z", bot.z)?;
 
-    bot_table.set(
-      "get_bot_area",
-      $scope.create_function(|_, id: String| {
-        let net = $net_ref.borrow_mut();
+        Ok(table)
+      } else {
+        Err(create_bot_error(&id))
+      }
+    })?,
+  )?;
 
-        if let Some(bot) = net.get_bot(&id) {
-          Ok(bot.area_id.clone())
-        } else {
-          Err(create_bot_error(&id))
-        }
-      })?,
-    )?;
+  api_table.set(
+    "move_bot",
+    scope.create_function(move |_, (id, x, y, z): (String, f64, f64, f64)| {
+      let mut net = net_ref.borrow_mut();
 
-    bot_table.set(
-      "get_bot_position",
-      $scope.create_function(|lua_ctx, id: String| {
-        let net = $net_ref.borrow();
+      net.move_bot(&id, x, y, z);
 
-        if let Some(bot) = net.get_bot(&id) {
-          let table = lua_ctx.create_table()?;
-          table.set("x", bot.x)?;
-          table.set("y", bot.y)?;
-          table.set("z", bot.z)?;
+      Ok(())
+    })?,
+  )?;
 
-          Ok(table)
-        } else {
-          Err(create_bot_error(&id))
-        }
-      })?,
-    )?;
+  api_table.set(
+    "set_bot_avatar",
+    scope.create_function(move |_, (id, avatar_id): (String, u16)| {
+      let mut net = net_ref.borrow_mut();
 
-    bot_table.set(
-      "move_bot",
-      $scope.create_function(|_, (id, x, y, z): (String, f64, f64, f64)| {
-        let mut net = $net_ref.borrow_mut();
+      net.set_bot_avatar(&id, avatar_id);
 
-        net.move_bot(&id, x, y, z);
+      Ok(())
+    })?,
+  )?;
 
-        Ok(())
-      })?,
-    )?;
+  api_table.set(
+    "set_bot_emote",
+    scope.create_function(move |_, (id, emote_id): (String, u8)| {
+      let mut net = net_ref.borrow_mut();
 
-    bot_table.set(
-      "set_bot_avatar",
-      $scope.create_function(|_, (id, avatar_id): (String, u16)| {
-        let mut net = $net_ref.borrow_mut();
+      net.set_bot_emote(&id, emote_id);
 
-        net.set_bot_avatar(&id, avatar_id);
+      Ok(())
+    })?,
+  )?;
 
-        Ok(())
-      })?,
-    )?;
-
-    bot_table.set(
-      "set_bot_emote",
-      $scope.create_function(|_, (id, emote_id): (String, u8)| {
-        let mut net = $net_ref.borrow_mut();
-
-        net.set_bot_emote(&id, emote_id);
-
-        Ok(())
-      })?,
-    )?;
-
-    bot_table
-  }};
+  Ok(())
 }
 
-macro_rules! create_player_table {
-  ($lua_ctx: ident, $scope: ident, $net_ref: ident) => {{
-    let player_table = $lua_ctx.create_table()?;
+fn add_player_api<'a, 'b, 'c>(
+  api_table: &rlua::Table<'a>,
+  scope: &rlua::Scope<'a, 'b>,
+  net_ref: &'b RefCell<&mut Net>,
+) -> rlua::Result<()> {
+  api_table.set(
+    "list_players",
+    scope.create_function(move |_, area_id: String| {
+      let mut net = net_ref.borrow_mut();
 
-    player_table.set(
-      "list_players",
-      $scope.create_function(|_, area_id: String| {
-        let mut net = $net_ref.borrow_mut();
+      if let Some(area) = net.get_area(&area_id) {
+        let connected_bots = area.get_connected_players();
+        let result: Vec<String> = connected_bots.iter().map(|id| id.clone()).collect();
 
-        if let Some(area) = net.get_area(&area_id) {
-          let connected_bots = area.get_connected_players();
-          let result: Vec<String> = connected_bots.iter().map(|id| id.clone()).collect();
+        Ok(result)
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
 
-          Ok(result)
-        } else {
-          Err(create_area_error(&area_id))
-        }
-      })?,
-    )?;
+  api_table.set(
+    "is_player",
+    scope.create_function(move |_, id: String| {
+      let net = net_ref.borrow();
 
-    player_table.set(
-      "is_player",
-      $scope.create_function(|_, id: String| {
-        let net = $net_ref.borrow();
+      if let Some(_) = net.get_player(&id) {
+        Ok(true)
+      } else {
+        Ok(false)
+      }
+    })?,
+  )?;
 
-        if let Some(_) = net.get_player(&id) {
-          Ok(true)
-        } else {
-          Ok(false)
-        }
-      })?,
-    )?;
+  api_table.set(
+    "get_player_area",
+    scope.create_function(move |_, id: String| {
+      let net = net_ref.borrow_mut();
 
-    player_table.set(
-      "get_player_area",
-      $scope.create_function(|_, id: String| {
-        let net = $net_ref.borrow_mut();
+      if let Some(player) = net.get_player(&id) {
+        Ok(player.area_id.clone())
+      } else {
+        Err(create_player_error(&id))
+      }
+    })?,
+  )?;
 
-        if let Some(player) = net.get_player(&id) {
-          Ok(player.area_id.clone())
-        } else {
-          Err(create_player_error(&id))
-        }
-      })?,
-    )?;
+  api_table.set(
+    "get_player_position",
+    scope.create_function(move |lua_ctx, id: String| {
+      let net = net_ref.borrow();
 
-    player_table.set(
-      "get_player_position",
-      $scope.create_function(|lua_ctx, id: String| {
-        let net = $net_ref.borrow();
+      if let Some(player) = net.get_player(&id) {
+        let table = lua_ctx.create_table()?;
+        table.set("x", player.x)?;
+        table.set("y", player.y)?;
+        table.set("z", player.z)?;
 
-        if let Some(player) = net.get_player(&id) {
-          let table = lua_ctx.create_table()?;
-          table.set("x", player.x)?;
-          table.set("y", player.y)?;
-          table.set("z", player.z)?;
+        Ok(table)
+      } else {
+        Err(create_player_error(&id))
+      }
+    })?,
+  )?;
 
-          Ok(table)
-        } else {
-          Err(create_player_error(&id))
-        }
-      })?,
-    )?;
+  api_table.set(
+    "get_player_avatar",
+    scope.create_function(move |_, id: String| {
+      let net = net_ref.borrow_mut();
 
-    player_table.set(
-      "get_player_avatar",
-      $scope.create_function(|_, id: String| {
-        let net = $net_ref.borrow_mut();
+      if let Some(player) = net.get_player(&id) {
+        Ok(player.avatar_id)
+      } else {
+        Err(create_player_error(&id))
+      }
+    })?,
+  )?;
 
-        if let Some(player) = net.get_player(&id) {
-          Ok(player.avatar_id)
-        } else {
-          Err(create_player_error(&id))
-        }
-      })?,
-    )?;
-
-    player_table
-  }};
+  Ok(())
 }
 
 impl LuaPluginInterface {
@@ -369,9 +370,13 @@ impl LuaPluginInterface {
       let globals = lua_ctx.globals();
 
       lua_ctx.scope(|scope| -> rlua::Result<()> {
-        globals.set("Areas", create_area_table!(lua_ctx, scope, net_ref))?;
-        globals.set("Bots", create_bot_table!(lua_ctx, scope, net_ref))?;
-        globals.set("Players", create_player_table!(lua_ctx, scope, net_ref))?;
+        let api_table = lua_ctx.create_table()?;
+
+        add_player_api(&api_table, &scope, &net_ref)?;
+        add_area_api(&api_table, &scope, &net_ref)?;
+        add_bot_api(&api_table, &scope, &net_ref)?;
+
+        globals.set("Net", api_table)?;
 
         lua_ctx.load(&script).exec()?;
 
@@ -425,10 +430,14 @@ macro_rules! create_event_handler {
           lua_env.context(|lua_ctx: rlua::Context |-> rlua::Result<()> {
             lua_ctx.scope(|scope| -> rlua::Result<()> {
               let globals = lua_ctx.globals();
+              let api_table = lua_ctx.create_table()?;
 
-              globals.set("Areas", create_area_table!(lua_ctx, scope, net_ref))?;
-              globals.set("Bots", create_bot_table!(lua_ctx, scope, net_ref))?;
-              globals.set("Players", create_player_table!(lua_ctx, scope, net_ref))?;
+              add_player_api(&api_table, &scope, &net_ref)?;
+              add_area_api(&api_table, &scope, &net_ref)?;
+              add_bot_api(&api_table, &scope, &net_ref)?;
+
+              globals.set("Net", api_table)?;
+
 
               let fn_name = concat!($prefix, $event);
 
