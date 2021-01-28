@@ -48,6 +48,10 @@ impl Map {
     map
   }
 
+  pub fn get_name(&self) -> &String {
+    &self.name
+  }
+
   pub fn get_width(&self) -> usize {
     self.width
   }

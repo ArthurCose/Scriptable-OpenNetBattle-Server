@@ -1,5 +1,5 @@
 use super::plugin_interface::PluginInterface;
-use crate::area::{Area, Bot};
+use crate::net::{Bot, Net};
 use paste::paste;
 use rlua::Lua;
 use std::cell::RefCell;
@@ -15,79 +15,133 @@ pub struct LuaPluginInterface {
   player_emote_listeners: Vec<std::path::PathBuf>,
 }
 
+fn create_area_error(id: &String) -> rlua::Error {
+  rlua::Error::RuntimeError(String::from(format!("No area matching \"{}\" found.", id)))
+}
+
+fn create_bot_error(id: &String) -> rlua::Error {
+  rlua::Error::RuntimeError(String::from(format!("No bot matching \"{}\" found.", id)))
+}
+
+fn create_player_error(id: &String) -> rlua::Error {
+  rlua::Error::RuntimeError(String::from(format!(
+    "No player matching \"{}\" found.",
+    id
+  )))
+}
+
 // abusing macro to auto resolve lifetime
-macro_rules! create_map_table {
-  ($lua_ctx: ident, $scope: ident, $area_ref: ident) => {{
-    let map_table = $lua_ctx.create_table()?;
+macro_rules! create_area_table {
+  ($lua_ctx: ident, $scope: ident, $net_ref: ident) => {{
+    let area_table = $lua_ctx.create_table()?;
 
-    map_table.set(
+    area_table.set(
+      "get_default_area",
+      $scope.create_function(|_, ()| {
+        let net = $net_ref.borrow();
+
+        Ok(net.get_default_area_id().clone())
+      })?,
+    )?;
+
+    area_table.set(
       "get_width",
-      $scope.create_function(|_, ()| {
-        let mut area = $area_ref.borrow_mut();
-        Ok(area.get_map().get_width())
+      $scope.create_function(|_, area_id: String| {
+        let mut net = $net_ref.borrow_mut();
+
+        if let Some(area) = net.get_area(&area_id) {
+          Ok(area.get_map().get_width())
+        } else {
+          Err(create_area_error(&area_id))
+        }
       })?,
     )?;
 
-    map_table.set(
+    area_table.set(
       "get_height",
-      $scope.create_function(|_, ()| {
-        let mut area = $area_ref.borrow_mut();
-        Ok(area.get_map().get_height())
+      $scope.create_function(|_, area_id: String| {
+        let mut net = $net_ref.borrow_mut();
+
+        if let Some(area) = net.get_area(&area_id) {
+          Ok(area.get_map().get_height())
+        } else {
+          Err(create_area_error(&area_id))
+        }
       })?,
     )?;
 
-    map_table.set(
+    area_table.set(
       "get_tile",
-      $scope.create_function(|_, (x, y): (usize, usize)| {
-        let mut area = $area_ref.borrow_mut();
-        Ok(area.get_map().get_tile(x, y))
+      $scope.create_function(|_, (area_id, x, y): (String, usize, usize)| {
+        let mut net = $net_ref.borrow_mut();
+
+        if let Some(area) = net.get_area(&area_id) {
+          Ok(area.get_map().get_tile(x, y))
+        } else {
+          Err(create_area_error(&area_id))
+        }
       })?,
     )?;
 
-    map_table.set(
+    area_table.set(
       "set_tile",
-      $scope.create_function(|_, (x, y, id): (usize, usize, String)| {
-        let mut area = $area_ref.borrow_mut();
-        Ok(area.get_map().set_tile(x, y, id))
+      $scope.create_function(|_, (area_id, x, y, id): (String, usize, usize, String)| {
+        let mut net = $net_ref.borrow_mut();
+
+        if let Some(area) = net.get_area(&area_id) {
+          Ok(area.get_map().set_tile(x, y, id))
+        } else {
+          Err(create_area_error(&area_id))
+        }
       })?,
     )?;
 
-    map_table
+    area_table
   }};
 }
 
 macro_rules! create_bot_table {
-  ($lua_ctx: ident, $scope: ident, $area_ref: ident) => {{
+  ($lua_ctx: ident, $scope: ident, $net_ref: ident) => {{
     let bot_table = $lua_ctx.create_table()?;
 
     bot_table.set(
       "list_bots",
-      $scope.create_function(|_, ()| {
-        let area = $area_ref.borrow_mut();
+      $scope.create_function(|_, area_id: String| {
+        let mut net = $net_ref.borrow_mut();
 
-        let bot_ids: Vec<String> = area.get_bots().map(|bot| bot.id.clone()).collect();
+        if let Some(area) = net.get_area(&area_id) {
+          let connected_bots = area.get_connected_bots();
+          let result: Vec<String> = connected_bots.iter().map(|id| id.clone()).collect();
 
-        Ok(bot_ids)
+          Ok(result)
+        } else {
+          Err(create_area_error(&area_id))
+        }
       })?,
     )?;
 
     bot_table.set(
       "create_bot",
       $scope.create_function(
-        |_, (id, avatar_id, x, y, z): (String, u16, f64, f64, f64)| {
-          let mut area = $area_ref.borrow_mut();
+        |_, (id, area_id, avatar_id, x, y, z): (String, String, u16, f64, f64, f64)| {
+          let mut net = $net_ref.borrow_mut();
 
-          let bot = Bot {
-            id,
-            avatar_id,
-            x,
-            y,
-            z,
-          };
+          if let Some(_) = net.get_area(&area_id) {
+            let bot = Bot {
+              id,
+              area_id,
+              avatar_id,
+              x,
+              y,
+              z,
+            };
 
-          area.add_bot(bot);
+            net.add_bot(bot);
 
-          Ok(())
+            Ok(())
+          } else {
+            Err(create_area_error(&id))
+          }
         },
       )?,
     )?;
@@ -95,14 +149,12 @@ macro_rules! create_bot_table {
     bot_table.set(
       "is_bot",
       $scope.create_function(|_, id: String| {
-        let area = $area_ref.borrow();
+        let net = $net_ref.borrow();
 
-        if let Some(bot) = area.get_bot(&id) {
-          Ok(vec![bot.x, bot.y, bot.z])
+        if let Some(_) = net.get_bot(&id) {
+          Ok(true)
         } else {
-          Err(rlua::Error::RuntimeError(String::from(
-            "No bot matching that ID found.",
-          )))
+          Ok(false)
         }
       })?,
     )?;
@@ -110,20 +162,33 @@ macro_rules! create_bot_table {
     bot_table.set(
       "remove_bot",
       $scope.create_function(|_, id: String| {
-        let mut area = $area_ref.borrow_mut();
+        let mut net = $net_ref.borrow_mut();
 
-        area.remove_bot(&id);
+        net.remove_bot(&id);
 
         Ok(())
       })?,
     )?;
 
     bot_table.set(
+      "get_bot_area",
+      $scope.create_function(|_, id: String| {
+        let net = $net_ref.borrow_mut();
+
+        if let Some(bot) = net.get_bot(&id) {
+          Ok(bot.area_id.clone())
+        } else {
+          Err(create_bot_error(&id))
+        }
+      })?,
+    )?;
+
+    bot_table.set(
       "get_bot_position",
       $scope.create_function(|lua_ctx, id: String| {
-        let area = $area_ref.borrow();
+        let net = $net_ref.borrow();
 
-        if let Some(bot) = area.get_bot(&id) {
+        if let Some(bot) = net.get_bot(&id) {
           let table = lua_ctx.create_table()?;
           table.set("x", bot.x)?;
           table.set("y", bot.y)?;
@@ -131,9 +196,7 @@ macro_rules! create_bot_table {
 
           Ok(table)
         } else {
-          Err(rlua::Error::RuntimeError(String::from(
-            "No bot matching that ID found.",
-          )))
+          Err(create_bot_error(&id))
         }
       })?,
     )?;
@@ -141,9 +204,9 @@ macro_rules! create_bot_table {
     bot_table.set(
       "move_bot",
       $scope.create_function(|_, (id, x, y, z): (String, f64, f64, f64)| {
-        let mut area = $area_ref.borrow_mut();
+        let mut net = $net_ref.borrow_mut();
 
-        area.move_bot(&id, x, y, z);
+        net.move_bot(&id, x, y, z);
 
         Ok(())
       })?,
@@ -152,15 +215,9 @@ macro_rules! create_bot_table {
     bot_table.set(
       "set_bot_avatar",
       $scope.create_function(|_, (id, avatar_id): (String, u16)| {
-        let mut area = $area_ref.borrow_mut();
+        let mut net = $net_ref.borrow_mut();
 
-        if let None = area.get_bot(&id) {
-          return Err(rlua::Error::RuntimeError(String::from(
-            "No bot matching that ID found.",
-          )));
-        }
-
-        area.set_bot_avatar(&id, avatar_id);
+        net.set_bot_avatar(&id, avatar_id);
 
         Ok(())
       })?,
@@ -169,15 +226,9 @@ macro_rules! create_bot_table {
     bot_table.set(
       "set_bot_emote",
       $scope.create_function(|_, (id, emote_id): (String, u8)| {
-        let mut area = $area_ref.borrow_mut();
+        let mut net = $net_ref.borrow_mut();
 
-        if let None = area.get_bot(&id) {
-          return Err(rlua::Error::RuntimeError(String::from(
-            "No bot matching that ID found.",
-          )));
-        }
-
-        area.set_bot_emote(&id, emote_id);
+        net.set_bot_emote(&id, emote_id);
 
         Ok(())
       })?,
@@ -188,31 +239,47 @@ macro_rules! create_bot_table {
 }
 
 macro_rules! create_player_table {
-  ($lua_ctx: ident, $scope: ident, $area_ref: ident) => {{
+  ($lua_ctx: ident, $scope: ident, $net_ref: ident) => {{
     let player_table = $lua_ctx.create_table()?;
 
     player_table.set(
       "list_players",
-      $scope.create_function(|_, ()| {
-        let area = $area_ref.borrow_mut();
+      $scope.create_function(|_, area_id: String| {
+        let mut net = $net_ref.borrow_mut();
 
-        let player_ids: Vec<String> = area.get_players().map(|player| player.id.clone()).collect();
+        if let Some(area) = net.get_area(&area_id) {
+          let connected_bots = area.get_connected_players();
+          let result: Vec<String> = connected_bots.iter().map(|id| id.clone()).collect();
 
-        Ok(player_ids)
+          Ok(result)
+        } else {
+          Err(create_area_error(&area_id))
+        }
       })?,
     )?;
 
     player_table.set(
       "is_player",
       $scope.create_function(|_, id: String| {
-        let area = $area_ref.borrow();
+        let net = $net_ref.borrow();
 
-        if let Some(player) = area.get_player(&id) {
-          Ok(vec![player.x, player.y, player.z])
+        if let Some(_) = net.get_player(&id) {
+          Ok(true)
         } else {
-          Err(rlua::Error::RuntimeError(String::from(
-            "No player matching that ID found.",
-          )))
+          Ok(false)
+        }
+      })?,
+    )?;
+
+    player_table.set(
+      "get_player_area",
+      $scope.create_function(|_, id: String| {
+        let net = $net_ref.borrow_mut();
+
+        if let Some(player) = net.get_player(&id) {
+          Ok(player.area_id.clone())
+        } else {
+          Err(create_player_error(&id))
         }
       })?,
     )?;
@@ -220,9 +287,9 @@ macro_rules! create_player_table {
     player_table.set(
       "get_player_position",
       $scope.create_function(|lua_ctx, id: String| {
-        let area = $area_ref.borrow();
+        let net = $net_ref.borrow();
 
-        if let Some(player) = area.get_player(&id) {
+        if let Some(player) = net.get_player(&id) {
           let table = lua_ctx.create_table()?;
           table.set("x", player.x)?;
           table.set("y", player.y)?;
@@ -230,9 +297,7 @@ macro_rules! create_player_table {
 
           Ok(table)
         } else {
-          Err(rlua::Error::RuntimeError(String::from(
-            "No player matching that ID found.",
-          )))
+          Err(create_player_error(&id))
         }
       })?,
     )?;
@@ -240,14 +305,12 @@ macro_rules! create_player_table {
     player_table.set(
       "get_player_avatar",
       $scope.create_function(|_, id: String| {
-        let area = $area_ref.borrow_mut();
+        let net = $net_ref.borrow_mut();
 
-        if let Some(player) = area.get_player(&id) {
-          Ok(vec![player.x, player.y, player.z])
+        if let Some(player) = net.get_player(&id) {
+          Ok(player.avatar_id)
         } else {
-          Err(rlua::Error::RuntimeError(String::from(
-            "No player matching that ID found.",
-          )))
+          Err(create_player_error(&id))
         }
       })?,
     )?;
@@ -271,10 +334,10 @@ impl LuaPluginInterface {
     plugin_interface
   }
 
-  fn load_scripts(&mut self, area_ref: &mut Area) -> std::io::Result<()> {
+  fn load_scripts(&mut self, net_ref: &mut Net) -> std::io::Result<()> {
     use std::fs::{read_dir, read_to_string};
 
-    let area_ref = RefCell::new(area_ref);
+    let net_ref = RefCell::new(net_ref);
 
     for wrapped_dir_entry in read_dir("./scripts")? {
       let dir_path = wrapped_dir_entry?.path();
@@ -282,7 +345,7 @@ impl LuaPluginInterface {
 
       for script_path in &script_paths {
         if let Ok(script) = read_to_string(script_path) {
-          if let Err(err) = self.load_script(&area_ref, dir_path.clone(), script) {
+          if let Err(err) = self.load_script(&net_ref, dir_path.clone(), script) {
             println!("Failed to load script \"{}\": {}", dir_path.display(), err)
           }
 
@@ -296,7 +359,7 @@ impl LuaPluginInterface {
 
   fn load_script(
     &mut self,
-    area_ref: &RefCell<&mut Area>,
+    net_ref: &RefCell<&mut Net>,
     script_dir: std::path::PathBuf,
     script: String,
   ) -> rlua::Result<()> {
@@ -306,9 +369,9 @@ impl LuaPluginInterface {
       let globals = lua_ctx.globals();
 
       lua_ctx.scope(|scope| -> rlua::Result<()> {
-        globals.set("Map", create_map_table!(lua_ctx, scope, area_ref))?;
-        globals.set("Bots", create_bot_table!(lua_ctx, scope, area_ref))?;
-        globals.set("Players", create_player_table!(lua_ctx, scope, area_ref))?;
+        globals.set("Areas", create_area_table!(lua_ctx, scope, net_ref))?;
+        globals.set("Bots", create_bot_table!(lua_ctx, scope, net_ref))?;
+        globals.set("Players", create_player_table!(lua_ctx, scope, net_ref))?;
 
         lua_ctx.load(&script).exec()?;
 
@@ -349,9 +412,9 @@ impl LuaPluginInterface {
 }
 
 macro_rules! create_event_handler {
-  ($self: ident, $area: ident, $prefix: expr, $event: expr, $($args: expr), *) => {{
+  ($self: ident, $net: ident, $prefix: expr, $event: expr, $($args: expr), *) => {{
     let call_lua = || -> rlua::Result<()> {
-      let area_ref = RefCell::new($area);
+      let net_ref = RefCell::new($net);
 
       // loop over scripts
       for script_dir in &paste! { $self.[<$event _listeners>] } {
@@ -363,9 +426,9 @@ macro_rules! create_event_handler {
             lua_ctx.scope(|scope| -> rlua::Result<()> {
               let globals = lua_ctx.globals();
 
-              globals.set("Map", create_map_table!(lua_ctx, scope, area_ref))?;
-              globals.set("Bots", create_bot_table!(lua_ctx, scope, area_ref))?;
-              globals.set("Players", create_player_table!(lua_ctx, scope, area_ref))?;
+              globals.set("Areas", create_area_table!(lua_ctx, scope, net_ref))?;
+              globals.set("Bots", create_bot_table!(lua_ctx, scope, net_ref))?;
+              globals.set("Players", create_player_table!(lua_ctx, scope, net_ref))?;
 
               let fn_name = concat!($prefix, $event);
 
@@ -391,34 +454,28 @@ macro_rules! create_event_handler {
 }
 
 impl PluginInterface for LuaPluginInterface {
-  fn init(&mut self, area: &mut Area) {
-    if let Err(err) = self.load_scripts(area) {
+  fn init(&mut self, net: &mut Net) {
+    if let Err(err) = self.load_scripts(net) {
       println!("Failed to load lua scripts: {}", err);
     }
   }
 
-  fn tick(&mut self, area: &mut Area, delta_time: f64) {
-    create_event_handler!(self, area, "", "tick", delta_time);
+  fn tick(&mut self, net: &mut Net, delta_time: f64) {
+    create_event_handler!(self, net, "", "tick", delta_time);
   }
 
-  fn handle_player_join(&mut self, area: &mut Area, player_id: &String) {
-    create_event_handler!(self, area, "handle_", "player_join", player_id.clone());
+  fn handle_player_join(&mut self, net: &mut Net, player_id: &String) {
+    create_event_handler!(self, net, "handle_", "player_join", player_id.clone());
   }
 
-  fn handle_player_disconnect(&mut self, area: &mut Area, player_id: &String) {
+  fn handle_player_disconnect(&mut self, net: &mut Net, player_id: &String) {
+    create_event_handler!(self, net, "handle_", "player_disconnect", player_id.clone());
+  }
+
+  fn handle_player_move(&mut self, net: &mut Net, player_id: &String, x: f64, y: f64, z: f64) {
     create_event_handler!(
       self,
-      area,
-      "handle_",
-      "player_disconnect",
-      player_id.clone()
-    );
-  }
-
-  fn handle_player_move(&mut self, area: &mut Area, player_id: &String, x: f64, y: f64, z: f64) {
-    create_event_handler!(
-      self,
-      area,
+      net,
       "handle_",
       "player_move",
       player_id.clone(),
@@ -428,10 +485,10 @@ impl PluginInterface for LuaPluginInterface {
     );
   }
 
-  fn handle_player_avatar_change(&mut self, area: &mut Area, player_id: &String, avatar_id: u16) {
+  fn handle_player_avatar_change(&mut self, net: &mut Net, player_id: &String, avatar_id: u16) {
     create_event_handler!(
       self,
-      area,
+      net,
       "handle_",
       "player_avatar_change",
       player_id.clone(),
@@ -439,10 +496,10 @@ impl PluginInterface for LuaPluginInterface {
     );
   }
 
-  fn handle_player_emote(&mut self, area: &mut Area, player_id: &String, emote_id: u8) {
+  fn handle_player_emote(&mut self, net: &mut Net, player_id: &String, emote_id: u8) {
     create_event_handler!(
       self,
-      area,
+      net,
       "handle_",
       "player_emote",
       player_id.clone(),

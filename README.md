@@ -15,6 +15,11 @@ Commented functions are in development and require changes to the client (specif
 ```Lua
 function tick(delta_time)
 function handle_player_join(player_id)
+
+-- For the following functions: internal values are not set until after execution
+-- this means Players.get_player_position(id) will provide the old position of the player, etc
+
+-- function handle_player_transfer(player_id, area_id)
 function handle_player_disconnect(player_id)
 function handle_player_move(player_id, x, y, z)
 function handle_player_avatar_change(player_id, avatar)
@@ -28,23 +33,28 @@ function handle_player_emote(player_id, emote)
 ### Global Tables
 
 ```Lua
--- todo: make this all part of one table called Area?
-Map.get_width()
-Map.get_height()
-Map.get_tile(x, y)
-Map.set_tile(x, y, id)
+-- todo: make this all part of one table called Net?
+Areas.get_default_area()
+-- Areas.create_area(area_id)
+Areas.get_width(area_id)
+Areas.get_height(area_id)
+Areas.get_tile(area_id, x, y)
+Areas.set_tile(area_id, x, y, id)
 
-Bots.list_bots()
-Bots.create_bot(id, avatar_id, x, y, z)
+Bots.list_bots(area_id)
+Bots.create_bot(id, area_id, avatar_id, x, y, z)
 Bots.is_bot(id)
 Bots.remove_bot(id)
+Bots.get_bot_area(id)
 Bots.get_bot_position(id)
 Bots.move_bot(id, x, y, z)
 Bots.set_bot_avatar(id, avatar_id)
 Bots.set_bot_emote(id, emote_id)
+-- Bots.transfer(id, area_id)
 
-Players.list_players()
+Players.list_players(area_id)
 Players.is_player(id)
+Players.get_player_area(id)
 Players.get_player_position(id)
 Players.get_player_avatar(id)
 -- Players.lock_player(id)
@@ -58,6 +68,8 @@ Players.get_player_avatar(id)
 -- Players.unlock_player_camera(id)
 -- Players.send_virus(id, data)
 -- Players.initiate_pvp(player_1_id, player_2_id, data)
+-- Players.transfer(id, area_id)
+-- Players.transfer_server(id, server)
 ```
 
 ## Proposed Changes for OpenNetBattle Client

@@ -1,12 +1,12 @@
-local function create_custom_bot(id, avatar_id, x, y, z)
+local function create_custom_bot(id, area_id, avatar_id, x, y, z)
   local bot = {
-    id = id,
-    avatar = avatar_id,
+    _id = id,
+    _area_id = area_id,
     x = x,
     y = y,
     z = z,
     path = {},
-    path_target_index = 1,
+    _path_target_index = 1,
     talking_to = nil,
     speed = 1.2,
     size = .3
@@ -14,11 +14,11 @@ local function create_custom_bot(id, avatar_id, x, y, z)
 
   function bot._tick(delta_time)
     if bot.talking_to ~= nil then
-      Bots.move_bot(bot.id, bot.x, bot.y, bot.z)
+      Bots.move_bot(bot._id, bot.x, bot.y, bot.z)
       return
     end
 
-    local player_ids = Players.list_players()
+    local player_ids = Players.list_players(bot._area_id)
 
     for i = 1, #player_ids, 1 do
       local player_pos = Players.get_player_position(player_ids[i])
@@ -28,12 +28,12 @@ local function create_custom_bot(id, avatar_id, x, y, z)
         math.abs(player_pos.y - bot.y) < bot.size and
         player_pos.z == bot.z
       then
-        Bots.move_bot(bot.id, bot.x, bot.y, bot.z)
+        Bots.move_bot(bot._id, bot.x, bot.y, bot.z)
         return
       end
     end
 
-    local target = bot.path[bot.path_target_index]
+    local target = bot.path[bot._path_target_index]
     local angle = math.atan(target.y - bot.y, target.x - bot.x)
 
     local vel_x = math.cos(angle) * bot.speed
@@ -44,15 +44,15 @@ local function create_custom_bot(id, avatar_id, x, y, z)
 
     local distance = math.sqrt((target.x - bot.x) ^ 2 + (target.y - bot.y) ^ 2)
 
-    Bots.move_bot(bot.id, bot.x, bot.y, bot.z)
+    Bots.move_bot(bot._id, bot.x, bot.y, bot.z)
 
     if distance < bot.speed * delta_time then
-      bot.path_target_index = bot.path_target_index % #bot.path + 1
+      bot._path_target_index = bot._path_target_index % #bot.path + 1
     end
   end
 
   function bot._handle_player_conversation(player_id, other_id)
-    if bot.talking_to or other_id ~= bot.id then
+    if bot.talking_to or other_id ~= bot._id then
       Players.send_player_message(player_id, "Sorry I'm busy talking to someone right now.")
       return
     end
@@ -79,7 +79,7 @@ local function create_custom_bot(id, avatar_id, x, y, z)
     end
   end
 
-  Bots.create_bot(bot.id, bot.avatar, bot.x, bot.y, bot.z)
+  Bots.create_bot(id, area_id, avatar_id, x, y, z)
 
   return bot
 end

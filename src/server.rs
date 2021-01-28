@@ -1,7 +1,6 @@
-use crate::area::Area;
-use crate::area::Map;
+use crate::net::Net;
+use crate::net::Player;
 use crate::packets::{build_packet, ClientPacket, ServerPacket};
-use crate::player::Player;
 use crate::plugins::{LuaPluginInterface, PluginInterface};
 use crate::threads::{create_clock_thread, create_socket_thread, ThreadMessage};
 use std::collections::HashMap;
@@ -12,7 +11,7 @@ const OBN_PORT: usize = 8765;
 
 pub struct Server {
   player_id_map: HashMap<std::net::SocketAddr, String>,
-  area: Area,
+  net: Net,
   plugin_interfaces: Vec<Box<dyn PluginInterface>>,
   socket: Rc<UdpSocket>,
   log_packets: bool, // todo command line option
@@ -31,11 +30,9 @@ impl Server {
 
     let rc_socket = Rc::new(socket);
 
-    let map_string = std::fs::read_to_string("map.txt").expect("Failed to read map.txt");
-
     Server {
       player_id_map: HashMap::new(),
-      area: Area::new(rc_socket.clone(), Map::from(String::from(map_string))),
+      net: Net::new(rc_socket.clone()),
       plugin_interfaces: vec![Box::new(LuaPluginInterface::new())],
       socket: rc_socket,
       log_packets: false,
@@ -47,7 +44,7 @@ impl Server {
     use std::time::Instant;
 
     for plugin_interface in &mut self.plugin_interfaces {
-      plugin_interface.init(&mut self.area);
+      plugin_interface.init(&mut self.net);
     }
 
     let (tx, rx) = mpsc::channel();
@@ -67,7 +64,7 @@ impl Server {
           time = Instant::now();
 
           for plugin in &mut self.plugin_interfaces {
-            plugin.tick(&mut self.area, elapsed_time.as_secs_f64());
+            plugin.tick(&mut self.net, elapsed_time.as_secs_f64());
           }
         }
         ThreadMessage::ClientPacket(src_addr, client_packet) => {
@@ -76,7 +73,7 @@ impl Server {
         }
       }
 
-      self.area.broadcast_map_changes();
+      self.net.broadcast_map_changes();
     }
   }
 
@@ -120,19 +117,22 @@ impl Server {
           }
 
           for plugin in &mut self.plugin_interfaces {
-            plugin.handle_player_move(&mut self.area, player_id, x, y, z);
+            plugin.handle_player_move(&mut self.net, player_id, x, y, z);
           }
 
-          self.area.move_player(player_id, x, y, z);
+          self.net.move_player(player_id, x, y, z);
         }
         ClientPacket::LoadedMap { map_id: _ } => {
           if self.log_packets {
             println!("Received Map packet from {}", socket_address);
           }
 
+          let area_id = &self.net.get_player(player_id).unwrap().area_id.clone();
+          let area = self.net.get_area(area_id).unwrap();
+
           // map signal
           let buf = build_packet(ServerPacket::MapData {
-            map_data: self.area.get_map().render(),
+            map_data: area.get_map().render(),
           });
 
           self.socket.send_to(&buf, socket_address)?;
@@ -145,10 +145,10 @@ impl Server {
           }
 
           for plugin in &mut self.plugin_interfaces {
-            plugin.handle_player_avatar_change(&mut self.area, player_id, form_id);
+            plugin.handle_player_avatar_change(&mut self.net, player_id, form_id);
           }
 
-          self.area.set_player_avatar(player_id, form_id);
+          self.net.set_player_avatar(player_id, form_id);
         }
         ClientPacket::Emote { emote_id } => {
           if self.log_packets {
@@ -156,10 +156,10 @@ impl Server {
           }
 
           for plugin in &mut self.plugin_interfaces {
-            plugin.handle_player_emote(&mut self.area, player_id, emote_id);
+            plugin.handle_player_emote(&mut self.net, player_id, emote_id);
           }
 
-          self.area.set_player_emote(player_id, emote_id);
+          self.net.set_player_emote(player_id, emote_id);
         }
       }
     } else {
@@ -207,6 +207,7 @@ impl Server {
 
     let player = Player {
       socket_address,
+      area_id: self.net.get_default_area_id().clone(),
       id: Uuid::new_v4().to_string(),
       avatar_id: 0,
       x: 0.0,
@@ -217,19 +218,19 @@ impl Server {
 
     self.player_id_map.insert(socket_address, player.id.clone());
 
-    self.area.add_player(player);
+    self.net.add_player(player);
   }
 
   fn connect_player(&mut self, socket_address: &std::net::SocketAddr) -> std::io::Result<()> {
     if let Some(player_id) = self.player_id_map.get_mut(&socket_address) {
-      self.area.mark_player_ready(player_id);
+      self.net.mark_player_ready(player_id);
 
       for plugin in &mut self.plugin_interfaces {
-        plugin.handle_player_join(&mut self.area, player_id);
+        plugin.handle_player_join(&mut self.net, player_id);
       }
     }
 
-    for other_player in self.area.get_players() {
+    for other_player in self.net.get_players() {
       let buf = build_packet(ServerPacket::NaviConnected {
         ticket: other_player.id.clone(),
       });
@@ -252,7 +253,7 @@ impl Server {
       self.socket.send_to(&buf, &socket_address)?;
     }
 
-    for bot in self.area.get_bots() {
+    for bot in self.net.get_bots() {
       let buf = build_packet(ServerPacket::NaviConnected {
         ticket: bot.id.clone(),
       });
@@ -281,10 +282,10 @@ impl Server {
   fn disconnect_player(&mut self, socket_address: &std::net::SocketAddr) {
     if let Some(player_id) = self.player_id_map.remove(&socket_address) {
       for plugin in &mut self.plugin_interfaces {
-        plugin.handle_player_disconnect(&mut self.area, &player_id);
+        plugin.handle_player_disconnect(&mut self.net, &player_id);
       }
 
-      self.area.remove_player(&player_id);
+      self.net.remove_player(&player_id);
     }
   }
 }
