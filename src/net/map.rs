@@ -111,7 +111,7 @@ impl Map {
     if !self.cached {
       let mut lines = vec![
         self.name.clone(),
-        self.width.to_string() + " " + &self.height.to_string(),
+        self.height.to_string() + " " + &self.width.to_string(),
       ];
 
       let mut rows: Vec<String> = self.data.iter().map(|row| row.join(",")).collect();
