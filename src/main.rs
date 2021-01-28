@@ -3,6 +3,7 @@ mod packets;
 mod plugins;
 mod server;
 mod threads;
+
 use server::Server;
 
 fn main() {
