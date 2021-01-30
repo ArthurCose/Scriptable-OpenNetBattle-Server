@@ -1,10 +1,9 @@
 mod net;
 mod packets;
 mod plugins;
-mod server;
 mod threads;
 
-use server::Server;
+use net::Server;
 
 fn main() {
     let mut server = Server::new();

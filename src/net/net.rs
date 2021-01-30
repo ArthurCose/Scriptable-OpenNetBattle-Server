@@ -56,7 +56,7 @@ impl Net {
     self.players.get(id)
   }
 
-  pub(crate) fn get_player_mut(&mut self, id: &String) -> Option<&mut Player> {
+  pub(super) fn get_player_mut(&mut self, id: &String) -> Option<&mut Player> {
     self.players.get_mut(id)
   }
 
@@ -129,7 +129,7 @@ impl Net {
     }
   }
 
-  pub(crate) fn add_player(&mut self, player: Player) {
+  pub(super) fn add_player(&mut self, player: Player) {
     let area = self.areas.get_mut(&player.area_id).unwrap();
 
     area.add_player(player.id.clone());
@@ -149,7 +149,7 @@ impl Net {
     );
   }
 
-  pub(crate) fn mark_player_ready(&mut self, id: &String) {
+  pub(super) fn mark_player_ready(&mut self, id: &String) {
     if let Some(player) = self.players.get_mut(id) {
       player.ready = true;
     }
@@ -290,7 +290,7 @@ impl Net {
     }
   }
 
-  pub(crate) fn broadcast_map_changes(&mut self) {
+  pub(super) fn broadcast_map_changes(&mut self) {
     for area in self.areas.values_mut() {
       let map = area.get_map();
 
@@ -312,7 +312,7 @@ impl Net {
 
   // needed for outside files to use Players' PacketShipper
   // feels a bit hacky, as this is not used in this file at all
-  pub(crate) fn send_packet(
+  pub(super) fn send_packet(
     &mut self,
     player_id: &String,
     reliability: &Reliability,
@@ -327,7 +327,7 @@ impl Net {
     Ok(())
   }
 
-  pub(crate) fn resend_backed_up_packets(&mut self) -> Vec<std::net::SocketAddr> {
+  pub(super) fn resend_backed_up_packets(&mut self) -> Vec<std::net::SocketAddr> {
     let mut disconnected_addresses = Vec::new();
 
     for player in self.players.values_mut() {
