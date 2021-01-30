@@ -1,5 +1,5 @@
 use super::{Area, Bot, Map, Player};
-use crate::packets::{build_packet, ServerPacket};
+use crate::packets::{Reliability, ServerPacket};
 use std::collections::HashMap;
 use std::net::UdpSocket;
 use std::rc::Rc;
@@ -56,6 +56,10 @@ impl Net {
     self.players.get(id)
   }
 
+  pub(crate) fn get_player_mut(&mut self, id: &String) -> Option<&mut Player> {
+    self.players.get_mut(id)
+  }
+
   pub fn get_players(&self) -> std::collections::hash_map::Values<String, Player> {
     self.players.values()
   }
@@ -66,15 +70,22 @@ impl Net {
       player.y = y;
       player.z = z;
 
-      let buf = build_packet(ServerPacket::NaviWalkTo {
+      let packet = ServerPacket::NaviWalkTo {
         ticket: id.clone(),
         x,
         y,
         z,
-      });
+      };
 
       let area = self.areas.get(&player.area_id).unwrap();
-      broadcast_to_area(&self.socket, &self.players, area, &buf);
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.players,
+        area,
+        Reliability::UnreliableSequenced,
+        packet,
+      );
     }
   }
 
@@ -82,25 +93,39 @@ impl Net {
     if let Some(player) = self.players.get_mut(id) {
       player.avatar_id = avatar_id;
 
-      let buf = build_packet(ServerPacket::NaviSetAvatar {
+      let packet = ServerPacket::NaviSetAvatar {
         ticket: id.clone(),
         avatar_id,
-      });
+      };
 
       let area = self.areas.get(&player.area_id).unwrap();
-      broadcast_to_area(&self.socket, &self.players, area, &buf);
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.players,
+        area,
+        Reliability::ReliableOrdered,
+        packet,
+      );
     }
   }
 
   pub fn set_player_emote(&mut self, id: &String, emote_id: u8) {
     if let Some(player) = self.players.get(id) {
-      let buf = build_packet(ServerPacket::NaviEmote {
+      let packet = ServerPacket::NaviEmote {
         ticket: id.clone(),
         emote_id,
-      });
+      };
 
       let area = self.areas.get(&player.area_id).unwrap();
-      broadcast_to_area(&self.socket, &self.players, area, &buf);
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.players,
+        area,
+        Reliability::Reliable,
+        packet,
+      );
     }
   }
 
@@ -109,13 +134,19 @@ impl Net {
 
     area.add_player(player.id.clone());
 
-    let buf = build_packet(ServerPacket::NaviConnected {
+    let packet = ServerPacket::NaviConnected {
       ticket: player.id.clone(),
-    });
+    };
 
     self.players.insert(player.id.clone(), player);
 
-    broadcast_to_area(&self.socket, &self.players, area, &buf);
+    broadcast_to_area(
+      &self.socket,
+      &mut self.players,
+      area,
+      Reliability::ReliableOrdered,
+      packet,
+    );
   }
 
   pub(crate) fn mark_player_ready(&mut self, id: &String) {
@@ -133,9 +164,15 @@ impl Net {
 
       area.remove_player(&player.id);
 
-      let buf = build_packet(ServerPacket::NaviDisconnected { ticket: id.clone() });
+      let packet = ServerPacket::NaviDisconnected { ticket: id.clone() };
 
-      broadcast_to_area(&self.socket, &self.players, area, &buf);
+      broadcast_to_area(
+        &self.socket,
+        &mut self.players,
+        area,
+        Reliability::Reliable,
+        packet,
+      );
     }
   }
 
@@ -143,11 +180,17 @@ impl Net {
     if let Some(area) = self.areas.get_mut(&bot.area_id) {
       area.add_bot(bot.id.clone());
 
-      let buf = build_packet(ServerPacket::NaviConnected {
+      let packet = ServerPacket::NaviConnected {
         ticket: bot.id.clone(),
-      });
+      };
 
-      broadcast_to_area(&self.socket, &self.players, area, &buf);
+      broadcast_to_area(
+        &self.socket,
+        &mut self.players,
+        area,
+        Reliability::ReliableOrdered,
+        packet,
+      );
 
       self.bots.insert(bot.id.clone(), bot);
     }
@@ -167,15 +210,22 @@ impl Net {
       bot.y = y;
       bot.z = z;
 
-      let buf = build_packet(ServerPacket::NaviWalkTo {
+      let packet = ServerPacket::NaviWalkTo {
         ticket: id.clone(),
         x,
         y,
         z,
-      });
+      };
 
       let area = self.areas.get(&bot.area_id).unwrap();
-      broadcast_to_area(&self.socket, &self.players, area, &buf);
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.players,
+        area,
+        Reliability::UnreliableSequenced,
+        packet,
+      );
     }
   }
 
@@ -183,25 +233,39 @@ impl Net {
     if let Some(bot) = self.bots.get_mut(id) {
       bot.avatar_id = avatar_id;
 
-      let buf = build_packet(ServerPacket::NaviSetAvatar {
+      let packet = ServerPacket::NaviSetAvatar {
         ticket: id.clone(),
         avatar_id,
-      });
+      };
 
       let area = self.areas.get(&bot.area_id).unwrap();
-      broadcast_to_area(&self.socket, &self.players, area, &buf);
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.players,
+        area,
+        Reliability::ReliableOrdered,
+        packet,
+      );
     }
   }
 
   pub fn set_bot_emote(&mut self, id: &String, emote_id: u8) {
     if let Some(bot) = self.bots.get(id) {
-      let buf = build_packet(ServerPacket::NaviEmote {
+      let packet = ServerPacket::NaviEmote {
         ticket: id.clone(),
         emote_id,
-      });
+      };
 
       let area = self.areas.get(&bot.area_id).unwrap();
-      broadcast_to_area(&self.socket, &self.players, area, &buf);
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.players,
+        area,
+        Reliability::Reliable,
+        packet,
+      );
     }
   }
 
@@ -214,9 +278,15 @@ impl Net {
 
       area.remove_bot(&bot.id);
 
-      let buf = build_packet(ServerPacket::NaviDisconnected { ticket: id.clone() });
+      let packet = ServerPacket::NaviDisconnected { ticket: id.clone() };
 
-      broadcast_to_area(&self.socket, &self.players, area, &buf);
+      broadcast_to_area(
+        &self.socket,
+        &mut self.players,
+        area,
+        Reliability::Reliable,
+        packet,
+      );
     }
   }
 
@@ -225,27 +295,63 @@ impl Net {
       let map = area.get_map();
 
       if map.is_dirty() {
-        let buf = build_packet(ServerPacket::MapData {
+        let packet = ServerPacket::MapData {
           map_data: map.render(),
-        });
+        };
 
-        broadcast_to_area(&self.socket, &self.players, area, &buf);
+        broadcast_to_area(
+          &self.socket,
+          &mut self.players,
+          area,
+          Reliability::ReliableOrdered,
+          packet,
+        );
       }
     }
+  }
+
+  // needed for outside files to use Players' PacketShipper
+  // feels a bit hacky, as this is not used in this file at all
+  pub(crate) fn send_packet(
+    &mut self,
+    player_id: &String,
+    reliability: &Reliability,
+    packet: &ServerPacket,
+  ) -> std::io::Result<()> {
+    if let Some(player) = self.players.get_mut(player_id) {
+      player
+        .packet_shipper
+        .send(&self.socket, &reliability, packet)?;
+    }
+
+    Ok(())
+  }
+
+  pub(crate) fn resend_backed_up_packets(&mut self) -> Vec<std::net::SocketAddr> {
+    let mut disconnected_addresses = Vec::new();
+
+    for player in self.players.values_mut() {
+      if let Err(_) = player.packet_shipper.resend_backed_up_packets(&self.socket) {
+        disconnected_addresses.push(player.socket_address);
+      }
+    }
+
+    disconnected_addresses
   }
 }
 
 fn broadcast_to_area(
   socket: &UdpSocket,
-  players: &HashMap<String, Player>,
+  players: &mut HashMap<String, Player>,
   area: &Area,
-  buf: &[u8],
+  reliability: Reliability,
+  packet: ServerPacket,
 ) {
   for player_id in area.get_connected_players() {
-    let player = players.get(player_id).unwrap();
+    let player = players.get_mut(player_id).unwrap();
 
     if player.ready {
-      if let Err(err) = socket.send_to(buf, player.socket_address) {
+      if let Err(err) = player.packet_shipper.send(socket, &reliability, &packet) {
         println!("{:#}", err);
       }
     }

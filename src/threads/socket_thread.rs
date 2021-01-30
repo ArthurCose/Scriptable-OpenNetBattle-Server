@@ -13,17 +13,19 @@ pub fn create_socket_thread(tx: mpsc::Sender<ThreadMessage>, socket: UdpSocket, 
 
     match wrapped_packet {
       Ok((number_of_bytes, src_addr)) => {
-        let filled_buf = &mut buf[..number_of_bytes];
+        let filled_buf = &buf[..number_of_bytes];
 
         if log_packets {
           println!("Received packet from {}", src_addr);
         }
 
-        let wrapped_packet = parse_client_packet(&filled_buf);
-
-        if let Some(client_packet) = wrapped_packet {
-          tx.send(ThreadMessage::ClientPacket(src_addr, client_packet))
-            .unwrap();
+        if let Some((headers, packet)) = parse_client_packet(&filled_buf) {
+          tx.send(ThreadMessage::ClientPacket {
+            socket_address: src_addr,
+            headers,
+            packet,
+          })
+          .unwrap();
         } else {
           println!("Received unknown packet from {}", src_addr);
           println!("{:?}", filled_buf);

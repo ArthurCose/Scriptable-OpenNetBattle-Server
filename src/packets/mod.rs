@@ -1,4 +1,4 @@
-mod bytes;
+pub mod bytes;
 
 mod client_packets;
 pub use client_packets::*;
@@ -6,5 +6,13 @@ pub use client_packets::*;
 mod server_packets;
 pub use server_packets::*;
 
-pub(crate) const TILE_WIDTH: f64 = 62.0 + 2.5;
-pub(crate) const TILE_HEIGHT: f64 = 32.0 + 0.5;
+mod management;
+pub use management::*;
+
+pub struct PacketHeaders {
+  pub reliability: Reliability,
+  pub id: u64,
+}
+
+pub(super) const TILE_WIDTH: f64 = 62.0 + 2.5;
+pub(super) const TILE_HEIGHT: f64 = 32.0 + 0.5;

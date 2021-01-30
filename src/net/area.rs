@@ -30,11 +30,11 @@ impl Area {
     &self.connected_players
   }
 
-  pub(crate) fn add_player(&mut self, player_id: String) {
+  pub(super) fn add_player(&mut self, player_id: String) {
     self.connected_players.push(player_id);
   }
 
-  pub(crate) fn remove_player(&mut self, player_id: &String) {
+  pub(super) fn remove_player(&mut self, player_id: &String) {
     self
       .connected_players
       .iter()
@@ -46,11 +46,11 @@ impl Area {
     &self.connected_bots
   }
 
-  pub(crate) fn add_bot(&mut self, bot_id: String) {
+  pub(super) fn add_bot(&mut self, bot_id: String) {
     self.connected_bots.push(bot_id);
   }
 
-  pub(crate) fn remove_bot(&mut self, bot_id: &String) {
+  pub(super) fn remove_bot(&mut self, bot_id: &String) {
     self
       .connected_bots
       .iter()
