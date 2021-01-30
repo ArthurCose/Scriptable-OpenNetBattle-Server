@@ -1,3 +1,5 @@
+mod bytes;
+
 mod client_packets;
 pub use client_packets::*;
 

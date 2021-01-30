@@ -1,3 +1,4 @@
+use super::bytes::*;
 use super::{TILE_HEIGHT, TILE_WIDTH};
 
 pub enum ServerPacket {
@@ -75,20 +76,4 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
   }
 
   buf
-}
-
-fn write_u16(buf: &mut Vec<u8>, data: u16) {
-  use byteorder::{ByteOrder, LittleEndian};
-
-  let mut buf_64 = [0u8; 2];
-  LittleEndian::write_u16(&mut buf_64, data);
-  buf.extend(&buf_64);
-}
-
-fn write_f64(buf: &mut Vec<u8>, data: f64) {
-  use byteorder::{ByteOrder, LittleEndian};
-
-  let mut buf_64 = [0u8; 8];
-  LittleEndian::write_f64(&mut buf_64, data);
-  buf.extend(&buf_64);
 }

@@ -1,3 +1,4 @@
+use super::bytes::*;
 use super::{TILE_HEIGHT, TILE_WIDTH};
 
 #[derive(Debug)]
@@ -36,73 +37,4 @@ pub fn parse_client_packet(buf: &[u8]) -> Option<ClientPacket> {
     6 => Some(ClientPacket::Ping),
     _ => None,
   }
-}
-
-fn read_byte(buf: &mut &[u8]) -> Option<u8> {
-  if buf.len() == 0 {
-    return None;
-  }
-
-  let byte = buf[0];
-
-  *buf = &buf[1..];
-
-  Some(byte)
-}
-
-fn read_u16(buf: &mut &[u8]) -> Option<u16> {
-  use byteorder::{ByteOrder, LittleEndian};
-
-  if buf.len() < 2 {
-    *buf = &buf[buf.len()..];
-    return None;
-  }
-
-  let data = LittleEndian::read_u16(buf);
-
-  *buf = &buf[2..];
-
-  Some(data)
-}
-
-fn read_u64(buf: &mut &[u8]) -> Option<u64> {
-  use byteorder::{ByteOrder, LittleEndian};
-
-  if buf.len() < 8 {
-    *buf = &buf[buf.len()..];
-    return None;
-  }
-
-  let data = LittleEndian::read_u64(buf);
-
-  *buf = &buf[8..];
-
-  Some(data)
-}
-
-fn read_f64(buf: &mut &[u8]) -> Option<f64> {
-  use byteorder::{ByteOrder, LittleEndian};
-
-  if buf.len() < 8 {
-    *buf = &buf[buf.len()..];
-    return None;
-  }
-
-  let float = LittleEndian::read_f64(buf);
-
-  *buf = &buf[8..];
-
-  Some(float)
-}
-
-fn read_string(buf: &mut &[u8]) -> Option<String> {
-  let terminator_pos = buf.iter().position(|&b| b == 0);
-
-  terminator_pos.and_then(|index| {
-    let string_slice = std::str::from_utf8(&buf[0..index]).unwrap();
-
-    *buf = &buf[index + 1..];
-
-    Some(String::from(string_slice))
-  })
 }
