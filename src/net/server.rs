@@ -225,7 +225,7 @@ impl Server {
         }
         _ => {
           if self.log_packets {
-            println!("Received bad packet from {}", socket_address,);
+            println!("Received bad packet from {}", socket_address);
             println!("{:?}", client_packet);
             println!("Connected players: {:?}", self.player_id_map.keys());
           }
