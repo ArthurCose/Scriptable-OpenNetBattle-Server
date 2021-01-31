@@ -128,6 +128,10 @@ impl Server {
           self.socket.send_to(&buf, socket_address)?;
         }
         ClientPacket::Ack { reliability, id } => {
+          if self.log_packets {
+            println!("Received {:?} Ack from {}", reliability, socket_address);
+          }
+
           let player = self.net.get_player_mut(player_id).unwrap();
           player.packet_shipper.acknowledged(reliability, id);
         }
