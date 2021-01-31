@@ -57,23 +57,23 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     ServerPacket::Login { ticket, error } => {
       write_u16(&mut buf, 2);
       write_u16(&mut buf, *error);
-      buf.extend(ticket.as_bytes());
+      write_string(&mut buf, ticket);
     }
     ServerPacket::MapData { map_data } => {
       write_u16(&mut buf, 3);
-      buf.extend(map_data.as_bytes());
+      write_string(&mut buf, map_data);
     }
     ServerPacket::NaviConnected { ticket } => {
       write_u16(&mut buf, 4);
-      buf.extend(ticket.as_bytes());
+      write_string(&mut buf, ticket);
     }
     ServerPacket::NaviDisconnected { ticket } => {
       write_u16(&mut buf, 5);
-      buf.extend(ticket.as_bytes());
+      write_string(&mut buf, ticket);
     }
     ServerPacket::NaviWalkTo { ticket, x, y, z } => {
       write_u16(&mut buf, 6);
-      buf.extend(ticket.as_bytes());
+      write_string(&mut buf, ticket);
       write_f64(&mut buf, f64::floor(x * TILE_WIDTH / 2.0));
       write_f64(&mut buf, f64::floor(y * TILE_HEIGHT));
       write_f64(&mut buf, *z);
@@ -81,12 +81,12 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     ServerPacket::NaviSetAvatar { ticket, avatar_id } => {
       write_u16(&mut buf, 7);
       write_u16(&mut buf, *avatar_id);
-      buf.extend(ticket.as_bytes());
+      write_string(&mut buf, ticket);
     }
     ServerPacket::NaviEmote { ticket, emote_id } => {
       write_u16(&mut buf, 8);
       buf.push(*emote_id);
-      buf.extend(ticket.as_bytes());
+      write_string(&mut buf, ticket);
     }
   }
 

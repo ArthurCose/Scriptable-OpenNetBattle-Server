@@ -94,3 +94,9 @@ pub fn write_f64(buf: &mut Vec<u8>, data: f64) {
   LittleEndian::write_f64(&mut buf_64, data);
   buf.extend(&buf_64);
 }
+
+pub fn write_string(buf: &mut Vec<u8>, data: &String) {
+  // todo: endianness may be an issue
+  buf.extend(data.as_bytes());
+  buf.push(0);
+}
