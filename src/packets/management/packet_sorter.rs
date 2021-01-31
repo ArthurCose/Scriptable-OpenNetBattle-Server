@@ -78,13 +78,14 @@ impl PacketSorter {
         if headers.id == self.next_reliable_ordered {
           let mut i = 0;
 
-          for backed_up_packet in &self.backed_up_ordered_packets {
-            self.next_reliable_ordered += 1;
+          self.next_reliable_ordered += 1;
 
+          for backed_up_packet in &self.backed_up_ordered_packets {
             if backed_up_packet.id != self.next_reliable_ordered {
               break;
             }
 
+            self.next_reliable_ordered += 1;
             i += 1;
           }
 
