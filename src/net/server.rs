@@ -71,7 +71,21 @@ impl Server {
             plugin.tick(&mut self.net, elapsed_time.as_secs_f64());
           }
 
-          for socket_address in self.net.resend_backed_up_packets() {
+          // resend pending packets, kick anyone who had errors
+          let mut kick_list = self.net.resend_backed_up_packets();
+
+          // kick afk players
+          let max_silence = std::time::Duration::from_secs(5);
+
+          for (socket_address, packet_sorter) in &mut self.packet_sorter_map {
+            let last_message = packet_sorter.get_last_message_time();
+
+            if time.elapsed() - last_message.elapsed() > max_silence {
+              kick_list.push(socket_address.clone())
+            }
+          }
+
+          for socket_address in kick_list {
             self.disconnect_player(&socket_address);
           }
         }

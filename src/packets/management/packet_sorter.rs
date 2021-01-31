@@ -14,6 +14,7 @@ pub struct PacketSorter {
   next_reliable_ordered: u64,
   missing_reliable: Vec<u64>,
   backed_up_ordered_packets: Vec<BackedUpPacket>,
+  last_message_time: std::time::Instant,
 }
 
 impl PacketSorter {
@@ -25,7 +26,12 @@ impl PacketSorter {
       next_reliable_ordered: 0,
       missing_reliable: Vec::new(),
       backed_up_ordered_packets: Vec::new(),
+      last_message_time: std::time::Instant::now(),
     }
+  }
+
+  pub fn get_last_message_time(&self) -> &std::time::Instant {
+    &self.last_message_time
   }
 
   pub fn sort_packet(
@@ -34,6 +40,8 @@ impl PacketSorter {
     headers: PacketHeaders,
     packet: ClientPacket,
   ) -> std::io::Result<Vec<ClientPacket>> {
+    self.last_message_time = std::time::Instant::now();
+
     let packets = match headers.reliability {
       Reliability::Unreliable => vec![packet],
       Reliability::UnreliableSequenced => {
