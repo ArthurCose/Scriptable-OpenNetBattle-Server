@@ -96,7 +96,7 @@ impl PacketSorter {
           let mut packets = vec![packet];
           packets.extend(backed_up.into_iter().map(|bp| bp.packet));
           packets
-        } else if headers.id > self.next_reliable {
+        } else if headers.id > self.next_reliable_ordered {
           // sorted insert
           let mut i = 0;
           let mut should_insert = true;
