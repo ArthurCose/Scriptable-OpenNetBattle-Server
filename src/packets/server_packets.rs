@@ -72,19 +72,19 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_string(&mut buf, ticket);
     }
     ServerPacket::NaviWalkTo { ticket, x, y, z } => {
-      write_u16(&mut buf, 6);
+      write_u16(&mut buf, 7);
       write_string(&mut buf, ticket);
       write_f64(&mut buf, f64::floor(x * TILE_WIDTH / 2.0));
       write_f64(&mut buf, f64::floor(y * TILE_HEIGHT));
       write_f64(&mut buf, *z);
     }
     ServerPacket::NaviSetAvatar { ticket, avatar_id } => {
-      write_u16(&mut buf, 7);
+      write_u16(&mut buf, 8);
       write_u16(&mut buf, *avatar_id);
       write_string(&mut buf, ticket);
     }
     ServerPacket::NaviEmote { ticket, emote_id } => {
-      write_u16(&mut buf, 8);
+      write_u16(&mut buf, 9);
       buf.push(*emote_id);
       write_string(&mut buf, ticket);
     }
