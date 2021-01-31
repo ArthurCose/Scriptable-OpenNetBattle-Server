@@ -129,7 +129,10 @@ impl Server {
         }
         ClientPacket::Ack { reliability, id } => {
           if self.log_packets {
-            println!("Received {:?} Ack from {}", reliability, socket_address);
+            println!(
+              "Received Ack for {:?} {} from {}",
+              reliability, id, socket_address
+            );
           }
 
           let player = self.net.get_player_mut(player_id).unwrap();
