@@ -85,6 +85,7 @@ impl Server {
             }
           }
 
+          // actually kick players
           for socket_address in kick_list {
             self.disconnect_player(&socket_address);
           }
