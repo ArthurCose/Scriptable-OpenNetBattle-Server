@@ -80,7 +80,7 @@ impl Server {
           for (socket_address, packet_sorter) in &mut self.packet_sorter_map {
             let last_message = packet_sorter.get_last_message_time();
 
-            if time.elapsed() - last_message.elapsed() > max_silence {
+            if last_message.elapsed() > max_silence {
               kick_list.push(socket_address.clone())
             }
           }
