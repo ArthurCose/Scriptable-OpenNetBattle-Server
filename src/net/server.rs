@@ -86,7 +86,7 @@ impl Server {
               let _ = self.handle_packet(socket_address, packet);
             }
             _ => {
-              if self.packet_sorter_map.contains_key(&socket_address) {
+              if !self.packet_sorter_map.contains_key(&socket_address) {
                 let packet_sorter = PacketSorter::new(socket_address);
                 self.packet_sorter_map.insert(socket_address, packet_sorter);
               }
