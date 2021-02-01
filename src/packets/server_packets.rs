@@ -23,12 +23,12 @@ pub enum ServerPacket {
     z: f32,
     warp_in: bool,
   },
+  NaviDisconnected {
+    ticket: String,
+  },
   NaviSetName {
     ticket: String,
     name: String,
-  },
-  NaviDisconnected {
-    ticket: String,
   },
   NaviWalkTo {
     ticket: String,
