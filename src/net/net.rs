@@ -133,30 +133,31 @@ impl Net {
     let area = self.areas.get_mut(&player.area_id).unwrap();
 
     area.add_player(player.id.clone());
-
-    let packet = ServerPacket::NaviConnected {
-      ticket: player.id.clone(),
-      name: player.name.clone(),
-      x: player.x,
-      y: player.y,
-      z: player.z,
-      warp_in: true,
-    };
-
     self.players.insert(player.id.clone(), player);
-
-    broadcast_to_area(
-      &self.socket,
-      &mut self.players,
-      area,
-      Reliability::ReliableOrdered,
-      packet,
-    );
   }
 
   pub(super) fn mark_player_ready(&mut self, id: &String) {
     if let Some(player) = self.players.get_mut(id) {
       player.ready = true;
+
+      let area = self.areas.get(&player.area_id).unwrap();
+
+      let packet = ServerPacket::NaviConnected {
+        ticket: player.id.clone(),
+        name: player.name.clone(),
+        x: player.x,
+        y: player.y,
+        z: player.z,
+        warp_in: true,
+      };
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.players,
+        area,
+        Reliability::ReliableOrdered,
+        packet,
+      );
     }
   }
 
