@@ -4,6 +4,7 @@ pub struct Player {
   pub socket_address: std::net::SocketAddr,
   pub packet_shipper: PacketShipper,
   pub id: String,
+  pub name: String,
   pub area_id: String,
   pub avatar_id: u16,
   pub x: f32,

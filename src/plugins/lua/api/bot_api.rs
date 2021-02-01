@@ -28,12 +28,22 @@ pub fn add_bot_api<'a, 'b>(
   api_table.set(
     "create_bot",
     scope.create_function(
-      move |_, (id, area_id, avatar_id, x, y, z): (String, String, u16, f32, f32, f32)| {
+      move |_,
+            (id, name, area_id, avatar_id, x, y, z): (
+        String,
+        String,
+        String,
+        u16,
+        f32,
+        f32,
+        f32,
+      )| {
         let mut net = net_ref.borrow_mut();
 
         if let Some(_) = net.get_area(&area_id) {
           let bot = Bot {
             id,
+            name,
             area_id,
             avatar_id,
             x,

@@ -16,6 +16,15 @@ pub enum ServerPacket {
   },
   NaviConnected {
     ticket: String,
+    name: String,
+    x: f32,
+    y: f32,
+    z: f32,
+    warp_in: bool,
+  },
+  NaviSetName {
+    ticket: String,
+    name: String,
   },
   NaviDisconnected {
     ticket: String,
@@ -63,13 +72,30 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_u16(&mut buf, 3);
       write_string(&mut buf, map_data);
     }
-    ServerPacket::NaviConnected { ticket } => {
+    ServerPacket::NaviConnected {
+      ticket,
+      name,
+      x,
+      y,
+      z,
+      warp_in,
+    } => {
       write_u16(&mut buf, 4);
       write_string(&mut buf, ticket);
+      write_string(&mut buf, ticket);
+      write_f32(&mut buf, f32::floor(x * TILE_WIDTH / 2.0));
+      write_f32(&mut buf, f32::floor(y * TILE_HEIGHT));
+      write_f32(&mut buf, *z);
+      write_bool(&mut buf, *warp_in);
     }
     ServerPacket::NaviDisconnected { ticket } => {
       write_u16(&mut buf, 5);
       write_string(&mut buf, ticket);
+    }
+    ServerPacket::NaviSetName { ticket, name } => {
+      write_u16(&mut buf, 6);
+      write_string(&mut buf, ticket);
+      write_string(&mut buf, name);
     }
     ServerPacket::NaviWalkTo { ticket, x, y, z } => {
       write_u16(&mut buf, 7);

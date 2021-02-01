@@ -155,7 +155,10 @@ impl Server {
           let player = self.net.get_player_mut(player_id).unwrap();
           player.packet_shipper.acknowledged(reliability, id);
         }
-        ClientPacket::Login { username: _ } => {
+        ClientPacket::Login {
+          username: _,
+          password: _,
+        } => {
           if self.log_packets {
             println!("Received second Login packet from {}", socket_address);
           }
@@ -240,12 +243,15 @@ impl Server {
           let buf = build_unreliable_packet(&ServerPacket::Pong);
           self.socket.send_to(&buf, socket_address)?;
         }
-        ClientPacket::Login { username: _ } => {
+        ClientPacket::Login {
+          username,
+          password: _,
+        } => {
           if self.log_packets {
             println!("Received Login packet from {}", socket_address);
           }
 
-          self.add_player(socket_address)?;
+          self.add_player(socket_address, username)?;
         }
         _ => {
           if self.log_packets {
@@ -260,13 +266,18 @@ impl Server {
     Ok(())
   }
 
-  fn add_player(&mut self, socket_address: std::net::SocketAddr) -> std::io::Result<()> {
+  fn add_player(
+    &mut self,
+    socket_address: std::net::SocketAddr,
+    name: String,
+  ) -> std::io::Result<()> {
     use uuid::Uuid;
 
     let mut player = Player {
       socket_address,
       packet_shipper: PacketShipper::new(socket_address),
       id: Uuid::new_v4().to_string(),
+      name,
       area_id: self.net.get_default_area_id().clone(),
       avatar_id: 0,
       x: 0.0,
@@ -303,6 +314,11 @@ impl Server {
       for other_player in self.net.get_players() {
         packets.push(ServerPacket::NaviConnected {
           ticket: other_player.id.clone(),
+          name: other_player.name.clone(),
+          x: other_player.x,
+          y: other_player.y,
+          z: other_player.z,
+          warp_in: false,
         });
 
         packets.push(ServerPacket::NaviSetAvatar {
@@ -314,6 +330,11 @@ impl Server {
       for bot in self.net.get_bots() {
         packets.push(ServerPacket::NaviConnected {
           ticket: bot.id.clone(),
+          name: bot.name.clone(),
+          x: bot.x,
+          y: bot.y,
+          z: bot.z,
+          warp_in: false,
         });
 
         packets.push(ServerPacket::NaviSetAvatar {

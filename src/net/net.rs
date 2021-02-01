@@ -136,6 +136,11 @@ impl Net {
 
     let packet = ServerPacket::NaviConnected {
       ticket: player.id.clone(),
+      name: player.name.clone(),
+      x: player.x,
+      y: player.y,
+      z: player.z,
+      warp_in: true,
     };
 
     self.players.insert(player.id.clone(), player);
@@ -182,6 +187,11 @@ impl Net {
 
       let packet = ServerPacket::NaviConnected {
         ticket: bot.id.clone(),
+        name: bot.name.clone(),
+        x: bot.x,
+        y: bot.y,
+        z: bot.z,
+        warp_in: true,
       };
 
       broadcast_to_area(

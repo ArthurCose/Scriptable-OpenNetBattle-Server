@@ -6,7 +6,7 @@ use super::{PacketHeaders, TILE_HEIGHT, TILE_WIDTH};
 pub enum ClientPacket {
   Ping,
   Ack { reliability: Reliability, id: u64 },
-  Login { username: String },
+  Login { username: String, password: String },
   Logout,
   LoadedMap { map_id: u64 },
   Position { x: f32, y: f32, z: f32 },
@@ -43,6 +43,7 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
     }),
     2 => Some(ClientPacket::Login {
       username: read_string(work_buf)?,
+      password: read_string(work_buf)?,
     }),
     3 => Some(ClientPacket::Logout),
     4 => Some(ClientPacket::LoadedMap {

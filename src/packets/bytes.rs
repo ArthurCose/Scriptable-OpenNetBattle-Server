@@ -71,6 +71,10 @@ pub fn read_string(buf: &mut &[u8]) -> Option<String> {
 
 // writers
 
+pub fn write_bool(buf: &mut Vec<u8>, data: bool) {
+  buf.push(if data { 1 } else { 0 });
+}
+
 pub fn write_u16(buf: &mut Vec<u8>, data: u16) {
   use byteorder::{ByteOrder, LittleEndian};
 

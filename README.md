@@ -49,7 +49,7 @@ Net.set_tile(area_id, x, y, id)
 
 ```lua
 Net.list_bots(area_id)
-Net.create_bot(id, area_id, avatar_id, x, y, z)
+Net.create_bot(id, name, area_id, avatar_id, x, y, z)
 Net.is_bot(id)
 Net.remove_bot(id)
 Net.get_bot_area(id)
