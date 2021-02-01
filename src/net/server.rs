@@ -3,7 +3,7 @@ use crate::net::Player;
 use crate::packets::{
   build_unreliable_packet, ClientPacket, PacketShipper, PacketSorter, Reliability, ServerPacket,
 };
-use crate::plugins::{LuaPluginInterface, PluginInterface};
+use crate::plugins::PluginInterface;
 use crate::threads::{create_clock_thread, create_socket_thread, ThreadMessage};
 use std::collections::HashMap;
 use std::net::UdpSocket;
@@ -35,10 +35,14 @@ impl Server {
       player_id_map: HashMap::new(),
       packet_sorter_map: HashMap::new(),
       net: Net::new(rc_socket.clone()),
-      plugin_interfaces: vec![Box::new(LuaPluginInterface::new())],
+      plugin_interfaces: Vec::new(),
       socket: rc_socket,
       log_packets: false,
     }
+  }
+
+  pub fn add_plugin_interface(&mut self, plugin_interface: Box<dyn PluginInterface>) {
+    self.plugin_interfaces.push(plugin_interface);
   }
 
   pub fn start(&mut self) -> Result<(), Box<dyn std::error::Error>> {
