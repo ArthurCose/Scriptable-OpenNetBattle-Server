@@ -9,8 +9,6 @@ use std::collections::HashMap;
 use std::net::UdpSocket;
 use std::rc::Rc;
 
-const OBN_PORT: usize = 8765;
-
 pub struct Server {
   player_id_map: HashMap<std::net::SocketAddr, String>,
   packet_sorter_map: HashMap<std::net::SocketAddr, PacketSorter>,
@@ -21,12 +19,12 @@ pub struct Server {
 }
 
 impl Server {
-  pub fn new() -> Server {
-    let addr = format!("0.0.0.0:{}", OBN_PORT);
+  pub fn new(port: u16) -> Server {
+    let addr = format!("0.0.0.0:{}", port);
     let socket = UdpSocket::bind(addr).expect("Couldn't bind to address");
 
     match socket.take_error() {
-      Ok(None) => println!("Server listening on: {}", OBN_PORT),
+      Ok(None) => println!("Server listening on: {}", port),
       Ok(Some(err)) => panic!("UdpSocket error: {:?}", err),
       Err(err) => panic!("UdpSocket.take_error failed: {:?}", err),
     }

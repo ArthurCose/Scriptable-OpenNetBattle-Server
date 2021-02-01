@@ -6,7 +6,7 @@ mod threads;
 use net::Server;
 
 fn main() {
-    let mut server = Server::new();
+    let mut server = Server::new(8765);
 
     if let Err(err) = server.start() {
         panic!("{}", err);
