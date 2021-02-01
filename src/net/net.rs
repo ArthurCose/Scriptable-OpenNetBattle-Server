@@ -70,7 +70,7 @@ impl Net {
       player.y = y;
       player.z = z;
 
-      let packet = ServerPacket::NaviWalkTo {
+      let packet = ServerPacket::NaviMove {
         ticket: id.clone(),
         x,
         y,
@@ -221,7 +221,7 @@ impl Net {
       bot.y = y;
       bot.z = z;
 
-      let packet = ServerPacket::NaviWalkTo {
+      let packet = ServerPacket::NaviMove {
         ticket: id.clone(),
         x,
         y,

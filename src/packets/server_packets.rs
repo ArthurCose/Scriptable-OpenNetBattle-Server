@@ -30,7 +30,7 @@ pub enum ServerPacket {
     ticket: String,
     name: String,
   },
-  NaviWalkTo {
+  NaviMove {
     ticket: String,
     x: f32,
     y: f32,
@@ -99,7 +99,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_string(&mut buf, ticket);
       write_string(&mut buf, name);
     }
-    ServerPacket::NaviWalkTo { ticket, x, y, z } => {
+    ServerPacket::NaviMove { ticket, x, y, z } => {
       write_u16(&mut buf, 7);
       write_string(&mut buf, ticket);
       write_f32(&mut buf, f32::floor(x * TILE_WIDTH / 2.0));
