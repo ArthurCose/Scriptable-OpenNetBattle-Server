@@ -22,7 +22,7 @@ impl Area {
     &self.id
   }
 
-  pub fn get_map(&mut self) -> &mut Map {
+  pub fn get_map_mut(&mut self) -> &mut Map {
     &mut self.map
   }
 

@@ -297,7 +297,7 @@ impl Net {
 
   pub(super) fn broadcast_map_changes(&mut self) {
     for area in self.areas.values_mut() {
-      let map = area.get_map();
+      let map = area.get_map_mut();
 
       if map.is_dirty() {
         let packet = ServerPacket::MapData {

@@ -265,7 +265,7 @@ impl Server {
     let area = self.net.get_area_mut(area_id).unwrap();
 
     packets.push(ServerPacket::MapData {
-      map_data: area.get_map().render(),
+      map_data: area.get_map_mut().render(),
     });
 
     // get an immutable reference to area
