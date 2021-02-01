@@ -1,6 +1,9 @@
 use super::bytes::*;
 use super::{TILE_HEIGHT, TILE_WIDTH};
 
+const VERSION_ID: &str = "https://github.com/ArthurCose/Scriptable-OpenNetBattle-Server";
+const VERSION_ITERATION: u64 = 0;
+
 pub enum ServerPacket {
   Pong,
   Ack {
@@ -56,6 +59,8 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
   match packet {
     ServerPacket::Pong => {
       write_u16(&mut buf, 0);
+      write_str(&mut buf, VERSION_ID);
+      write_u64(&mut buf, VERSION_ITERATION);
     }
     ServerPacket::Ack { reliability, id } => {
       write_u16(&mut buf, 1);

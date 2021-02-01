@@ -99,6 +99,11 @@ pub fn write_f32(buf: &mut Vec<u8>, data: f32) {
   buf.extend(&buf_32);
 }
 
+pub fn write_str(buf: &mut Vec<u8>, data: &str) {
+  buf.extend(data.as_bytes());
+  buf.push(0);
+}
+
 pub fn write_string(buf: &mut Vec<u8>, data: &String) {
   // todo: endianness may be an issue
   buf.extend(data.as_bytes());
