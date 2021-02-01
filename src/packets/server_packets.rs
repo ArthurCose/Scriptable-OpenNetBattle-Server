@@ -22,9 +22,9 @@ pub enum ServerPacket {
   },
   NaviWalkTo {
     ticket: String,
-    x: f64,
-    y: f64,
-    z: f64,
+    x: f32,
+    y: f32,
+    z: f32,
   },
   NaviSetAvatar {
     ticket: String,
@@ -74,9 +74,9 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     ServerPacket::NaviWalkTo { ticket, x, y, z } => {
       write_u16(&mut buf, 7);
       write_string(&mut buf, ticket);
-      write_f64(&mut buf, f64::floor(x * TILE_WIDTH / 2.0));
-      write_f64(&mut buf, f64::floor(y * TILE_HEIGHT));
-      write_f64(&mut buf, *z);
+      write_f32(&mut buf, f32::floor(x * TILE_WIDTH / 2.0));
+      write_f32(&mut buf, f32::floor(y * TILE_HEIGHT));
+      write_f32(&mut buf, *z);
     }
     ServerPacket::NaviSetAvatar { ticket, avatar_id } => {
       write_u16(&mut buf, 8);

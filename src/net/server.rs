@@ -70,7 +70,7 @@ impl Server {
           time = Instant::now();
 
           for plugin in &mut self.plugin_interfaces {
-            plugin.tick(&mut self.net, elapsed_time.as_secs_f64());
+            plugin.tick(&mut self.net, elapsed_time.as_secs_f32());
           }
 
           // resend pending packets, kick anyone who had errors

@@ -64,7 +64,7 @@ impl Net {
     self.players.values()
   }
 
-  pub fn move_player(&mut self, id: &String, x: f64, y: f64, z: f64) {
+  pub fn move_player(&mut self, id: &String, x: f32, y: f32, z: f32) {
     if let Some(player) = self.players.get_mut(id) {
       player.x = x;
       player.y = y;
@@ -204,7 +204,7 @@ impl Net {
     self.bots.values()
   }
 
-  pub fn move_bot(&mut self, id: &String, x: f64, y: f64, z: f64) {
+  pub fn move_bot(&mut self, id: &String, x: f32, y: f32, z: f32) {
     if let Some(bot) = self.bots.get_mut(id) {
       bot.x = x;
       bot.y = y;

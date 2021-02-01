@@ -158,7 +158,7 @@ impl PluginInterface for LuaPluginInterface {
     }
   }
 
-  fn tick(&mut self, net: &mut Net, delta_time: f64) {
+  fn tick(&mut self, net: &mut Net, delta_time: f32) {
     create_event_handler!(self, net, "", "tick", delta_time);
   }
 
@@ -170,7 +170,7 @@ impl PluginInterface for LuaPluginInterface {
     create_event_handler!(self, net, "handle_", "player_disconnect", player_id.clone());
   }
 
-  fn handle_player_move(&mut self, net: &mut Net, player_id: &String, x: f64, y: f64, z: f64) {
+  fn handle_player_move(&mut self, net: &mut Net, player_id: &String, x: f32, y: f32, z: f32) {
     create_event_handler!(
       self,
       net,

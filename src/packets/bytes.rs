@@ -42,17 +42,17 @@ pub fn read_u64(buf: &mut &[u8]) -> Option<u64> {
   Some(data)
 }
 
-pub fn read_f64(buf: &mut &[u8]) -> Option<f64> {
+pub fn read_f32(buf: &mut &[u8]) -> Option<f32> {
   use byteorder::{ByteOrder, LittleEndian};
 
-  if buf.len() < 8 {
+  if buf.len() < 4 {
     *buf = &buf[buf.len()..];
     return None;
   }
 
-  let float = LittleEndian::read_f64(buf);
+  let float = LittleEndian::read_f32(buf);
 
-  *buf = &buf[8..];
+  *buf = &buf[4..];
 
   Some(float)
 }
@@ -87,12 +87,12 @@ pub fn write_u64(buf: &mut Vec<u8>, data: u64) {
   buf.extend(&buf_64);
 }
 
-pub fn write_f64(buf: &mut Vec<u8>, data: f64) {
+pub fn write_f32(buf: &mut Vec<u8>, data: f32) {
   use byteorder::{ByteOrder, LittleEndian};
 
-  let mut buf_64 = [0u8; 8];
-  LittleEndian::write_f64(&mut buf_64, data);
-  buf.extend(&buf_64);
+  let mut buf_32 = [0u8; 4];
+  LittleEndian::write_f32(&mut buf_32, data);
+  buf.extend(&buf_32);
 }
 
 pub fn write_string(buf: &mut Vec<u8>, data: &String) {

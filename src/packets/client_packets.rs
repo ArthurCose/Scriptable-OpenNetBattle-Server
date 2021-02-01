@@ -9,7 +9,7 @@ pub enum ClientPacket {
   Login { username: String },
   Logout,
   LoadedMap { map_id: u64 },
-  Position { x: f64, y: f64, z: f64 },
+  Position { x: f32, y: f32, z: f32 },
   AvatarChange { form_id: u16 },
   Emote { emote_id: u8 },
 }
@@ -49,9 +49,9 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
       map_id: read_u64(work_buf)?,
     }),
     5 => Some(ClientPacket::Position {
-      x: read_f64(work_buf)? / TILE_WIDTH * 2.0,
-      y: read_f64(work_buf)? / TILE_HEIGHT,
-      z: read_f64(work_buf)?,
+      x: read_f32(work_buf)? / TILE_WIDTH * 2.0,
+      y: read_f32(work_buf)? / TILE_HEIGHT,
+      z: read_f32(work_buf)?,
     }),
     6 => Some(ClientPacket::AvatarChange {
       form_id: read_u16(work_buf)?,
