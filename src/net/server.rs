@@ -266,8 +266,8 @@ impl Server {
     let mut player = Player {
       socket_address,
       packet_shipper: PacketShipper::new(socket_address),
-      area_id: self.net.get_default_area_id().clone(),
       id: Uuid::new_v4().to_string(),
+      area_id: self.net.get_default_area_id().clone(),
       avatar_id: 0,
       x: 0.0,
       y: 0.0,
