@@ -320,23 +320,6 @@ impl Net {
     }
   }
 
-  // needed for outside files to use Players' PacketShipper
-  // feels a bit hacky, as this is not used in this file at all
-  pub(super) fn send_packet(
-    &mut self,
-    player_id: &String,
-    reliability: &Reliability,
-    packet: &ServerPacket,
-  ) -> std::io::Result<()> {
-    if let Some(player) = self.players.get_mut(player_id) {
-      player
-        .packet_shipper
-        .send(&self.socket, &reliability, packet)?;
-    }
-
-    Ok(())
-  }
-
   pub(super) fn resend_backed_up_packets(&mut self) -> Vec<std::net::SocketAddr> {
     let mut disconnected_addresses = Vec::new();
 

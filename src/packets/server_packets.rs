@@ -9,7 +9,6 @@ pub enum ServerPacket {
   },
   Login {
     ticket: String,
-    error: u16,
   },
   MapData {
     map_data: String,
@@ -63,9 +62,8 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       buf.push(*reliability);
       write_u64(&mut buf, *id);
     }
-    ServerPacket::Login { ticket, error } => {
+    ServerPacket::Login { ticket } => {
       write_u16(&mut buf, 2);
-      write_u16(&mut buf, *error);
       write_string(&mut buf, ticket);
     }
     ServerPacket::MapData { map_data } => {

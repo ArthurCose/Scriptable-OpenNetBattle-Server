@@ -158,19 +158,11 @@ impl Server {
         ClientPacket::Login {
           username: _,
           password: _,
+          form_id: _,
         } => {
           if self.log_packets {
-            println!("Received second Login packet from {}", socket_address);
+            println!("Received bad Login packet from {}", socket_address);
           }
-
-          let packet = ServerPacket::Login {
-            ticket: player_id.clone(),
-            error: 0,
-          };
-
-          self
-            .net
-            .send_packet(player_id, &Reliability::Reliable, &packet)?;
         }
         ClientPacket::Logout => {
           if self.log_packets {
@@ -190,25 +182,12 @@ impl Server {
 
           self.net.move_player(player_id, x, y, z);
         }
-        ClientPacket::LoadedMap { map_id: _ } => {
+        ClientPacket::Ready => {
           if self.log_packets {
-            println!("Received Map packet from {}", socket_address);
+            println!("Received Ready packet from {}", socket_address);
           }
 
-          let player = self.net.get_player(player_id).unwrap();
-          let area_id = &player.area_id.clone();
-          let area = self.net.get_area(area_id).unwrap();
-
-          // map signal
-          let packet = ServerPacket::MapData {
-            map_data: area.get_map().render(),
-          };
-
-          self
-            .net
-            .send_packet(player_id, &Reliability::ReliableOrdered, &packet)?;
-
-          self.connect_player(&socket_address)?;
+          self.net.mark_player_ready(player_id);
         }
         ClientPacket::AvatarChange { form_id } => {
           if self.log_packets {
@@ -246,12 +225,13 @@ impl Server {
         ClientPacket::Login {
           username,
           password: _,
+          form_id,
         } => {
           if self.log_packets {
             println!("Received Login packet from {}", socket_address);
           }
 
-          self.add_player(socket_address, username)?;
+          self.connect_player(&socket_address, username, form_id)?;
         }
         _ => {
           if self.log_packets {
@@ -266,20 +246,93 @@ impl Server {
     Ok(())
   }
 
+  fn connect_player(
+    &mut self,
+    socket_address: &std::net::SocketAddr,
+    name: String,
+    form_id: u16,
+  ) -> std::io::Result<()> {
+    let mut packets = vec![];
+
+    let player_id = &self.add_player(socket_address.clone(), name, form_id)?;
+
+    for plugin in &mut self.plugin_interfaces {
+      plugin.handle_player_connect(&mut self.net, player_id);
+    }
+
+    let player = self.net.get_player(player_id).unwrap();
+    let area_id = &player.area_id.clone();
+    let area = self.net.get_area(area_id).unwrap();
+
+    packets.push(ServerPacket::MapData {
+      map_data: area.get_map().render(),
+    });
+
+    for other_player in self.net.get_players() {
+      packets.push(ServerPacket::NaviConnected {
+        ticket: other_player.id.clone(),
+        name: other_player.name.clone(),
+        x: other_player.x,
+        y: other_player.y,
+        z: other_player.z,
+        warp_in: false,
+      });
+
+      packets.push(ServerPacket::NaviSetAvatar {
+        ticket: other_player.id.clone(),
+        avatar_id: other_player.avatar_id,
+      });
+    }
+
+    for bot in self.net.get_bots() {
+      packets.push(ServerPacket::NaviConnected {
+        ticket: bot.id.clone(),
+        name: bot.name.clone(),
+        x: bot.x,
+        y: bot.y,
+        z: bot.z,
+        warp_in: false,
+      });
+
+      packets.push(ServerPacket::NaviSetAvatar {
+        ticket: bot.id.clone(),
+        avatar_id: bot.avatar_id,
+      });
+    }
+
+    // todo: send position
+    packets.push(ServerPacket::Login {
+      ticket: player_id.clone(),
+    });
+
+    let player = self.net.get_player_mut(player_id).unwrap();
+
+    for packet in packets {
+      player
+        .packet_shipper
+        .send(&self.socket, &Reliability::ReliableOrdered, &packet)?;
+    }
+
+    Ok(())
+  }
+
   fn add_player(
     &mut self,
     socket_address: std::net::SocketAddr,
     name: String,
-  ) -> std::io::Result<()> {
+    form_id: u16,
+  ) -> std::io::Result<String> {
     use uuid::Uuid;
+
+    let id = Uuid::new_v4().to_string();
 
     let mut player = Player {
       socket_address,
       packet_shipper: PacketShipper::new(socket_address),
-      id: Uuid::new_v4().to_string(),
+      id: id.clone(),
       name,
       area_id: self.net.get_default_area_id().clone(),
-      avatar_id: 0,
+      avatar_id: form_id,
       x: 0.0,
       y: 0.0,
       z: 0.0,
@@ -288,7 +341,6 @@ impl Server {
 
     let packet = ServerPacket::Login {
       ticket: player.id.clone(),
-      error: 0,
     };
 
     player
@@ -298,61 +350,7 @@ impl Server {
     self.player_id_map.insert(socket_address, player.id.clone());
     self.net.add_player(player);
 
-    Ok(())
-  }
-
-  fn connect_player(&mut self, socket_address: &std::net::SocketAddr) -> std::io::Result<()> {
-    if let Some(player_id) = self.player_id_map.get_mut(&socket_address) {
-      self.net.mark_player_ready(player_id);
-
-      for plugin in &mut self.plugin_interfaces {
-        plugin.handle_player_connect(&mut self.net, player_id);
-      }
-
-      let mut packets = vec![];
-
-      for other_player in self.net.get_players() {
-        packets.push(ServerPacket::NaviConnected {
-          ticket: other_player.id.clone(),
-          name: other_player.name.clone(),
-          x: other_player.x,
-          y: other_player.y,
-          z: other_player.z,
-          warp_in: false,
-        });
-
-        packets.push(ServerPacket::NaviSetAvatar {
-          ticket: other_player.id.clone(),
-          avatar_id: other_player.avatar_id,
-        });
-      }
-
-      for bot in self.net.get_bots() {
-        packets.push(ServerPacket::NaviConnected {
-          ticket: bot.id.clone(),
-          name: bot.name.clone(),
-          x: bot.x,
-          y: bot.y,
-          z: bot.z,
-          warp_in: false,
-        });
-
-        packets.push(ServerPacket::NaviSetAvatar {
-          ticket: bot.id.clone(),
-          avatar_id: bot.avatar_id,
-        });
-      }
-
-      let player = self.net.get_player_mut(player_id).unwrap();
-
-      for packet in packets {
-        player
-          .packet_shipper
-          .send(&self.socket, &Reliability::ReliableOrdered, &packet)?;
-      }
-    }
-
-    Ok(())
+    Ok(id)
   }
 
   fn disconnect_player(&mut self, socket_address: &std::net::SocketAddr) {
