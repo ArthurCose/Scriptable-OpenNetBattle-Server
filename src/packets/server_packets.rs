@@ -1,8 +1,7 @@
-use super::bytes::*;
-use super::{TILE_HEIGHT, TILE_WIDTH};
+// Increment VERSION_ITERATION src/packets/mod.rs if packets are added or modified
 
-const VERSION_ID: &str = "https://github.com/ArthurCose/Scriptable-OpenNetBattle-Server";
-const VERSION_ITERATION: u64 = 0;
+use super::bytes::*;
+use super::{TILE_HEIGHT, TILE_WIDTH, VERSION_ID, VERSION_ITERATION};
 
 pub enum ServerPacket {
   Pong,

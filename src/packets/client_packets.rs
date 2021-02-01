@@ -1,3 +1,5 @@
+// Increment VERSION_ITERATION src/packets/mod.rs if packets are added or modified
+
 use super::bytes::*;
 use super::management::{get_reliability, Reliability};
 use super::{PacketHeaders, TILE_HEIGHT, TILE_WIDTH};
