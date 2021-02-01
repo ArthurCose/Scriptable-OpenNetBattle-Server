@@ -326,7 +326,7 @@ impl Server {
 
     let id = Uuid::new_v4().to_string();
 
-    let mut player = Player {
+    let player = Player {
       socket_address,
       packet_shipper: PacketShipper::new(socket_address),
       id: id.clone(),
@@ -338,14 +338,6 @@ impl Server {
       z: 0.0,
       ready: false,
     };
-
-    let packet = ServerPacket::Login {
-      ticket: player.id.clone(),
-    };
-
-    player
-      .packet_shipper
-      .send(&self.socket, &Reliability::Reliable, &packet)?;
 
     self.player_id_map.insert(socket_address, player.id.clone());
     self.net.add_player(player);
