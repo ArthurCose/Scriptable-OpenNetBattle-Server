@@ -51,6 +51,30 @@ pub fn add_player_api<'a, 'b, 'c>(
   )?;
 
   api_table.set(
+    "get_player_name",
+    scope.create_function(move |_, id: String| {
+      let net = net_ref.borrow_mut();
+
+      if let Some(player) = net.get_player(&id) {
+        Ok(player.name.clone())
+      } else {
+        Err(create_player_error(&id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
+    "set_player_name",
+    scope.create_function(move |_, (id, name): (String, String)| {
+      let mut net = net_ref.borrow_mut();
+
+      net.set_player_name(&id, name);
+
+      Ok(())
+    })?,
+  )?;
+
+  api_table.set(
     "get_player_position",
     scope.create_function(move |lua_ctx, id: String| {
       let net = net_ref.borrow();

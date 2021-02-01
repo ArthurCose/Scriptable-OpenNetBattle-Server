@@ -64,6 +64,27 @@ impl Net {
     self.players.get_mut(id)
   }
 
+  pub fn set_player_name(&mut self, id: &String, name: String) {
+    if let Some(player) = self.players.get_mut(id) {
+      player.name = name.clone();
+
+      let packet = ServerPacket::NaviSetName {
+        ticket: id.clone(),
+        name,
+      };
+
+      let area = self.areas.get(&player.area_id).unwrap();
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.players,
+        area,
+        Reliability::Reliable,
+        packet,
+      );
+    }
+  }
+
   pub fn move_player(&mut self, id: &String, x: f32, y: f32, z: f32) {
     if let Some(player) = self.players.get_mut(id) {
       player.x = x;
@@ -207,6 +228,27 @@ impl Net {
 
   pub fn get_bot(&self, id: &String) -> Option<&Bot> {
     self.bots.get(id)
+  }
+
+  pub fn set_bot_name(&mut self, id: &String, name: String) {
+    if let Some(bot) = self.bots.get_mut(id) {
+      bot.name = name.clone();
+
+      let packet = ServerPacket::NaviSetName {
+        ticket: id.clone(),
+        name,
+      };
+
+      let area = self.areas.get(&bot.area_id).unwrap();
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.players,
+        area,
+        Reliability::Reliable,
+        packet,
+      );
+    }
   }
 
   pub fn move_bot(&mut self, id: &String, x: f32, y: f32, z: f32) {

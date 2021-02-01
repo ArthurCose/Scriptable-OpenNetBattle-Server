@@ -99,6 +99,30 @@ pub fn add_bot_api<'a, 'b>(
   )?;
 
   api_table.set(
+    "get_bot_name",
+    scope.create_function(move |_, id: String| {
+      let net = net_ref.borrow_mut();
+
+      if let Some(bot) = net.get_bot(&id) {
+        Ok(bot.name.clone())
+      } else {
+        Err(create_bot_error(&id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
+    "set_bot_name",
+    scope.create_function(move |_, (id, name): (String, String)| {
+      let mut net = net_ref.borrow_mut();
+
+      net.set_bot_name(&id, name);
+
+      Ok(())
+    })?,
+  )?;
+
+  api_table.set(
     "get_bot_position",
     scope.create_function(move |lua_ctx, id: String| {
       let net = net_ref.borrow();
