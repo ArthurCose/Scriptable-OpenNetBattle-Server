@@ -262,7 +262,7 @@ impl Server {
 
     let player = self.net.get_player(player_id).unwrap();
     let area_id = &player.area_id.clone();
-    let area = self.net.get_area(area_id).unwrap();
+    let area = self.net.get_area_mut(area_id).unwrap();
 
     packets.push(ServerPacket::MapData {
       map_data: area.get_map().render(),

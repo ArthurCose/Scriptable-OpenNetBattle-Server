@@ -13,7 +13,7 @@ pub fn add_player_api<'a, 'b, 'c>(
     scope.create_function(move |_, area_id: String| {
       let mut net = net_ref.borrow_mut();
 
-      if let Some(area) = net.get_area(&area_id) {
+      if let Some(area) = net.get_area_mut(&area_id) {
         let connected_players = area.get_connected_players();
         let result: Vec<String> = connected_players.iter().map(|id| id.clone()).collect();
 

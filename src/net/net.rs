@@ -48,7 +48,11 @@ impl Net {
     &self.default_area_id
   }
 
-  pub fn get_area(&mut self, area_id: &String) -> Option<&mut Area> {
+  pub fn get_area(&self, area_id: &String) -> Option<&Area> {
+    self.areas.get(area_id)
+  }
+
+  pub fn get_area_mut(&mut self, area_id: &String) -> Option<&mut Area> {
     self.areas.get_mut(area_id)
   }
 

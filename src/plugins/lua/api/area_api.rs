@@ -22,7 +22,7 @@ pub fn add_area_api<'a, 'b>(
     scope.create_function(move |_, area_id: String| {
       let mut net = net_ref.borrow_mut();
 
-      if let Some(area) = net.get_area(&area_id) {
+      if let Some(area) = net.get_area_mut(&area_id) {
         Ok(area.get_map().get_width())
       } else {
         Err(create_area_error(&area_id))
@@ -35,7 +35,7 @@ pub fn add_area_api<'a, 'b>(
     scope.create_function(move |_, area_id: String| {
       let mut net = net_ref.borrow_mut();
 
-      if let Some(area) = net.get_area(&area_id) {
+      if let Some(area) = net.get_area_mut(&area_id) {
         Ok(area.get_map().get_height())
       } else {
         Err(create_area_error(&area_id))
@@ -48,7 +48,7 @@ pub fn add_area_api<'a, 'b>(
     scope.create_function(move |_, (area_id, x, y): (String, usize, usize)| {
       let mut net = net_ref.borrow_mut();
 
-      if let Some(area) = net.get_area(&area_id) {
+      if let Some(area) = net.get_area_mut(&area_id) {
         Ok(area.get_map().get_tile(x, y))
       } else {
         Err(create_area_error(&area_id))
@@ -62,7 +62,7 @@ pub fn add_area_api<'a, 'b>(
       move |_, (area_id, x, y, id): (String, usize, usize, String)| {
         let mut net = net_ref.borrow_mut();
 
-        if let Some(area) = net.get_area(&area_id) {
+        if let Some(area) = net.get_area_mut(&area_id) {
           Ok(area.get_map().set_tile(x, y, id))
         } else {
           Err(create_area_error(&area_id))
