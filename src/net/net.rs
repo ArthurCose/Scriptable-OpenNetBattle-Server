@@ -64,10 +64,6 @@ impl Net {
     self.players.get_mut(id)
   }
 
-  pub fn get_players(&self) -> std::collections::hash_map::Values<String, Player> {
-    self.players.values()
-  }
-
   pub fn move_player(&mut self, id: &String, x: f32, y: f32, z: f32) {
     if let Some(player) = self.players.get_mut(id) {
       player.x = x;
@@ -211,10 +207,6 @@ impl Net {
 
   pub fn get_bot(&self, id: &String) -> Option<&Bot> {
     self.bots.get(id)
-  }
-
-  pub fn get_bots(&self) -> std::collections::hash_map::Values<String, Bot> {
-    self.bots.values()
   }
 
   pub fn move_bot(&mut self, id: &String, x: f32, y: f32, z: f32) {

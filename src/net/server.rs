@@ -268,7 +268,12 @@ impl Server {
       map_data: area.get_map().render(),
     });
 
-    for other_player in self.net.get_players() {
+    // get an immutable reference to area
+    let area = self.net.get_area(area_id).unwrap();
+
+    for other_player_id in area.get_connected_players() {
+      let other_player = self.net.get_player(other_player_id).unwrap();
+
       packets.push(ServerPacket::NaviConnected {
         ticket: other_player.id.clone(),
         name: other_player.name.clone(),
@@ -284,7 +289,9 @@ impl Server {
       });
     }
 
-    for bot in self.net.get_bots() {
+    for bot_id in area.get_connected_bots() {
+      let bot = self.net.get_bot(bot_id).unwrap();
+
       packets.push(ServerPacket::NaviConnected {
         ticket: bot.id.clone(),
         name: bot.name.clone(),
