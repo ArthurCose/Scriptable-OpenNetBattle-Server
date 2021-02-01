@@ -336,7 +336,6 @@ impl Server {
       x: 0.0,
       y: 0.0,
       z: 0.0,
-      ready: false,
     };
 
     self.player_id_map.insert(socket_address, player.id.clone());

@@ -138,8 +138,6 @@ impl Net {
 
   pub(super) fn mark_player_ready(&mut self, id: &String) {
     if let Some(player) = self.players.get_mut(id) {
-      player.ready = true;
-
       let area = self.areas.get(&player.area_id).unwrap();
 
       let packet = ServerPacket::NaviConnected {
@@ -344,10 +342,8 @@ fn broadcast_to_area(
   for player_id in area.get_connected_players() {
     let player = players.get_mut(player_id).unwrap();
 
-    if player.ready {
-      if let Err(err) = player.packet_shipper.send(socket, &reliability, &packet) {
-        println!("{:#}", err);
-      }
+    if let Err(err) = player.packet_shipper.send(socket, &reliability, &packet) {
+      println!("{:#}", err);
     }
   }
 }
