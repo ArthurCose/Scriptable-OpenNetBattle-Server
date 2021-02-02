@@ -15,11 +15,11 @@ pub struct Server {
   net: Net,
   plugin_interfaces: Vec<Box<dyn PluginInterface>>,
   socket: Rc<UdpSocket>,
-  log_packets: bool, // todo command line option
+  log_packets: bool,
 }
 
 impl Server {
-  pub fn new(port: u16) -> Server {
+  pub fn new(port: u16, log_packets: bool) -> Server {
     let addr = format!("0.0.0.0:{}", port);
     let socket = UdpSocket::bind(addr).expect("Couldn't bind to address");
 
@@ -37,7 +37,7 @@ impl Server {
       net: Net::new(rc_socket.clone()),
       plugin_interfaces: Vec::new(),
       socket: rc_socket,
-      log_packets: false,
+      log_packets,
     }
   }
 
