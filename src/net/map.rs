@@ -2,6 +2,8 @@ pub struct Map {
   name: String,
   width: usize,
   height: usize,
+  spawn_x: f32,
+  spawn_y: f32,
   data: Vec<Vec<String>>, // row major
   cached: bool,
   cached_string: String,
@@ -13,6 +15,8 @@ impl Map {
       name: String::new(),
       width: 0,
       height: 0,
+      spawn_x: 0.0,
+      spawn_y: 0.0,
       data: Vec::<Vec<String>>::new(),
       cached: false,
       cached_string: String::from(""),
@@ -37,6 +41,11 @@ impl Map {
 
         if map.width < row.len() {
           map.width = row.len();
+        }
+
+        if let Some(x) = row.iter().position(|d| d == "H") {
+          map.spawn_x = x as f32 + 0.5;
+          map.spawn_y = map.data.len() as f32 + 0.5;
         }
 
         map.data.push(row);
@@ -68,6 +77,10 @@ impl Map {
 
   pub fn get_height(&self) -> usize {
     self.height
+  }
+
+  pub fn get_spawn(&self) -> (f32, f32) {
+    return (self.spawn_x, self.spawn_y);
   }
 
   pub fn get_tile(&self, x: usize, y: usize) -> String {

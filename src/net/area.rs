@@ -16,6 +16,10 @@ impl Area {
     }
   }
 
+  pub fn get_map(&self) -> &Map {
+    &self.map
+  }
+
   pub fn get_map_mut(&mut self) -> &mut Map {
     &mut self.map
   }

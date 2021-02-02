@@ -333,15 +333,19 @@ impl Server {
 
     let id = Uuid::new_v4().to_string();
 
+    let area_id = self.net.get_default_area_id().clone();
+    let area = self.net.get_area(&area_id).unwrap();
+    let (spawn_x, spawn_y) = area.get_map().get_spawn();
+
     let player = Player {
       socket_address,
       packet_shipper: PacketShipper::new(socket_address),
       id: id.clone(),
       name,
-      area_id: self.net.get_default_area_id().clone(),
+      area_id,
       avatar_id: form_id,
-      x: 0.0,
-      y: 0.0,
+      x: spawn_x,
+      y: spawn_y,
       z: 0.0,
     };
 
