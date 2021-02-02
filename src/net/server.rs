@@ -347,6 +347,7 @@ impl Server {
       x: spawn_x,
       y: spawn_y,
       z: 0.0,
+      ready: false,
     };
 
     self.player_id_map.insert(socket_address, player.id.clone());

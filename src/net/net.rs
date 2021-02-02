@@ -68,20 +68,23 @@ impl Net {
     if let Some(player) = self.players.get_mut(id) {
       player.name = name.clone();
 
-      let packet = ServerPacket::NaviSetName {
-        ticket: id.clone(),
-        name,
-      };
+      // skip if player has not even been sent to anyone yet
+      if player.ready {
+        let packet = ServerPacket::NaviSetName {
+          ticket: id.clone(),
+          name,
+        };
 
-      let area = self.areas.get(&player.area_id).unwrap();
+        let area = self.areas.get(&player.area_id).unwrap();
 
-      broadcast_to_area(
-        &self.socket,
-        &mut self.players,
-        area,
-        Reliability::Reliable,
-        packet,
-      );
+        broadcast_to_area(
+          &self.socket,
+          &mut self.players,
+          area,
+          Reliability::Reliable,
+          packet,
+        );
+      }
     }
   }
 
@@ -91,22 +94,25 @@ impl Net {
       player.y = y;
       player.z = z;
 
-      let packet = ServerPacket::NaviMove {
-        ticket: id.clone(),
-        x,
-        y,
-        z,
-      };
+      // skip if player has not even been sent to anyone yet
+      if player.ready {
+        let packet = ServerPacket::NaviMove {
+          ticket: id.clone(),
+          x,
+          y,
+          z,
+        };
 
-      let area = self.areas.get(&player.area_id).unwrap();
+        let area = self.areas.get(&player.area_id).unwrap();
 
-      broadcast_to_area(
-        &self.socket,
-        &mut self.players,
-        area,
-        Reliability::UnreliableSequenced,
-        packet,
-      );
+        broadcast_to_area(
+          &self.socket,
+          &mut self.players,
+          area,
+          Reliability::UnreliableSequenced,
+          packet,
+        );
+      }
     }
   }
 
@@ -114,20 +120,23 @@ impl Net {
     if let Some(player) = self.players.get_mut(id) {
       player.avatar_id = avatar_id;
 
-      let packet = ServerPacket::NaviSetAvatar {
-        ticket: id.clone(),
-        avatar_id,
-      };
+      // skip if player has not even been sent to anyone yet
+      if player.ready {
+        let packet = ServerPacket::NaviSetAvatar {
+          ticket: id.clone(),
+          avatar_id,
+        };
 
-      let area = self.areas.get(&player.area_id).unwrap();
+        let area = self.areas.get(&player.area_id).unwrap();
 
-      broadcast_to_area(
-        &self.socket,
-        &mut self.players,
-        area,
-        Reliability::ReliableOrdered,
-        packet,
-      );
+        broadcast_to_area(
+          &self.socket,
+          &mut self.players,
+          area,
+          Reliability::ReliableOrdered,
+          packet,
+        );
+      }
     }
   }
 
@@ -151,15 +160,16 @@ impl Net {
   }
 
   pub(super) fn add_player(&mut self, player: Player) {
-    let area = self.areas.get_mut(&player.area_id).unwrap();
-
-    area.add_player(player.id.clone());
     self.players.insert(player.id.clone(), player);
   }
 
   pub(super) fn mark_player_ready(&mut self, id: &String) {
     if let Some(player) = self.players.get_mut(id) {
-      let area = self.areas.get(&player.area_id).unwrap();
+      player.ready = true;
+
+      // clone id to end mutable player lifetime
+      let player_id = player.id.clone();
+      let area = self.areas.get_mut(&player.area_id).unwrap();
 
       let packet = ServerPacket::NaviConnected {
         ticket: player.id.clone(),
@@ -177,6 +187,8 @@ impl Net {
         Reliability::ReliableOrdered,
         packet,
       );
+
+      area.add_player(player_id);
     }
   }
 
