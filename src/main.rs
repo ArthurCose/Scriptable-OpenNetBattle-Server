@@ -9,7 +9,6 @@ use plugins::LuaPluginInterface;
 
 fn main() {
     let matches = clap::App::new("OpenNetBattle Server")
-        .about("https://github.com/TheMaverickProgrammer/OpenNetBattle")
         .arg(
             clap::Arg::with_name("port")
                 .short("p")
