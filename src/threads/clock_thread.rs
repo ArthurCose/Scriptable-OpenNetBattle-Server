@@ -15,6 +15,7 @@ pub fn create_clock_thread(tx: mpsc::Sender<ThreadMessage>) {
     let behind_count = behind_counter.fetch_add(1, Ordering::Relaxed);
 
     if behind_count > 1 {
+      behind_counter.fetch_sub(1, Ordering::Relaxed);
       println!("Server running behind, skipping tick");
       continue;
     }
