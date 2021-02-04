@@ -1,9 +1,11 @@
 // Increment VERSION_ITERATION src/packets/mod.rs if packets are added or modified
 
 use super::bytes::*;
-use super::{TILE_HEIGHT, TILE_WIDTH, VERSION_ID, VERSION_ITERATION};
+use super::{MAX_BUFFER_LEN, TILE_HEIGHT, TILE_WIDTH, VERSION_ID, VERSION_ITERATION};
+use crate::net::Asset;
 
-pub enum ServerPacket {
+#[derive(Debug)]
+pub enum ServerPacket<'a> {
   Pong,
   Ack {
     reliability: u8,
@@ -12,12 +14,21 @@ pub enum ServerPacket {
   Login {
     ticket: String,
   },
+  AssetStream {
+    data: &'a [u8],
+  },
+  AssetStreamComplete {
+    name: String,
+    asset: &'a Asset,
+  },
   MapData {
     map_data: String,
   },
   NaviConnected {
     ticket: String,
     name: String,
+    texture_path: String,
+    animation_path: String,
     x: f32,
     y: f32,
     z: f32,
@@ -38,7 +49,8 @@ pub enum ServerPacket {
   },
   NaviSetAvatar {
     ticket: String,
-    avatar_id: u16,
+    texture_path: String,
+    animation_path: String,
   },
   NaviEmote {
     ticket: String,
@@ -70,53 +82,126 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_u16(&mut buf, 2);
       write_string(&mut buf, ticket);
     }
-    ServerPacket::MapData { map_data } => {
+    ServerPacket::AssetStream { data } => {
       write_u16(&mut buf, 3);
+      write_u16(&mut buf, data.len() as u16);
+      write_data(&mut buf, data);
+    }
+    ServerPacket::AssetStreamComplete { name, asset } => {
+      write_u16(&mut buf, 4);
+      write_string(&mut buf, name);
+
+      match asset {
+        Asset::Text(_) => {
+          buf.push(0);
+        }
+        Asset::Texture(_) => {
+          buf.push(1);
+        }
+        Asset::Audio(_) => {
+          buf.push(2);
+        }
+        Asset::SFMLImage(_) => {
+          buf.push(3);
+        }
+      }
+    }
+    ServerPacket::MapData { map_data } => {
+      write_u16(&mut buf, 5);
       write_string(&mut buf, map_data);
     }
     ServerPacket::NaviConnected {
       ticket,
       name,
+      texture_path,
+      animation_path,
       x,
       y,
       z,
       warp_in,
     } => {
-      write_u16(&mut buf, 4);
+      write_u16(&mut buf, 6);
       write_string(&mut buf, ticket);
       write_string(&mut buf, name);
+      write_string(&mut buf, texture_path);
+      write_string(&mut buf, animation_path);
       write_f32(&mut buf, f32::floor(x * TILE_WIDTH / 2.0));
       write_f32(&mut buf, f32::floor(y * TILE_HEIGHT));
       write_f32(&mut buf, *z);
       write_bool(&mut buf, *warp_in);
     }
     ServerPacket::NaviDisconnected { ticket } => {
-      write_u16(&mut buf, 5);
+      write_u16(&mut buf, 7);
       write_string(&mut buf, ticket);
     }
     ServerPacket::NaviSetName { ticket, name } => {
-      write_u16(&mut buf, 6);
+      write_u16(&mut buf, 8);
       write_string(&mut buf, ticket);
       write_string(&mut buf, name);
     }
     ServerPacket::NaviMove { ticket, x, y, z } => {
-      write_u16(&mut buf, 7);
+      write_u16(&mut buf, 9);
       write_string(&mut buf, ticket);
       write_f32(&mut buf, f32::floor(x * TILE_WIDTH / 2.0));
       write_f32(&mut buf, f32::floor(y * TILE_HEIGHT));
       write_f32(&mut buf, *z);
     }
-    ServerPacket::NaviSetAvatar { ticket, avatar_id } => {
-      write_u16(&mut buf, 8);
-      write_u16(&mut buf, *avatar_id);
+    ServerPacket::NaviSetAvatar {
+      ticket,
+      texture_path,
+      animation_path,
+    } => {
+      write_u16(&mut buf, 10);
       write_string(&mut buf, ticket);
+      write_string(&mut buf, texture_path);
+      write_string(&mut buf, animation_path);
     }
     ServerPacket::NaviEmote { ticket, emote_id } => {
-      write_u16(&mut buf, 9);
+      write_u16(&mut buf, 11);
       buf.push(*emote_id);
       write_string(&mut buf, ticket);
     }
   }
 
   buf
+}
+
+pub fn create_asset_stream<'a>(name: &String, asset: &'a Asset) -> Vec<ServerPacket<'a>> {
+  // reliability type + id + packet type + data size
+  const HEADER_SIZE: usize = 1 + 8 + 2 + 2 + 16;
+
+  let mut packets = Vec::new();
+
+  let mut bytes = match asset {
+    Asset::Text(data) => data.as_bytes(),
+    Asset::Texture(data) => &data,
+    Asset::Audio(data) => &data,
+    Asset::SFMLImage(data) => &data,
+  };
+
+  let mut remaining_bytes = bytes.len();
+
+  while remaining_bytes > 0 {
+    let available_room = MAX_BUFFER_LEN - HEADER_SIZE;
+    let size = if remaining_bytes < available_room {
+      remaining_bytes
+    } else {
+      available_room
+    };
+
+    packets.push(ServerPacket::AssetStream {
+      data: &bytes[..size],
+    });
+
+    bytes = &bytes[size..];
+
+    remaining_bytes -= size;
+  }
+
+  packets.push(ServerPacket::AssetStreamComplete {
+    name: name.clone(),
+    asset,
+  });
+
+  packets
 }

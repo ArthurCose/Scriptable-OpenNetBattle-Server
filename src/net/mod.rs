@@ -1,4 +1,5 @@
 mod area;
+mod asset;
 mod bot;
 mod map;
 mod net;
@@ -6,6 +7,7 @@ mod player;
 mod server;
 
 pub use area::Area;
+pub use asset::*;
 pub use bot::Bot;
 pub use map::Map;
 pub use net::Net;

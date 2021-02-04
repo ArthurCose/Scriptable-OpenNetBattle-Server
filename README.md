@@ -6,6 +6,26 @@ Support for more sources such as WASM/WASI (C++, Kotlin, etc) or JavaScript can 
 
 The Plugin Interface could also be used to build a Rust based script compiled directly into the server.
 
+## Areas
+
+Maps for areas are stored in `/areas`. The first area a players will see is `default.txt` (required).
+
+The first line in a map file defines the name and ID of the area.
+The remaining lines define the layout using tile IDs separated by commas.
+
+```
+My Area
+1,1,1
+1,H,1
+1,1,1
+```
+
+## Assets
+
+Assets are stored in `/assets` and are translated to `server/assets` in scripts.
+Currently assets are only used to set avatars on players and bots.
+Until split packets are implemented assets have a ~9MB limit.
+
 ## Lua API
 
 Commented functions are in development and require changes to the client (specified below).
@@ -22,7 +42,7 @@ function handle_player_connect(player_id)
 -- function handle_player_transfer(player_id, area_id)
 function handle_player_disconnect(player_id)
 function handle_player_move(player_id, x, y, z)
-function handle_player_avatar_change(player_id, avatar)
+function handle_player_avatar_change(player_id, texture_path, animation_path)
 function handle_player_emote(player_id, emote)
 -- function handle_tile_interaction(player_id, x, y, z)
 -- function handle_player_conversation(player_id, other_id)
@@ -49,7 +69,7 @@ Net.set_tile(area_id, x, y, id)
 
 ```lua
 Net.list_bots(area_id)
-Net.create_bot(id, name, area_id, avatar_id, x, y, z)
+Net.create_bot(id, name, area_id, texture_path, animation_path, x, y, z)
 Net.is_bot(id)
 Net.remove_bot(id)
 Net.get_bot_area(id)
@@ -71,7 +91,8 @@ Net.get_player_area(id)
 Net.get_player_name(id)
 Net.set_player_name(id)
 Net.get_player_position(id)
-Net.get_player_avatar(id)
+-- Net.get_player_avatar(id)
+Net.set_player_avatar(id, texture_path, animation_path)
 -- Net.lock_player(id)
 -- Net.unlock_player(id)
 -- Net.move_player(id, x, y, z)
@@ -102,9 +123,6 @@ Net.get_player_avatar(id)
   - Slide camera (locks camera)
   - Unlock camera (focus back on player)
   - Virus battle
-  - Custom asset? (background, mugshots, tiles, navis, etc)
-    - Might be implemented with multiple or different packets.
-      For example, tile assets may be sent with map data in the future.
   - Transfer?
     - Send the player to a different server.
   - Reset Map
@@ -115,10 +133,6 @@ Net.get_player_avatar(id)
   - Interaction with Tile (Interact)
   - Menu Response (for Message, MessageQuestion, etc)
     - Allows scripting the next action (textbox, camera movement, etc).
-  - Map Loaded
-    - Instead of the current refresh map packet.
-
-Ordered reliable packets will be required as well, so bots don't hang on dropped responses, and so players dont miss messages or camera requests.
 
 ### Map
 

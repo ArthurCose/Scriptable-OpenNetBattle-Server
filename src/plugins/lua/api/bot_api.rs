@@ -29,11 +29,12 @@ pub fn add_bot_api<'a, 'b>(
     "create_bot",
     scope.create_function(
       move |_,
-            (id, name, area_id, avatar_id, x, y, z): (
+            (id, name, area_id, texture_path, animation_path, x, y, z): (
         String,
         String,
         String,
-        u16,
+        String,
+        String,
         f32,
         f32,
         f32,
@@ -45,7 +46,8 @@ pub fn add_bot_api<'a, 'b>(
             id,
             name,
             area_id,
-            avatar_id,
+            texture_path,
+            animation_path,
             x,
             y,
             z,
@@ -153,13 +155,15 @@ pub fn add_bot_api<'a, 'b>(
 
   api_table.set(
     "set_bot_avatar",
-    scope.create_function(move |_, (id, avatar_id): (String, u16)| {
-      let mut net = net_ref.borrow_mut();
+    scope.create_function(
+      move |_, (id, texture_path, animation_path): (String, String, String)| {
+        let mut net = net_ref.borrow_mut();
 
-      net.set_bot_avatar(&id, avatar_id);
+        net.set_bot_avatar(&id, texture_path, animation_path);
 
-      Ok(())
-    })?,
+        Ok(())
+      },
+    )?,
   )?;
 
   api_table.set(

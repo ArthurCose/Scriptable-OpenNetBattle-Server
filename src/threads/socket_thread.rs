@@ -1,9 +1,7 @@
-use crate::packets::parse_client_packet;
+use crate::packets::{parse_client_packet, MAX_BUFFER_LEN};
 use crate::threads::ThreadMessage;
 use std::net::UdpSocket;
 use std::sync::mpsc;
-
-const MAX_BUFFER_LEN: usize = 10240;
 
 pub fn create_socket_thread(tx: mpsc::Sender<ThreadMessage>, socket: UdpSocket, log_packets: bool) {
   std::thread::spawn(move || loop {

@@ -1,4 +1,5 @@
 use crate::packets::PacketShipper;
+use std::collections::HashSet;
 
 pub struct Player {
   pub socket_address: std::net::SocketAddr,
@@ -6,9 +7,11 @@ pub struct Player {
   pub id: String,
   pub name: String,
   pub area_id: String,
-  pub avatar_id: u16,
+  pub texture_path: String,
+  pub animation_path: String,
   pub x: f32,
   pub y: f32,
   pub z: f32,
   pub ready: bool,
+  pub cached_assets: HashSet<String>,
 }

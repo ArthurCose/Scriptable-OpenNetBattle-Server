@@ -1,6 +1,6 @@
-use super::{Area, Bot, Map, Player};
-use crate::packets::{Reliability, ServerPacket};
-use std::collections::HashMap;
+use super::{Area, Asset, Bot, Map, Player};
+use crate::packets::{create_asset_stream, PacketShipper, Reliability, ServerPacket};
+use std::collections::{HashMap, HashSet};
 use std::net::UdpSocket;
 use std::rc::Rc;
 
@@ -10,6 +10,7 @@ pub struct Net {
   default_area_id: String,
   players: HashMap<String, Player>,
   bots: HashMap<String, Bot>,
+  assets: HashMap<String, Asset>,
 }
 
 impl Net {
@@ -35,12 +36,46 @@ impl Net {
       }
     }
 
+    let mut assets = HashMap::new();
+    Net::load_assets_from_dir(&mut assets, &std::path::Path::new("assets"));
+
     Net {
       socket,
       default_area_id: default_area_id.expect("No default (default.txt) area data found"),
       areas,
       players: HashMap::new(),
       bots: HashMap::new(),
+      assets,
+    }
+  }
+
+  fn load_assets_from_dir(assets: &mut HashMap<String, Asset>, dir: &std::path::Path) {
+    use std::fs::{read, read_dir, read_to_string};
+
+    if let Ok(entries) = read_dir(dir) {
+      for wrapped_entry in entries {
+        if let Ok(entry) = wrapped_entry {
+          let path = entry.path();
+
+          if path.is_dir() {
+            Net::load_assets_from_dir(assets, &path);
+          } else {
+            let path_string = String::from("server/") + path.to_str().unwrap_or_default();
+            let extension_index = path_string.rfind(".").unwrap_or(path_string.len());
+            let extension = path_string.to_lowercase().split_off(extension_index);
+
+            let asset = if extension == ".ogg" {
+              Asset::Audio(read(&path).unwrap_or_default())
+            } else if extension == ".png" || extension == ".bmp" {
+              Asset::Texture(read(&path).unwrap_or_default())
+            } else {
+              Asset::Text(read_to_string(&path).unwrap_or_default())
+            };
+
+            assets.insert(path_string, asset);
+          }
+        }
+      }
     }
   }
 
@@ -54,6 +89,32 @@ impl Net {
 
   pub fn get_area_mut(&mut self, area_id: &String) -> Option<&mut Area> {
     self.areas.get_mut(area_id)
+  }
+
+  pub fn get_asset(&self, path: &String) -> Option<&Asset> {
+    self.assets.get(path)
+  }
+
+  pub fn set_asset(&mut self, path: String, asset: Asset) {
+    let reliability = Reliability::ReliableOrdered;
+    let packets = create_asset_stream(&path, &asset);
+
+    for player in self.players.values_mut() {
+      if player.cached_assets.contains(&path) {
+        for packet in &packets {
+          // todo: handle in packet_shipper?
+          let _ = player
+            .packet_shipper
+            .send(&self.socket, &reliability, &packet);
+        }
+      }
+    }
+
+    self.assets.insert(path, asset);
+  }
+
+  pub fn remove_asset(&mut self, path: &String) {
+    self.assets.remove(path);
   }
 
   pub fn get_player(&self, id: &String) -> Option<&Player> {
@@ -116,18 +177,35 @@ impl Net {
     }
   }
 
-  pub fn set_player_avatar(&mut self, id: &String, avatar_id: u16) {
+  pub fn set_player_avatar(&mut self, id: &String, texture_path: String, animation_path: String) {
     if let Some(player) = self.players.get_mut(id) {
-      player.avatar_id = avatar_id;
+      player.texture_path = texture_path.clone();
+      player.animation_path = animation_path.clone();
+
+      let area = self.areas.get(&player.area_id).unwrap();
 
       // skip if player has not even been sent to anyone yet
       if player.ready {
+        assert_asset(
+          &self.socket,
+          area,
+          &self.assets,
+          &mut self.players,
+          &texture_path,
+        );
+        assert_asset(
+          &self.socket,
+          area,
+          &self.assets,
+          &mut self.players,
+          &animation_path,
+        );
+
         let packet = ServerPacket::NaviSetAvatar {
           ticket: id.clone(),
-          avatar_id,
+          texture_path,
+          animation_path,
         };
-
-        let area = self.areas.get(&player.area_id).unwrap();
 
         broadcast_to_area(
           &self.socket,
@@ -159,8 +237,140 @@ impl Net {
     }
   }
 
-  pub(super) fn add_player(&mut self, player: Player) {
+  pub(super) fn add_player(
+    &mut self,
+    socket_address: std::net::SocketAddr,
+    name: String,
+    texture_data: Vec<u8>,
+    animation_data: String,
+  ) -> std::io::Result<String> {
+    use uuid::Uuid;
+
+    let id = Uuid::new_v4().to_string();
+
+    let (texture_path, animation_path) =
+      self.store_player_avatar(&id, texture_data, animation_data);
+
+    let area_id = self.get_default_area_id().clone();
+    let area = self.get_area_mut(&area_id).unwrap();
+    let (spawn_x, spawn_y) = area.get_map().get_spawn();
+
+    let player = Player {
+      socket_address,
+      packet_shipper: PacketShipper::new(socket_address),
+      id: id.clone(),
+      name,
+      area_id,
+      texture_path,
+      animation_path,
+      x: spawn_x,
+      y: spawn_y,
+      z: 0.0,
+      ready: false,
+      cached_assets: HashSet::new(),
+    };
+
+    area.add_player(player.id.clone());
     self.players.insert(player.id.clone(), player);
+
+    Ok(id)
+  }
+
+  pub(super) fn store_player_avatar(
+    &mut self,
+    player_id: &String,
+    texture_data: Vec<u8>,
+    animation_data: String,
+  ) -> (String, String) {
+    use super::asset;
+
+    let texture_path = asset::get_player_texture_path(player_id);
+    let animation_path = asset::get_player_animation_path(player_id);
+
+    self.set_asset(texture_path.clone(), Asset::SFMLImage(texture_data));
+    self.set_asset(animation_path.clone(), Asset::Text(animation_data));
+
+    (texture_path, animation_path)
+  }
+
+  pub(super) fn connect_player(&mut self, player_id: &String) -> std::io::Result<()> {
+    let mut packets: Vec<ServerPacket> = Vec::new();
+    let mut asset_paths: Vec<String> = Vec::new();
+
+    let player = self.players.get_mut(player_id).unwrap();
+    let area = self.areas.get_mut(&player.area_id).unwrap();
+
+    packets.push(ServerPacket::MapData {
+      map_data: area.get_map_mut().render(),
+    });
+
+    for other_player_id in area.get_connected_players() {
+      if other_player_id == player_id {
+        continue;
+      }
+
+      let other_player = self.players.get(other_player_id).unwrap();
+
+      asset_paths.push(other_player.texture_path.clone());
+      asset_paths.push(other_player.animation_path.clone());
+
+      packets.push(ServerPacket::NaviConnected {
+        ticket: other_player.id.clone(),
+        name: other_player.name.clone(),
+        texture_path: other_player.texture_path.clone(),
+        animation_path: other_player.animation_path.clone(),
+        x: other_player.x,
+        y: other_player.y,
+        z: other_player.z,
+        warp_in: false,
+      });
+    }
+
+    for bot_id in area.get_connected_bots() {
+      let bot = self.bots.get(bot_id).unwrap();
+
+      asset_paths.push(bot.texture_path.clone());
+      asset_paths.push(bot.animation_path.clone());
+
+      packets.push(ServerPacket::NaviConnected {
+        ticket: bot.id.clone(),
+        name: bot.name.clone(),
+        texture_path: bot.texture_path.clone(),
+        animation_path: bot.animation_path.clone(),
+        x: bot.x,
+        y: bot.y,
+        z: bot.z,
+        warp_in: false,
+      });
+    }
+
+    // todo: send position
+    packets.push(ServerPacket::Login {
+      ticket: player_id.clone(),
+    });
+
+    let player = self.players.get_mut(player_id).unwrap();
+    let mut asset_packets = Vec::new();
+
+    for asset_path in asset_paths {
+      if let Some(asset) = self.assets.get(&asset_path) {
+        asset_packets.extend(create_asset_stream(&asset_path, asset));
+      }
+
+      player.cached_assets.insert(asset_path);
+    }
+
+    // send asset_packets before anything else
+    asset_packets.append(&mut packets);
+    let packets = asset_packets;
+
+    for packet in packets {
+      player
+        .packet_shipper
+        .send(&self.socket, &Reliability::ReliableOrdered, &packet)?;
+    }
+
+    Ok(())
   }
 
   pub(super) fn mark_player_ready(&mut self, id: &String) {
@@ -170,15 +380,35 @@ impl Net {
       // clone id to end mutable player lifetime
       let player_id = player.id.clone();
       let area = self.areas.get_mut(&player.area_id).unwrap();
+      let texture_path = player.texture_path.clone();
+      let animation_path = player.animation_path.clone();
 
       let packet = ServerPacket::NaviConnected {
-        ticket: player.id.clone(),
+        ticket: player_id.clone(),
         name: player.name.clone(),
+        texture_path: texture_path.clone(),
+        animation_path: animation_path.clone(),
         x: player.x,
         y: player.y,
         z: player.z,
         warp_in: true,
       };
+
+      assert_asset(
+        &self.socket,
+        area,
+        &self.assets,
+        &mut self.players,
+        &texture_path,
+      );
+
+      assert_asset(
+        &self.socket,
+        area,
+        &self.assets,
+        &mut self.players,
+        &animation_path,
+      );
 
       broadcast_to_area(
         &self.socket,
@@ -187,12 +417,15 @@ impl Net {
         Reliability::ReliableOrdered,
         packet,
       );
-
-      area.add_player(player_id);
     }
   }
 
   pub fn remove_player(&mut self, id: &String) {
+    use super::asset;
+
+    self.assets.remove(&asset::get_player_texture_path(id));
+    self.assets.remove(&asset::get_player_animation_path(id));
+
     if let Some(player) = self.players.remove(id) {
       let area = self
         .areas
@@ -220,6 +453,8 @@ impl Net {
       let packet = ServerPacket::NaviConnected {
         ticket: bot.id.clone(),
         name: bot.name.clone(),
+        texture_path: bot.texture_path.clone(),
+        animation_path: bot.animation_path.clone(),
         x: bot.x,
         y: bot.y,
         z: bot.z,
@@ -288,16 +523,33 @@ impl Net {
     }
   }
 
-  pub fn set_bot_avatar(&mut self, id: &String, avatar_id: u16) {
+  pub fn set_bot_avatar(&mut self, id: &String, texture_path: String, animation_path: String) {
     if let Some(bot) = self.bots.get_mut(id) {
-      bot.avatar_id = avatar_id;
+      bot.texture_path = texture_path.clone();
+      bot.animation_path = animation_path.clone();
+
+      let area = self.areas.get(&bot.area_id).unwrap();
+
+      assert_asset(
+        &self.socket,
+        area,
+        &self.assets,
+        &mut self.players,
+        &texture_path,
+      );
+      assert_asset(
+        &self.socket,
+        area,
+        &self.assets,
+        &mut self.players,
+        &animation_path,
+      );
 
       let packet = ServerPacket::NaviSetAvatar {
         ticket: id.clone(),
-        avatar_id,
+        texture_path: texture_path,
+        animation_path: animation_path,
       };
-
-      let area = self.areas.get(&bot.area_id).unwrap();
 
       broadcast_to_area(
         &self.socket,
@@ -379,6 +631,34 @@ impl Net {
     }
 
     disconnected_addresses
+  }
+}
+
+fn assert_asset(
+  socket: &UdpSocket,
+  area: &Area,
+  assets: &HashMap<String, Asset>,
+  players: &mut HashMap<String, Player>,
+  asset_path: &String,
+) {
+  if let Some(asset) = assets.get(asset_path) {
+    let player_ids = area.get_connected_players();
+
+    let packets = create_asset_stream(asset_path, asset);
+
+    for player_id in player_ids {
+      let player = players.get_mut(player_id).unwrap();
+
+      if player.cached_assets.contains(asset_path) {
+        continue;
+      }
+
+      for packet in &packets {
+        let _ = player
+          .packet_shipper
+          .send(socket, &Reliability::ReliableOrdered, &packet);
+      }
+    }
   }
 }
 

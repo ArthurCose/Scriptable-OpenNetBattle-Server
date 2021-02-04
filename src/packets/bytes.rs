@@ -69,6 +69,18 @@ pub fn read_string(buf: &mut &[u8]) -> Option<String> {
   })
 }
 
+pub fn read_data(buf: &mut &[u8], size: usize) -> Option<Vec<u8>> {
+  if buf.len() < size {
+    return None;
+  }
+
+  let data = Vec::from(&buf[..size]);
+
+  *buf = &buf[size..];
+
+  Some(data)
+}
+
 // writers
 
 pub fn write_bool(buf: &mut Vec<u8>, data: bool) {
@@ -108,4 +120,9 @@ pub fn write_string(buf: &mut Vec<u8>, data: &String) {
   // todo: endianness may be an issue
   buf.extend(data.as_bytes());
   buf.push(0);
+}
+
+pub fn write_data(buf: &mut Vec<u8>, data: &[u8]) {
+  write_u16(buf, data.len() as u16);
+  buf.extend(data);
 }

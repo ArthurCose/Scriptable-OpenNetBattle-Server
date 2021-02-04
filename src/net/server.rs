@@ -1,7 +1,7 @@
-use crate::net::Net;
-use crate::net::Player;
+use super::Net;
 use crate::packets::{
-  build_unreliable_packet, ClientPacket, PacketShipper, PacketSorter, Reliability, ServerPacket,
+  build_unreliable_packet, ClientPacket, PacketSorter, Reliability, ServerPacket,
+  MAX_PLAYER_ASSET_SIZE,
 };
 use crate::plugins::PluginInterface;
 use crate::threads::{create_clock_thread, create_socket_thread, ThreadMessage};
@@ -10,6 +10,8 @@ use std::net::UdpSocket;
 use std::rc::Rc;
 
 pub struct Server {
+  player_texture_buffer: HashMap<std::net::SocketAddr, Vec<u8>>,
+  player_animation_buffer: HashMap<std::net::SocketAddr, Vec<u8>>,
   player_id_map: HashMap<std::net::SocketAddr, String>,
   packet_sorter_map: HashMap<std::net::SocketAddr, PacketSorter>,
   net: Net,
@@ -32,6 +34,8 @@ impl Server {
     let rc_socket = Rc::new(socket);
 
     Server {
+      player_texture_buffer: HashMap::new(),
+      player_animation_buffer: HashMap::new(),
       player_id_map: HashMap::new(),
       packet_sorter_map: HashMap::new(),
       net: Net::new(rc_socket.clone()),
@@ -141,6 +145,20 @@ impl Server {
           let buf = build_unreliable_packet(&ServerPacket::Pong);
           self.socket.send_to(&buf, socket_address)?;
         }
+        ClientPacket::TextureStream { data } => {
+          if self.log_packets {
+            println!("Received Texture Stream packet from {}", socket_address);
+          }
+
+          append_texture_data(&mut self.player_texture_buffer, socket_address, data);
+        }
+        ClientPacket::AnimationStream { data } => {
+          if self.log_packets {
+            println!("Received Animation Stream packet from {}", socket_address);
+          }
+
+          append_texture_data(&mut self.player_animation_buffer, socket_address, data);
+        }
         ClientPacket::Ack { reliability, id } => {
           if self.log_packets {
             println!(
@@ -155,7 +173,6 @@ impl Server {
         ClientPacket::Login {
           username: _,
           password: _,
-          form_id: _,
         } => {
           if self.log_packets {
             println!("Received bad Login packet from {}", socket_address);
@@ -186,16 +203,35 @@ impl Server {
 
           self.net.mark_player_ready(player_id);
         }
-        ClientPacket::AvatarChange { form_id } => {
+        ClientPacket::AvatarChange => {
           if self.log_packets {
             println!("Received Avatar Change packet from {}", socket_address);
           }
 
-          for plugin in &mut self.plugin_interfaces {
-            plugin.handle_player_avatar_change(&mut self.net, player_id, form_id);
-          }
+          let data_result = collect_streamed_player_data(
+            &mut self.player_texture_buffer,
+            &mut self.player_animation_buffer,
+            &socket_address,
+          );
 
-          self.net.set_player_avatar(player_id, form_id);
+          if let Some((texture_data, animation_data)) = data_result {
+            let (texture_path, animation_path) =
+              self
+                .net
+                .store_player_avatar(player_id, texture_data, animation_data);
+
+            for plugin in &mut self.plugin_interfaces {
+              plugin.handle_player_avatar_change(
+                &mut self.net,
+                player_id,
+                &texture_path,
+                &animation_path,
+              );
+            }
+            self
+              .net
+              .set_player_avatar(player_id, texture_path, animation_path);
+          }
         }
         ClientPacket::Emote { emote_id } => {
           if self.log_packets {
@@ -219,16 +255,37 @@ impl Server {
           let buf = build_unreliable_packet(&ServerPacket::Pong);
           self.socket.send_to(&buf, socket_address)?;
         }
+        ClientPacket::TextureStream { data } => {
+          if self.log_packets {
+            println!("Received Texture Stream packet from {}", socket_address);
+          }
+
+          append_texture_data(&mut self.player_texture_buffer, socket_address, data);
+        }
+        ClientPacket::AnimationStream { data } => {
+          if self.log_packets {
+            println!("Received Animation Stream packet from {}", socket_address);
+          }
+
+          append_texture_data(&mut self.player_animation_buffer, socket_address, data);
+        }
         ClientPacket::Login {
           username,
           password: _,
-          form_id,
         } => {
           if self.log_packets {
             println!("Received Login packet from {}", socket_address);
           }
 
-          self.connect_player(&socket_address, username, form_id)?;
+          let data_result = collect_streamed_player_data(
+            &mut self.player_texture_buffer,
+            &mut self.player_animation_buffer,
+            &socket_address,
+          );
+
+          if let Some((texture_data, animation_data)) = data_result {
+            self.connect_player(socket_address, username, texture_data, animation_data)?;
+          }
         }
         _ => {
           if self.log_packets {
@@ -245,112 +302,24 @@ impl Server {
 
   fn connect_player(
     &mut self,
-    socket_address: &std::net::SocketAddr,
-    name: String,
-    form_id: u16,
-  ) -> std::io::Result<()> {
-    let mut packets = vec![];
-
-    let player_id = &self.add_player(socket_address.clone(), name, form_id)?;
-
-    for plugin in &mut self.plugin_interfaces {
-      plugin.handle_player_connect(&mut self.net, player_id);
-    }
-
-    let player = self.net.get_player(player_id).unwrap();
-    let area_id = &player.area_id.clone();
-    let area = self.net.get_area_mut(area_id).unwrap();
-
-    packets.push(ServerPacket::MapData {
-      map_data: area.get_map_mut().render(),
-    });
-
-    // get an immutable reference to area
-    let area = self.net.get_area(area_id).unwrap();
-
-    for other_player_id in area.get_connected_players() {
-      let other_player = self.net.get_player(other_player_id).unwrap();
-
-      packets.push(ServerPacket::NaviConnected {
-        ticket: other_player.id.clone(),
-        name: other_player.name.clone(),
-        x: other_player.x,
-        y: other_player.y,
-        z: other_player.z,
-        warp_in: false,
-      });
-
-      packets.push(ServerPacket::NaviSetAvatar {
-        ticket: other_player.id.clone(),
-        avatar_id: other_player.avatar_id,
-      });
-    }
-
-    for bot_id in area.get_connected_bots() {
-      let bot = self.net.get_bot(bot_id).unwrap();
-
-      packets.push(ServerPacket::NaviConnected {
-        ticket: bot.id.clone(),
-        name: bot.name.clone(),
-        x: bot.x,
-        y: bot.y,
-        z: bot.z,
-        warp_in: false,
-      });
-
-      packets.push(ServerPacket::NaviSetAvatar {
-        ticket: bot.id.clone(),
-        avatar_id: bot.avatar_id,
-      });
-    }
-
-    // todo: send position
-    packets.push(ServerPacket::Login {
-      ticket: player_id.clone(),
-    });
-
-    let player = self.net.get_player_mut(player_id).unwrap();
-
-    for packet in packets {
-      player
-        .packet_shipper
-        .send(&self.socket, &Reliability::ReliableOrdered, &packet)?;
-    }
-
-    Ok(())
-  }
-
-  fn add_player(
-    &mut self,
     socket_address: std::net::SocketAddr,
     name: String,
-    form_id: u16,
-  ) -> std::io::Result<String> {
-    use uuid::Uuid;
+    texture_data: Vec<u8>,
+    animation_data: String,
+  ) -> std::io::Result<()> {
+    let player_id =
+      self
+        .net
+        .add_player(socket_address.clone(), name, texture_data, animation_data)?;
 
-    let id = Uuid::new_v4().to_string();
+    for plugin in &mut self.plugin_interfaces {
+      plugin.handle_player_connect(&mut self.net, &player_id);
+    }
 
-    let area_id = self.net.get_default_area_id().clone();
-    let area = self.net.get_area(&area_id).unwrap();
-    let (spawn_x, spawn_y) = area.get_map().get_spawn();
+    self.net.connect_player(&player_id)?;
+    self.player_id_map.insert(socket_address, player_id);
 
-    let player = Player {
-      socket_address,
-      packet_shipper: PacketShipper::new(socket_address),
-      id: id.clone(),
-      name,
-      area_id,
-      avatar_id: form_id,
-      x: spawn_x,
-      y: spawn_y,
-      z: 0.0,
-      ready: false,
-    };
-
-    self.player_id_map.insert(socket_address, player.id.clone());
-    self.net.add_player(player);
-
-    Ok(id)
+    Ok(())
   }
 
   fn disconnect_player(&mut self, socket_address: &std::net::SocketAddr) {
@@ -362,6 +331,41 @@ impl Server {
       self.net.remove_player(&player_id);
     }
 
+    self.player_texture_buffer.remove(socket_address);
+    self.player_animation_buffer.remove(socket_address);
+
     self.packet_sorter_map.remove(socket_address);
   }
+}
+
+fn append_texture_data(
+  asset_buffer_map: &mut HashMap<std::net::SocketAddr, Vec<u8>>,
+  socket_address: std::net::SocketAddr,
+  data: Vec<u8>,
+) {
+  if let Some(buffer) = asset_buffer_map.get_mut(&socket_address) {
+    if buffer.len() < MAX_PLAYER_ASSET_SIZE {
+      buffer.extend(data);
+    }
+  } else {
+    asset_buffer_map.insert(socket_address, data);
+  }
+}
+
+fn collect_streamed_player_data(
+  player_texture_buffer: &mut HashMap<std::net::SocketAddr, Vec<u8>>,
+  player_animation_buffer: &mut HashMap<std::net::SocketAddr, Vec<u8>>,
+  socket_address: &std::net::SocketAddr,
+) -> Option<(Vec<u8>, String)> {
+  let wrapped_texture_data = player_texture_buffer.remove(socket_address);
+  let wrapped_animation_data = player_animation_buffer.remove(socket_address);
+
+  let texture_data = wrapped_texture_data?;
+  let animation_data = wrapped_animation_data?;
+
+  if texture_data.len() > MAX_PLAYER_ASSET_SIZE || animation_data.len() > MAX_PLAYER_ASSET_SIZE {
+    return None;
+  }
+
+  Some((texture_data, String::from_utf8(animation_data).ok()?))
 }

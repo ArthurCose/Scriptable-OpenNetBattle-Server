@@ -98,11 +98,27 @@ pub fn add_player_api<'a, 'b, 'c>(
       let net = net_ref.borrow_mut();
 
       if let Some(player) = net.get_player(&id) {
-        Ok(player.avatar_id)
+        Ok(vec![
+          player.texture_path.clone(),
+          player.animation_path.clone(),
+        ])
       } else {
         Err(create_player_error(&id))
       }
     })?,
+  )?;
+
+  api_table.set(
+    "set_player_avatar",
+    scope.create_function(
+      move |_, (id, texture_path, animation_path): (String, String, String)| {
+        let mut net = net_ref.borrow_mut();
+
+        net.set_player_avatar(&id, texture_path, animation_path);
+
+        Ok(())
+      },
+    )?,
   )?;
 
   Ok(())

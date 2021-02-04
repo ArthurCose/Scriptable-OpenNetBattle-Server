@@ -4,31 +4,20 @@ use super::bytes::*;
 use super::management::{get_reliability, Reliability};
 use super::{PacketHeaders, TILE_HEIGHT, TILE_WIDTH};
 
+pub const MAX_PLAYER_ASSET_SIZE: usize = 1024 * 1024 * 5;
+
 #[derive(Debug)]
 pub enum ClientPacket {
   Ping,
-  Ack {
-    reliability: Reliability,
-    id: u64,
-  },
-  Login {
-    username: String,
-    password: String,
-    form_id: u16,
-  },
+  Ack { reliability: Reliability, id: u64 },
+  TextureStream { data: Vec<u8> },
+  AnimationStream { data: Vec<u8> },
+  Login { username: String, password: String },
   Logout,
   Ready,
-  Position {
-    x: f32,
-    y: f32,
-    z: f32,
-  },
-  AvatarChange {
-    form_id: u16,
-  },
-  Emote {
-    emote_id: u8,
-  },
+  Position { x: f32, y: f32, z: f32 },
+  AvatarChange,
+  Emote { emote_id: u8 },
 }
 
 pub fn parse_client_packet(buf: &[u8]) -> Option<(PacketHeaders, ClientPacket)> {
@@ -58,22 +47,31 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
       reliability: get_reliability(read_byte(work_buf)?),
       id: read_u64(work_buf)?,
     }),
-    2 => Some(ClientPacket::Login {
+    2 => {
+      let size = read_u16(work_buf)? as usize;
+      let data = read_data(work_buf, size)?;
+
+      Some(ClientPacket::TextureStream { data })
+    }
+    3 => {
+      let size = read_u16(work_buf)? as usize;
+      let data = read_data(work_buf, size)?;
+
+      Some(ClientPacket::AnimationStream { data })
+    }
+    4 => Some(ClientPacket::Login {
       username: read_string(work_buf)?,
       password: read_string(work_buf)?,
-      form_id: read_u16(work_buf)?,
     }),
-    3 => Some(ClientPacket::Logout),
-    4 => Some(ClientPacket::Ready),
-    5 => Some(ClientPacket::Position {
+    5 => Some(ClientPacket::Logout),
+    6 => Some(ClientPacket::Ready),
+    7 => Some(ClientPacket::Position {
       x: read_f32(work_buf)? / TILE_WIDTH * 2.0,
       y: read_f32(work_buf)? / TILE_HEIGHT,
       z: read_f32(work_buf)?,
     }),
-    6 => Some(ClientPacket::AvatarChange {
-      form_id: read_u16(work_buf)?,
-    }),
-    7 => Some(ClientPacket::Emote {
+    8 => Some(ClientPacket::AvatarChange),
+    9 => Some(ClientPacket::Emote {
       emote_id: read_byte(work_buf)?,
     }),
     _ => None,

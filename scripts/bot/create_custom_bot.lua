@@ -1,4 +1,4 @@
-local function create_custom_bot(id, name, area_id, avatar_id, x, y, z)
+local function create_custom_bot(id, name, area_id, texture_path, animation_path, x, y, z)
   local bot = {
     _id = id,
     _area_id = area_id,
@@ -79,7 +79,7 @@ local function create_custom_bot(id, name, area_id, avatar_id, x, y, z)
     end
   end
 
-  Net.create_bot(id, name, area_id, avatar_id, x, y, z)
+  Net.create_bot(id, name, area_id, texture_path, animation_path, x, y, z)
 
   return bot
 end

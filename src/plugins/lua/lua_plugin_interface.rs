@@ -183,14 +183,21 @@ impl PluginInterface for LuaPluginInterface {
     );
   }
 
-  fn handle_player_avatar_change(&mut self, net: &mut Net, player_id: &String, avatar_id: u16) {
+  fn handle_player_avatar_change(
+    &mut self,
+    net: &mut Net,
+    player_id: &String,
+    texture_path: &String,
+    animation_path: &String,
+  ) {
     create_event_handler!(
       self,
       net,
       "handle_",
       "player_avatar_change",
       player_id.clone(),
-      avatar_id
+      texture_path.clone(),
+      animation_path.clone()
     );
   }
 
