@@ -15,7 +15,11 @@ pub struct Net {
 
 impl Net {
   pub fn new(socket: Rc<UdpSocket>) -> Net {
+    use super::asset::get_map_path;
     use std::fs::{read_dir, read_to_string};
+
+    let mut assets = HashMap::new();
+    Net::load_assets_from_dir(&mut assets, &std::path::Path::new("assets"));
 
     let mut areas = HashMap::new();
     let mut default_area_id = None;
@@ -25,19 +29,17 @@ impl Net {
         let map_path = map_dir_entry.path();
 
         if let Ok(raw_map) = read_to_string(&map_path) {
-          let map = Map::from(String::from(raw_map));
+          let mut map = Map::from(String::from(raw_map));
 
           if map_path.file_name().unwrap() == "default.txt" {
             default_area_id = Some(map.get_name().clone());
           }
 
+          assets.insert(get_map_path(map.get_name()), Asset::Text(map.render()));
           areas.insert(map.get_name().clone(), Area::new(map));
         }
       }
     }
-
-    let mut assets = HashMap::new();
-    Net::load_assets_from_dir(&mut assets, &std::path::Path::new("assets"));
 
     Net {
       socket,
@@ -96,19 +98,7 @@ impl Net {
   }
 
   pub fn set_asset(&mut self, path: String, asset: Asset) {
-    let reliability = Reliability::ReliableOrdered;
-    let packets = create_asset_stream(&path, &asset);
-
-    for player in self.players.values_mut() {
-      if player.cached_assets.contains(&path) {
-        for packet in &packets {
-          // todo: handle in packet_shipper?
-          let _ = player
-            .packet_shipper
-            .send(&self.socket, &reliability, &packet);
-        }
-      }
-    }
+    update_cached_players(&self.socket, &mut self.players, &path, &asset);
 
     self.assets.insert(path, asset);
   }
@@ -294,16 +284,21 @@ impl Net {
   }
 
   pub(super) fn connect_player(&mut self, player_id: &String) -> std::io::Result<()> {
+    use super::asset::get_map_path;
+
     let mut packets: Vec<ServerPacket> = Vec::new();
     let mut asset_paths: Vec<String> = Vec::new();
 
     let player = self.players.get_mut(player_id).unwrap();
-    let area = self.areas.get_mut(&player.area_id).unwrap();
 
-    packets.push(ServerPacket::MapData {
-      map_data: area.get_map_mut().render(),
-    });
+    // send map
+    let map_path = get_map_path(&player.area_id);
+    asset_paths.push(map_path.clone());
+    packets.push(ServerPacket::MapUpdate { map_path });
 
+    let area = self.areas.get(&player.area_id).unwrap();
+
+    // send players
     for other_player_id in area.get_connected_players() {
       if other_player_id == player_id {
         continue;
@@ -326,6 +321,7 @@ impl Net {
       });
     }
 
+    // send bots
     for bot_id in area.get_connected_bots() {
       let bot = self.bots.get(bot_id).unwrap();
 
@@ -602,13 +598,19 @@ impl Net {
   }
 
   pub(super) fn broadcast_map_changes(&mut self) {
+    use super::asset::get_map_path;
+
     for area in self.areas.values_mut() {
       let map = area.get_map_mut();
 
       if map.is_dirty() {
-        let packet = ServerPacket::MapData {
-          map_data: map.render(),
-        };
+        let map_path = get_map_path(map.get_name());
+        let map_asset = Asset::Text(map.render());
+
+        update_cached_players(&self.socket, &mut self.players, &map_path, &map_asset);
+        self.assets.insert(map_path.clone(), map_asset);
+
+        let packet = ServerPacket::MapUpdate { map_path };
 
         broadcast_to_area(
           &self.socket,
@@ -631,6 +633,25 @@ impl Net {
     }
 
     disconnected_addresses
+  }
+}
+
+fn update_cached_players(
+  socket: &UdpSocket,
+  players: &mut HashMap<String, Player>,
+  path: &String,
+  asset: &Asset,
+) {
+  let reliability = Reliability::ReliableOrdered;
+  let packets = create_asset_stream(path, &asset);
+
+  for player in players.values_mut() {
+    if player.cached_assets.contains(path) {
+      for packet in &packets {
+        // todo: handle in packet_shipper?
+        let _ = player.packet_shipper.send(socket, &reliability, &packet);
+      }
+    }
   }
 }
 

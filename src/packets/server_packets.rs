@@ -21,8 +21,8 @@ pub enum ServerPacket<'a> {
     name: String,
     asset: &'a Asset,
   },
-  MapData {
-    map_data: String,
+  MapUpdate {
+    map_path: String,
   },
   NaviConnected {
     ticket: String,
@@ -106,9 +106,9 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
         }
       }
     }
-    ServerPacket::MapData { map_data } => {
+    ServerPacket::MapUpdate { map_path } => {
       write_u16(&mut buf, 5);
-      write_string(&mut buf, map_data);
+      write_string(&mut buf, map_path);
     }
     ServerPacket::NaviConnected {
       ticket,
