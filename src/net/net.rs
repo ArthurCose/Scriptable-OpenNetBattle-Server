@@ -183,6 +183,7 @@ impl Net {
           &mut self.players,
           &texture_path,
         );
+
         assert_asset(
           &self.socket,
           area,
@@ -457,6 +458,22 @@ impl Net {
         warp_in: true,
       };
 
+      assert_asset(
+        &self.socket,
+        area,
+        &self.assets,
+        &mut self.players,
+        &bot.texture_path,
+      );
+
+      assert_asset(
+        &self.socket,
+        area,
+        &self.assets,
+        &mut self.players,
+        &bot.animation_path,
+      );
+
       broadcast_to_area(
         &self.socket,
         &mut self.players,
@@ -533,6 +550,7 @@ impl Net {
         &mut self.players,
         &texture_path,
       );
+
       assert_asset(
         &self.socket,
         area,
