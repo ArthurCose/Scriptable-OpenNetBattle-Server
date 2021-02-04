@@ -3,8 +3,10 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::mpsc;
 use std::sync::Arc;
 
+pub const TICK_RATE: f64 = 20.0;
+
 pub fn create_clock_thread(tx: mpsc::Sender<ThreadMessage>) {
-  let target = std::time::Duration::from_secs_f64(1.0 / 20.0);
+  let target = std::time::Duration::from_secs_f64(1.0 / TICK_RATE);
   let behind_counter = Arc::new(AtomicU8::new(0));
 
   std::thread::spawn(move || loop {

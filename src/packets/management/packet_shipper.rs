@@ -1,6 +1,7 @@
 use super::super::bytes::write_u64;
 use super::super::server_packets::*;
 use super::reliability::Reliability;
+use crate::threads::clock_thread::TICK_RATE;
 use std::net::UdpSocket;
 
 struct BackedUpPacket {
@@ -90,7 +91,7 @@ impl PacketShipper {
   }
 
   pub fn resend_backed_up_packets(&self, socket: &UdpSocket) -> std::io::Result<()> {
-    let retry_delay = std::time::Duration::from_secs_f64(1.0 / 20.0);
+    let retry_delay = std::time::Duration::from_secs_f64(1.0 / TICK_RATE);
 
     for backed_up_packet in &self.backed_up_reliable {
       if backed_up_packet.creation_time.elapsed() < retry_delay {
