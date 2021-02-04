@@ -1,5 +1,5 @@
 use super::lua_errors::{create_area_error, create_bot_error};
-use crate::net::Bot;
+use crate::net::Navi;
 use crate::net::Net;
 use rlua;
 use std::cell::RefCell;
@@ -42,7 +42,7 @@ pub fn add_bot_api<'a, 'b>(
         let mut net = net_ref.borrow_mut();
 
         if let Some(_) = net.get_area_mut(&area_id) {
-          let bot = Bot {
+          let bot = Navi {
             id,
             name,
             area_id,

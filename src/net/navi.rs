@@ -1,4 +1,4 @@
-pub struct Bot {
+pub struct Navi {
   pub id: String,
   pub name: String,
   pub area_id: String,

@@ -1,17 +1,11 @@
+use super::Navi;
 use crate::packets::PacketShipper;
 use std::collections::HashSet;
 
 pub struct Player {
   pub socket_address: std::net::SocketAddr,
   pub packet_shipper: PacketShipper,
-  pub id: String,
-  pub name: String,
-  pub area_id: String,
-  pub texture_path: String,
-  pub animation_path: String,
-  pub x: f32,
-  pub y: f32,
-  pub z: f32,
+  pub navi: Navi,
   pub ready: bool,
   pub cached_assets: HashSet<String>,
 }

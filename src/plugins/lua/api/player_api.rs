@@ -43,7 +43,7 @@ pub fn add_player_api<'a, 'b, 'c>(
       let net = net_ref.borrow_mut();
 
       if let Some(player) = net.get_player(&id) {
-        Ok(player.area_id.clone())
+        Ok(player.navi.area_id.clone())
       } else {
         Err(create_player_error(&id))
       }
@@ -56,7 +56,7 @@ pub fn add_player_api<'a, 'b, 'c>(
       let net = net_ref.borrow_mut();
 
       if let Some(player) = net.get_player(&id) {
-        Ok(player.name.clone())
+        Ok(player.navi.name.clone())
       } else {
         Err(create_player_error(&id))
       }
@@ -81,9 +81,9 @@ pub fn add_player_api<'a, 'b, 'c>(
 
       if let Some(player) = net.get_player(&id) {
         let table = lua_ctx.create_table()?;
-        table.set("x", player.x)?;
-        table.set("y", player.y)?;
-        table.set("z", player.z)?;
+        table.set("x", player.navi.x)?;
+        table.set("y", player.navi.y)?;
+        table.set("z", player.navi.z)?;
 
         Ok(table)
       } else {
@@ -99,8 +99,8 @@ pub fn add_player_api<'a, 'b, 'c>(
 
       if let Some(player) = net.get_player(&id) {
         Ok(vec![
-          player.texture_path.clone(),
-          player.animation_path.clone(),
+          player.navi.texture_path.clone(),
+          player.navi.animation_path.clone(),
         ])
       } else {
         Err(create_player_error(&id))
