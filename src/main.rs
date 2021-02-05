@@ -30,16 +30,21 @@ fn main() {
                 }),
         )
         .arg(
+            clap::Arg::with_name("log_connections")
+                .long("log-connections")
+                .help("Logs connects and disconnects"),
+        )
+        .arg(
             clap::Arg::with_name("log_packets")
-                .short("l")
                 .long("log-packets")
-                .help("Outputs received packets (useful for debugging)"),
+                .help("Logs received packets (useful for debugging)"),
         )
         .get_matches();
 
     // validators makes this safe to unwrap
     let config = net::ServerConfig {
         port: matches.value_of("port").unwrap().parse().unwrap(),
+        log_connections: matches.is_present("log_connections"),
         log_packets: matches.is_present("log_packets"),
     };
 

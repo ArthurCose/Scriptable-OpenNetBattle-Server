@@ -11,6 +11,7 @@ use std::rc::Rc;
 
 pub struct ServerConfig {
   pub port: u16,
+  pub log_connections: bool,
   pub log_packets: bool,
 }
 
@@ -110,6 +111,10 @@ impl Server {
             if !self.packet_sorter_map.contains_key(&socket_address) {
               let packet_sorter = PacketSorter::new(socket_address);
               self.packet_sorter_map.insert(socket_address, packet_sorter);
+
+              if self.config.log_connections {
+                println!("{} connected", socket_address);
+              }
             }
           }
 
@@ -322,6 +327,11 @@ impl Server {
     }
 
     self.net.connect_player(&player_id)?;
+
+    if self.config.log_connections {
+      println!("{} connected", player_id);
+    }
+
     self.player_id_map.insert(socket_address, player_id);
 
     Ok(())
@@ -334,12 +344,20 @@ impl Server {
       }
 
       self.net.remove_player(&player_id);
+
+      if self.config.log_connections {
+        println!("{} disconnected", player_id);
+      }
     }
 
     self.player_texture_buffer.remove(socket_address);
     self.player_animation_buffer.remove(socket_address);
 
     self.packet_sorter_map.remove(socket_address);
+
+    if self.config.log_connections {
+      println!("{} disconnected", socket_address);
+    }
   }
 }
 
