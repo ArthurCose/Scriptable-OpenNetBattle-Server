@@ -1,7 +1,6 @@
 use super::Net;
 use crate::packets::{
   build_unreliable_packet, ClientPacket, PacketSorter, Reliability, ServerPacket,
-  MAX_PLAYER_ASSET_SIZE,
 };
 use crate::plugins::PluginInterface;
 use crate::threads::{create_clock_thread, create_socket_thread, ThreadMessage};
@@ -13,6 +12,7 @@ pub struct ServerConfig {
   pub port: u16,
   pub log_connections: bool,
   pub log_packets: bool,
+  pub player_asset_limit: usize,
 }
 
 pub struct Server {
@@ -160,14 +160,24 @@ impl Server {
             println!("Received Texture Stream packet from {}", socket_address);
           }
 
-          append_texture_data(&mut self.player_texture_buffer, socket_address, data);
+          append_texture_data(
+            &mut self.player_texture_buffer,
+            socket_address,
+            data,
+            self.config.player_asset_limit,
+          );
         }
         ClientPacket::AnimationStream { data } => {
           if self.config.log_packets {
             println!("Received Animation Stream packet from {}", socket_address);
           }
 
-          append_texture_data(&mut self.player_animation_buffer, socket_address, data);
+          append_texture_data(
+            &mut self.player_animation_buffer,
+            socket_address,
+            data,
+            self.config.player_asset_limit,
+          );
         }
         ClientPacket::Ack { reliability, id } => {
           if self.config.log_packets {
@@ -222,6 +232,7 @@ impl Server {
             &mut self.player_texture_buffer,
             &mut self.player_animation_buffer,
             &socket_address,
+            self.config.player_asset_limit,
           );
 
           if let Some((texture_data, animation_data)) = data_result {
@@ -270,14 +281,24 @@ impl Server {
             println!("Received Texture Stream packet from {}", socket_address);
           }
 
-          append_texture_data(&mut self.player_texture_buffer, socket_address, data);
+          append_texture_data(
+            &mut self.player_texture_buffer,
+            socket_address,
+            data,
+            self.config.player_asset_limit,
+          );
         }
         ClientPacket::AnimationStream { data } => {
           if self.config.log_packets {
             println!("Received Animation Stream packet from {}", socket_address);
           }
 
-          append_texture_data(&mut self.player_animation_buffer, socket_address, data);
+          append_texture_data(
+            &mut self.player_animation_buffer,
+            socket_address,
+            data,
+            self.config.player_asset_limit,
+          );
         }
         ClientPacket::Login {
           username,
@@ -291,6 +312,7 @@ impl Server {
             &mut self.player_texture_buffer,
             &mut self.player_animation_buffer,
             &socket_address,
+            self.config.player_asset_limit,
           );
 
           if let Some((texture_data, animation_data)) = data_result {
@@ -365,9 +387,10 @@ fn append_texture_data(
   asset_buffer_map: &mut HashMap<std::net::SocketAddr, Vec<u8>>,
   socket_address: std::net::SocketAddr,
   data: Vec<u8>,
+  player_asset_limit: usize,
 ) {
   if let Some(buffer) = asset_buffer_map.get_mut(&socket_address) {
-    if buffer.len() < MAX_PLAYER_ASSET_SIZE {
+    if buffer.len() < player_asset_limit {
       buffer.extend(data);
     }
   } else {
@@ -379,6 +402,7 @@ fn collect_streamed_player_data(
   player_texture_buffer: &mut HashMap<std::net::SocketAddr, Vec<u8>>,
   player_animation_buffer: &mut HashMap<std::net::SocketAddr, Vec<u8>>,
   socket_address: &std::net::SocketAddr,
+  player_asset_limit: usize,
 ) -> Option<(Vec<u8>, String)> {
   let wrapped_texture_data = player_texture_buffer.remove(socket_address);
   let wrapped_animation_data = player_animation_buffer.remove(socket_address);
@@ -386,7 +410,8 @@ fn collect_streamed_player_data(
   let texture_data = wrapped_texture_data?;
   let animation_data = wrapped_animation_data?;
 
-  if texture_data.len() > MAX_PLAYER_ASSET_SIZE || animation_data.len() > MAX_PLAYER_ASSET_SIZE {
+  if texture_data.len() > player_asset_limit || animation_data.len() > player_asset_limit {
+    println!("{} player assets too large", socket_address);
     return None;
   }
 

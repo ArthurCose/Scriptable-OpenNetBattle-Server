@@ -4,8 +4,6 @@ use super::bytes::*;
 use super::management::{get_reliability, Reliability};
 use super::{PacketHeaders, TILE_HEIGHT, TILE_WIDTH};
 
-pub const MAX_PLAYER_ASSET_SIZE: usize = 1024 * 1024 * 5;
-
 #[derive(Debug)]
 pub enum ClientPacket {
   Ping,

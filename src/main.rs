@@ -39,13 +39,30 @@ fn main() {
                 .long("log-packets")
                 .help("Logs received packets (useful for debugging)"),
         )
+        .arg(
+            clap::Arg::with_name("player_asset_limit")
+                .default_value("5120") // 5 MiB - todo: reduce to 1 MiB?
+                .long("player-asset-limit")
+                .takes_value(true)
+                .help("Sets the file size limit for avatar files (in KiB)")
+                .validator(|value| match value.parse::<usize>() {
+                    Ok(_) => Ok(()),
+                    Err(_) => Err(String::from("Invalid file size")),
+                }),
+        )
         .get_matches();
 
-    // validators makes this safe to unwrap
     let config = net::ServerConfig {
+        // validators makes this safe to unwrap
         port: matches.value_of("port").unwrap().parse().unwrap(),
         log_connections: matches.is_present("log_connections"),
         log_packets: matches.is_present("log_packets"),
+        player_asset_limit: matches
+            .value_of("player_asset_limit")
+            .unwrap()
+            .parse::<usize>()
+            .unwrap()
+            * 1024,
     };
 
     let mut server = net::Server::new(config);
