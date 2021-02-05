@@ -4,7 +4,6 @@ mod plugins;
 mod threads;
 
 use clap;
-use net::Server;
 use plugins::LuaPluginInterface;
 
 fn main() {
@@ -39,10 +38,12 @@ fn main() {
         .get_matches();
 
     // validators makes this safe to unwrap
-    let port: u16 = matches.value_of("port").unwrap().parse().unwrap();
-    let log_packets = matches.is_present("log_packets");
+    let config = net::ServerConfig {
+        port: matches.value_of("port").unwrap().parse().unwrap(),
+        log_packets: matches.is_present("log_packets"),
+    };
 
-    let mut server = Server::new(port, log_packets);
+    let mut server = net::Server::new(config);
 
     server.add_plugin_interface(Box::new(LuaPluginInterface::new()));
 

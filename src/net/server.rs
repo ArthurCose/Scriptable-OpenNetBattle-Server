@@ -9,6 +9,11 @@ use std::collections::HashMap;
 use std::net::UdpSocket;
 use std::rc::Rc;
 
+pub struct ServerConfig {
+  pub port: u16,
+  pub log_packets: bool,
+}
+
 pub struct Server {
   player_texture_buffer: HashMap<std::net::SocketAddr, Vec<u8>>,
   player_animation_buffer: HashMap<std::net::SocketAddr, Vec<u8>>,
@@ -17,16 +22,16 @@ pub struct Server {
   net: Net,
   plugin_interfaces: Vec<Box<dyn PluginInterface>>,
   socket: Rc<UdpSocket>,
-  log_packets: bool,
+  config: ServerConfig,
 }
 
 impl Server {
-  pub fn new(port: u16, log_packets: bool) -> Server {
-    let addr = format!("0.0.0.0:{}", port);
+  pub fn new(config: ServerConfig) -> Server {
+    let addr = format!("0.0.0.0:{}", config.port);
     let socket = UdpSocket::bind(addr).expect("Couldn't bind to address");
 
     match socket.take_error() {
-      Ok(None) => println!("Server listening on: {}", port),
+      Ok(None) => println!("Server listening on: {}", config.port),
       Ok(Some(err)) => panic!("UdpSocket error: {:?}", err),
       Err(err) => panic!("UdpSocket.take_error failed: {:?}", err),
     }
@@ -41,7 +46,7 @@ impl Server {
       net: Net::new(rc_socket.clone()),
       plugin_interfaces: Vec::new(),
       socket: rc_socket,
-      log_packets,
+      config,
     }
   }
 
@@ -59,7 +64,7 @@ impl Server {
 
     let (tx, rx) = mpsc::channel();
     create_clock_thread(tx.clone());
-    create_socket_thread(tx, self.socket.try_clone()?, self.log_packets);
+    create_socket_thread(tx, self.socket.try_clone()?, self.config.log_packets);
 
     println!("Server started");
 
@@ -138,7 +143,7 @@ impl Server {
     if let Some(player_id) = self.player_id_map.get(&socket_address) {
       match client_packet {
         ClientPacket::Ping => {
-          if self.log_packets {
+          if self.config.log_packets {
             println!("Received bad Ping packet from {}", socket_address);
           }
 
@@ -146,21 +151,21 @@ impl Server {
           self.socket.send_to(&buf, socket_address)?;
         }
         ClientPacket::TextureStream { data } => {
-          if self.log_packets {
+          if self.config.log_packets {
             println!("Received Texture Stream packet from {}", socket_address);
           }
 
           append_texture_data(&mut self.player_texture_buffer, socket_address, data);
         }
         ClientPacket::AnimationStream { data } => {
-          if self.log_packets {
+          if self.config.log_packets {
             println!("Received Animation Stream packet from {}", socket_address);
           }
 
           append_texture_data(&mut self.player_animation_buffer, socket_address, data);
         }
         ClientPacket::Ack { reliability, id } => {
-          if self.log_packets {
+          if self.config.log_packets {
             println!(
               "Received Ack for {:?} {} from {}",
               reliability, id, socket_address
@@ -174,19 +179,19 @@ impl Server {
           username: _,
           password: _,
         } => {
-          if self.log_packets {
+          if self.config.log_packets {
             println!("Received bad Login packet from {}", socket_address);
           }
         }
         ClientPacket::Logout => {
-          if self.log_packets {
+          if self.config.log_packets {
             println!("Received Logout packet from {}", socket_address);
           }
 
           self.disconnect_player(&socket_address);
         }
         ClientPacket::Position { x, y, z } => {
-          if self.log_packets {
+          if self.config.log_packets {
             println!("Received Position packet from {}", socket_address);
           }
 
@@ -197,14 +202,14 @@ impl Server {
           self.net.move_player(player_id, x, y, z);
         }
         ClientPacket::Ready => {
-          if self.log_packets {
+          if self.config.log_packets {
             println!("Received Ready packet from {}", socket_address);
           }
 
           self.net.mark_player_ready(player_id);
         }
         ClientPacket::AvatarChange => {
-          if self.log_packets {
+          if self.config.log_packets {
             println!("Received Avatar Change packet from {}", socket_address);
           }
 
@@ -234,7 +239,7 @@ impl Server {
           }
         }
         ClientPacket::Emote { emote_id } => {
-          if self.log_packets {
+          if self.config.log_packets {
             println!("Received Emote packet from {}", socket_address);
           }
 
@@ -248,7 +253,7 @@ impl Server {
     } else {
       match client_packet {
         ClientPacket::Ping => {
-          if self.log_packets {
+          if self.config.log_packets {
             println!("Received Ping packet from {}", socket_address);
           }
 
@@ -256,14 +261,14 @@ impl Server {
           self.socket.send_to(&buf, socket_address)?;
         }
         ClientPacket::TextureStream { data } => {
-          if self.log_packets {
+          if self.config.log_packets {
             println!("Received Texture Stream packet from {}", socket_address);
           }
 
           append_texture_data(&mut self.player_texture_buffer, socket_address, data);
         }
         ClientPacket::AnimationStream { data } => {
-          if self.log_packets {
+          if self.config.log_packets {
             println!("Received Animation Stream packet from {}", socket_address);
           }
 
@@ -273,7 +278,7 @@ impl Server {
           username,
           password: _,
         } => {
-          if self.log_packets {
+          if self.config.log_packets {
             println!("Received Login packet from {}", socket_address);
           }
 
@@ -288,7 +293,7 @@ impl Server {
           }
         }
         _ => {
-          if self.log_packets {
+          if self.config.log_packets {
             println!("Received bad packet from {}", socket_address);
             println!("{:?}", client_packet);
             println!("Connected players: {:?}", self.player_id_map.keys());

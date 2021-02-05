@@ -12,4 +12,4 @@ pub use map::Map;
 pub use navi::Navi;
 pub use net::Net;
 pub use player::Player;
-pub use server::Server;
+pub use server::*;
