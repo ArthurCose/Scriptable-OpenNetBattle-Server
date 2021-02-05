@@ -62,7 +62,7 @@ impl Net {
           if path.is_dir() {
             Net::load_assets_from_dir(assets, &path);
           } else {
-            let path_string = String::from("server/") + path.to_str().unwrap_or_default();
+            let path_string = String::from("/server/") + path.to_str().unwrap_or_default();
             let extension_index = path_string.rfind(".").unwrap_or(path_string.len());
             let extension = path_string.to_lowercase().split_off(extension_index);
 

@@ -8,7 +8,7 @@ The Plugin Interface could also be used to build a Rust based script compiled di
 
 ## Areas
 
-Maps for areas are stored in `/areas`. The first area a players will see is `default.txt` (required).
+Maps for areas are stored in `./areas`. The first area a players will see is `default.txt` (required).
 
 The first line in a map file defines the name and ID of the area.
 The remaining lines define the layout using tile IDs separated by commas.
@@ -22,7 +22,7 @@ My Area
 
 ## Assets
 
-Assets are stored in `/assets` and are translated to `server/assets` in scripts.
+Assets are stored in `./assets` and are stored internally as `/server/assets` in scripts.
 Currently assets are only used to set avatars on players and bots.
 Until split packets are implemented assets have a ~9MB limit.
 

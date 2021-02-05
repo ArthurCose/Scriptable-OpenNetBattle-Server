@@ -1,7 +1,7 @@
 local create_custom_bot = require('scripts/bot/create_custom_bot')
 
 local area_id = Net.get_default_area()
-local bot = create_custom_bot("test", "", area_id, "server/assets/prog.png", "server/assets/prog.animation", 1.5, 1.5, 0)
+local bot = create_custom_bot("test", "", area_id, "/server/assets/prog.png", "/server/assets/prog.animation", 1.5, 1.5, 0)
 bot.path = {
   { x=1.5, y=1.5 },
   { x=1.5, y=3.5 },
