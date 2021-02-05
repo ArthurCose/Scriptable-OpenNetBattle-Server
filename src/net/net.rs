@@ -354,6 +354,8 @@ impl Net {
     for asset_path in asset_paths {
       if let Some(asset) = self.assets.get(&asset_path) {
         asset_packets.extend(create_asset_stream(&asset_path, asset));
+      } else {
+        println!("Missing asset! \"{}\"", asset_path);
       }
 
       player.cached_assets.insert(asset_path);
@@ -700,6 +702,8 @@ fn assert_asset(
           .send(socket, &Reliability::ReliableOrdered, &packet);
       }
     }
+  } else {
+    println!("Missing asset! \"{}\"", asset_path);
   }
 }
 
