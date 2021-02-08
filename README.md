@@ -6,6 +6,29 @@ Support for more sources such as WASM/WASI (C++, Kotlin, etc) or JavaScript can 
 
 The Plugin Interface could also be used to build a Rust based script compiled directly into the server.
 
+## Assets
+
+Types of assets:
+
+- Texture (.png|.bmp)
+- Audio (.ogg)
+- Text
+
+Paths
+
+- `/server`
+  - Pseudo folder that represents files in memory
+  - `/assets`
+    - Generated at start from files in `./assets`.
+    - `./assets/prog.png` can be referenced with `/server/assets/prog.png`
+  - `/navis`
+    - Stores avatar files sent from players (5 MiB limit)
+    - Textures are stored as `[id].texture`, and animations are stored as `[id].animation`
+  - `/maps`
+    - Generated from areas and updated every tick.
+    - Stored as `[area id].txt`
+- Paths not starting with `/server` are treated as paths to client files. Files of interest are available in `resources/`
+
 ## Areas
 
 Maps for areas are stored in `./areas`. The first area a players will see is `default.txt` (required).
@@ -19,13 +42,6 @@ My Area
 1,H,1
 1,1,1
 ```
-
-## Assets
-
-Assets are stored in `./assets` and are stored internally as `/server/assets` in scripts.
-Currently assets are only used to set avatars on players and bots.
-Until split packets are implemented assets have a ~9MB limit.
-
 ## Lua API
 
 Commented functions are in development and require changes to the client (specified below).
