@@ -124,6 +124,7 @@ impl Map {
     if !self.cached {
       let mut lines = vec![
         self.name.clone(),
+        String::from("undernet"),
         self.height.to_string() + " " + &self.width.to_string(),
       ];
 
