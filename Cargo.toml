@@ -10,3 +10,4 @@ byteorder = "1.4.2"
 uuid = { version = "0.8.2", features = ["v4"] }
 rlua = "0.17.0"
 clap = "2.33.3"
+minidom = "0.12.0"

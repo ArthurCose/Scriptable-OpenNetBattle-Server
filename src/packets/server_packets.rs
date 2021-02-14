@@ -1,7 +1,7 @@
 // Increment VERSION_ITERATION src/packets/mod.rs if packets are added or modified
 
 use super::bytes::*;
-use super::{MAX_BUFFER_LEN, TILE_HEIGHT, TILE_WIDTH, VERSION_ID, VERSION_ITERATION};
+use super::{MAX_BUFFER_LEN, VERSION_ID, VERSION_ITERATION};
 use crate::net::Asset;
 
 #[derive(Debug)]
@@ -125,8 +125,8 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_string(&mut buf, name);
       write_string(&mut buf, texture_path);
       write_string(&mut buf, animation_path);
-      write_f32(&mut buf, f32::floor(x * TILE_WIDTH / 2.0));
-      write_f32(&mut buf, f32::floor(y * TILE_HEIGHT));
+      write_f32(&mut buf, *x);
+      write_f32(&mut buf, *y);
       write_f32(&mut buf, *z);
       write_bool(&mut buf, *warp_in);
     }
@@ -142,8 +142,8 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     ServerPacket::NaviMove { ticket, x, y, z } => {
       write_u16(&mut buf, 9);
       write_string(&mut buf, ticket);
-      write_f32(&mut buf, f32::floor(x * TILE_WIDTH / 2.0));
-      write_f32(&mut buf, f32::floor(y * TILE_HEIGHT));
+      write_f32(&mut buf, *x);
+      write_f32(&mut buf, *y);
       write_f32(&mut buf, *z);
     }
     ServerPacket::NaviSetAvatar {

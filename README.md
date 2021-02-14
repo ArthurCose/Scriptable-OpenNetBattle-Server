@@ -31,17 +31,57 @@ Paths
 
 ## Areas
 
-Maps for areas are stored in `./areas`. The first area a players will see is `default.txt` (required).
+Maps for areas are stored in `./areas`. The first area a players will see is `default.tmx` (required).
 
-The first line in a map file defines the name and ID of the area.
-The remaining lines define the layout using tile IDs separated by commas.
+### Suggested Settings
 
-```
-My Area
-1,1,1
-1,H,1
-1,1,1
-```
+Editor:
+
+- Fine grid divisions: 2 (Edit -> Preferences -> Interface)
+- Snap To Fine Grid (View -> Snapping)
+  - When working with Object Layer
+- Snap To Pixels (View -> Snapping)
+  - When working with Collision shapes
+
+Map:
+
+- Tile Width: 64
+- Tile Height: 32
+- Tile Layer Format: CSV (required)
+- Create map in assets
+- Copy resources/ow/tiles as ./tiles (relative to server folder)
+  - Server will not send assets from this folder,
+    but will translate the path relative to resources/ow/maps to make use of resources on the client
+
+Tilesets:
+
+- Type: Based on Tileset Image (other types are not currently supported)
+- Object Alignment:
+  - Top - For tile objects stuck to the floor such as warps
+    - Set drawing offset to 0,0
+  - Bottom - For tile objects that act as a wall
+- Place in a Tile Layer to tune drawing offset
+
+### Custom properties
+
+Map:
+
+- Background: string
+  - Path to Background
+- Background Animation: string
+  - Path to Background .animation file
+- Background Vel X: int
+- Background Vel Y: int
+- Song: string
+  - Path to ogg file
+- Name: string
+
+Tiles:
+
+- Solid: bool
+  - Object Layer Only
+  - Defines whether the collision is used for blocking movement or just interactions
+
 ## Lua API
 
 Commented functions are in development and require changes to the client (specified below).
@@ -77,8 +117,8 @@ Net.get_default_area()
 -- Net.create_area(area_id)
 Net.get_width(area_id)
 Net.get_height(area_id)
-Net.get_tile(area_id, x, y)
-Net.set_tile(area_id, x, y, id)
+Net.get_tile_gid(area_id, x, y, z)
+Net.set_tile(area_id, x, y, z, gid, flip_h?, flip_v?, rotate?)
 ```
 
 #### Bot API

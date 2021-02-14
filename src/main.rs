@@ -1,3 +1,4 @@
+mod helpers;
 mod net;
 mod packets;
 mod plugins;

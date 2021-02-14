@@ -2,7 +2,7 @@
 
 use super::bytes::*;
 use super::management::{get_reliability, Reliability};
-use super::{PacketHeaders, TILE_HEIGHT, TILE_WIDTH};
+use super::PacketHeaders;
 
 #[derive(Debug)]
 pub enum ClientPacket {
@@ -64,8 +64,8 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
     5 => Some(ClientPacket::Logout),
     6 => Some(ClientPacket::Ready),
     7 => Some(ClientPacket::Position {
-      x: read_f32(work_buf)? / TILE_WIDTH * 2.0,
-      y: read_f32(work_buf)? / TILE_HEIGHT,
+      x: read_f32(work_buf)?,
+      y: read_f32(work_buf)?,
       z: read_f32(work_buf)?,
     }),
     8 => Some(ClientPacket::AvatarChange),

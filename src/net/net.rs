@@ -31,7 +31,7 @@ impl Net {
         if let Ok(raw_map) = read_to_string(&map_path) {
           let mut map = Map::from(String::from(raw_map));
 
-          if map_path.file_name().unwrap() == "default.txt" {
+          if map_path.file_name().unwrap() == "default.tmx" {
             default_area_id = Some(map.get_name().clone());
           }
 
