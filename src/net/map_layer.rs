@@ -61,7 +61,7 @@ impl MapLayer {
             .join(",")
         })
         .collect::<Vec<String>>()
-        .join(",");
+        .join(",\n");
 
       self.cached_string = format!(
         "\
