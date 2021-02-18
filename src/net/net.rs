@@ -733,13 +733,18 @@ fn assert_asset(
   for asset_path in assets_to_send {
     let asset = assets.get(asset_path).unwrap();
 
-    let packets = create_asset_stream(asset_path, asset);
+    let mut packets: Vec<ServerPacket> = Vec::new();
 
     for player_id in player_ids {
       let player = players.get_mut(player_id).unwrap();
 
       if player.cached_assets.contains(asset_path) {
         continue;
+      }
+
+      // lazily create stream
+      if packets.len() == 0 {
+        packets = create_asset_stream(asset_path, asset);
       }
 
       player.cached_assets.insert(asset_path.clone());
