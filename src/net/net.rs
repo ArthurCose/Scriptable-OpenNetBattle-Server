@@ -202,19 +202,17 @@ impl Net {
 
       // skip if player has not even been sent to anyone yet
       if player.ready {
-        assert_asset(
+        update_cached_players(
           &self.socket,
-          &self.assets,
+          &mut self.assets,
           &mut self.players,
-          area.get_connected_players(),
           &texture_path,
         );
 
-        assert_asset(
+        update_cached_players(
           &self.socket,
-          &self.assets,
+          &mut self.assets,
           &mut self.players,
-          area.get_connected_players(),
           &animation_path,
         );
 
@@ -582,19 +580,17 @@ impl Net {
 
       let area = self.areas.get(&bot.area_id).unwrap();
 
-      assert_asset(
+      update_cached_players(
         &self.socket,
-        &self.assets,
+        &mut self.assets,
         &mut self.players,
-        area.get_connected_players(),
         &texture_path,
       );
 
-      assert_asset(
+      update_cached_players(
         &self.socket,
-        &self.assets,
+        &mut self.assets,
         &mut self.players,
-        area.get_connected_players(),
         &animation_path,
       );
 
