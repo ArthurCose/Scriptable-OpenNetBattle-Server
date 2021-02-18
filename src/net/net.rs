@@ -688,20 +688,47 @@ fn update_cached_players(
   asset_path: &String,
 ) {
   use super::get_flattened_dependency_chain;
-  let assets_to_send = get_flattened_dependency_chain(assets, asset_path);
+  let mut dependencies = get_flattened_dependency_chain(assets, asset_path);
+  dependencies.pop();
 
   let reliability = Reliability::ReliableOrdered;
 
-  for asset_path in assets_to_send {
-    if let Some(asset) = assets.get(asset_path) {
-      let packets = create_asset_stream(asset_path, &asset);
+  let mut players_to_update: Vec<&mut Player> = players
+    .values_mut()
+    .filter(|player| player.cached_assets.contains(asset_path))
+    .collect();
 
-      for player in players.values_mut() {
+  // asserting dependencies
+  for asset_path in dependencies {
+    if let Some(asset) = assets.get(asset_path) {
+      let mut packets = Vec::new();
+
+      for player in &mut players_to_update {
         if player.cached_assets.contains(asset_path) {
-          for packet in &packets {
-            player.packet_shipper.send(socket, &reliability, &packet);
-          }
+          continue;
         }
+
+        player.cached_assets.insert(asset_path.clone());
+
+        // lazily create stream
+        if packets.len() == 0 {
+          packets = create_asset_stream(asset_path, &asset);
+        }
+
+        for packet in &packets {
+          player.packet_shipper.send(socket, &reliability, &packet);
+        }
+      }
+    }
+  }
+
+  // updating players who have this asset
+  if let Some(asset) = assets.get(asset_path) {
+    let packets = create_asset_stream(asset_path, &asset);
+
+    for player in &mut players_to_update {
+      for packet in &packets {
+        player.packet_shipper.send(socket, &reliability, &packet);
       }
     }
   }
