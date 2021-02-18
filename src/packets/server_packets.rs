@@ -2,7 +2,7 @@
 
 use super::bytes::*;
 use super::{MAX_BUFFER_LEN, VERSION_ID, VERSION_ITERATION};
-use crate::net::Asset;
+use crate::net::{Asset, AssetData};
 
 #[derive(Debug)]
 pub enum ServerPacket<'a> {
@@ -91,17 +91,17 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_u16(&mut buf, 4);
       write_string(&mut buf, name);
 
-      match asset {
-        Asset::Text(_) => {
+      match asset.data {
+        AssetData::Text(_) => {
           buf.push(0);
         }
-        Asset::Texture(_) => {
+        AssetData::Texture(_) => {
           buf.push(1);
         }
-        Asset::Audio(_) => {
+        AssetData::Audio(_) => {
           buf.push(2);
         }
-        Asset::SFMLImage(_) => {
+        AssetData::SFMLImage(_) => {
           buf.push(3);
         }
       }
@@ -172,11 +172,11 @@ pub fn create_asset_stream<'a>(name: &String, asset: &'a Asset) -> Vec<ServerPac
 
   let mut packets = Vec::new();
 
-  let mut bytes = match asset {
-    Asset::Text(data) => data.as_bytes(),
-    Asset::Texture(data) => &data,
-    Asset::Audio(data) => &data,
-    Asset::SFMLImage(data) => &data,
+  let mut bytes = match &asset.data {
+    AssetData::Text(data) => data.as_bytes(),
+    AssetData::Texture(data) => &data,
+    AssetData::Audio(data) => &data,
+    AssetData::SFMLImage(data) => &data,
   };
 
   let mut remaining_bytes = bytes.len();

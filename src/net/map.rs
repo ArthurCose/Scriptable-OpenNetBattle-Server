@@ -1,6 +1,6 @@
 use super::map_layer::MapLayer;
 use super::map_object::MapObject;
-use super::Tile;
+use super::{Asset, Tile};
 use crate::helpers::unwrap_and_parse_or_default;
 use minidom;
 
@@ -82,7 +82,13 @@ impl Map {
         }
         "tileset" => {
           let first_gid: u32 = unwrap_and_parse_or_default(child.attr("firstgid"));
-          let path = child.attr("source").unwrap_or_default().to_string();
+          let mut path = child.attr("source").unwrap_or_default().to_string();
+
+          const ASSETS_RELATIVE_PATH: &str = "../assets/";
+
+          if path.starts_with(ASSETS_RELATIVE_PATH) {
+            path = String::from("/server/assets/") + &path[ASSETS_RELATIVE_PATH.len()..];
+          }
 
           map.tilesets.push(TilesetInfo { first_gid, path });
         }
@@ -121,6 +127,10 @@ impl Map {
     map.layers.reverse();
 
     map
+  }
+
+  pub fn get_tileset_paths(&self) -> impl std::iter::Iterator<Item = &String> {
+    self.tilesets.iter().map(|tileset_info| &tileset_info.path)
   }
 
   pub fn get_name(&self) -> &String {
@@ -218,5 +228,18 @@ impl Map {
     }
 
     self.cached_string.clone()
+  }
+
+  pub fn generate_asset(&mut self) -> Asset {
+    use super::AssetData;
+
+    Asset {
+      data: AssetData::Text(self.render()),
+      dependencies: self
+        .get_tileset_paths()
+        .filter(|path| path.starts_with("/server/")) // tileset provided by server
+        .map(|path| path.clone())
+        .collect(),
+    }
   }
 }

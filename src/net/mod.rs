@@ -1,5 +1,5 @@
 mod area;
-mod asset;
+pub mod asset;
 mod map;
 mod map_layer;
 mod map_object;

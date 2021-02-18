@@ -1,4 +1,4 @@
-use super::{Area, Asset, Map, Navi, Player};
+use super::{Area, Asset, AssetData, Map, Navi, Player};
 use crate::packets::{create_asset_stream, PacketShipper, Reliability, ServerPacket};
 use std::collections::{HashMap, HashSet};
 use std::net::UdpSocket;
@@ -35,7 +35,9 @@ impl Net {
             default_area_id = Some(map.get_name().clone());
           }
 
-          assets.insert(get_map_path(map.get_name()), Asset::Text(map.render()));
+          let map_asset = map.generate_asset();
+
+          assets.insert(get_map_path(map.get_name()), map_asset);
           areas.insert(map.get_name().clone(), Area::new(map));
         }
       }
@@ -52,6 +54,7 @@ impl Net {
   }
 
   fn load_assets_from_dir(assets: &mut HashMap<String, Asset>, dir: &std::path::Path) {
+    use super::{resolve_tsx_dependencies, translate_tsx};
     use std::fs::{read, read_dir, read_to_string};
 
     if let Ok(entries) = read_dir(dir) {
@@ -66,12 +69,35 @@ impl Net {
             let extension_index = path_string.rfind(".").unwrap_or(path_string.len());
             let extension = path_string.to_lowercase().split_off(extension_index);
 
-            let asset = if extension == ".ogg" {
-              Asset::Audio(read(&path).unwrap_or_default())
+            let asset_data = if extension == ".ogg" {
+              AssetData::Audio(read(&path).unwrap_or_default())
             } else if extension == ".png" || extension == ".bmp" {
-              Asset::Texture(read(&path).unwrap_or_default())
+              AssetData::Texture(read(&path).unwrap_or_default())
+            } else if extension == ".tsx" {
+              let original_data = read_to_string(&path).unwrap_or_default();
+              let translated_data = translate_tsx(&path, &original_data);
+
+              if translated_data == None {
+                println!("Invalid .tsx file: {:?}", path);
+              }
+
+              AssetData::Text(translated_data.unwrap_or(original_data))
             } else {
-              Asset::Text(read_to_string(&path).unwrap_or_default())
+              AssetData::Text(read_to_string(&path).unwrap_or_default())
+            };
+
+            let mut dependencies = Vec::new();
+
+            if extension == ".tsx" {
+              // can't chain yet: https://github.com/rust-lang/rust/issues/53667
+              if let AssetData::Text(data) = &asset_data {
+                dependencies = resolve_tsx_dependencies(data);
+              }
+            }
+
+            let asset = Asset {
+              data: asset_data,
+              dependencies,
             };
 
             assets.insert(path_string, asset);
@@ -98,9 +124,9 @@ impl Net {
   }
 
   pub fn set_asset(&mut self, path: String, asset: Asset) {
-    update_cached_players(&self.socket, &mut self.players, &path, &asset);
+    self.assets.insert(path.clone(), asset);
 
-    self.assets.insert(path, asset);
+    update_cached_players(&self.socket, &self.assets, &mut self.players, &path);
   }
 
   pub fn remove_asset(&mut self, path: &String) {
@@ -178,17 +204,17 @@ impl Net {
       if player.ready {
         assert_asset(
           &self.socket,
-          area,
           &self.assets,
           &mut self.players,
+          area.get_connected_players(),
           &texture_path,
         );
 
         assert_asset(
           &self.socket,
-          area,
           &self.assets,
           &mut self.players,
+          area.get_connected_players(),
           &animation_path,
         );
 
@@ -280,8 +306,21 @@ impl Net {
     let texture_path = asset::get_player_texture_path(player_id);
     let animation_path = asset::get_player_animation_path(player_id);
 
-    self.set_asset(texture_path.clone(), Asset::SFMLImage(texture_data));
-    self.set_asset(animation_path.clone(), Asset::Text(animation_data));
+    self.set_asset(
+      texture_path.clone(),
+      Asset {
+        data: AssetData::SFMLImage(texture_data),
+        dependencies: Vec::new(),
+      },
+    );
+
+    self.set_asset(
+      animation_path.clone(),
+      Asset {
+        data: AssetData::Text(animation_data),
+        dependencies: Vec::new(),
+      },
+    );
 
     (texture_path, animation_path)
   }
@@ -348,22 +387,18 @@ impl Net {
       ticket: player_id.clone(),
     });
 
-    let player = self.players.get_mut(player_id).unwrap();
-    let mut asset_packets = Vec::new();
-
+    // send asset_packets before anything else
     for asset_path in asset_paths {
-      if let Some(asset) = self.assets.get(&asset_path) {
-        asset_packets.extend(create_asset_stream(&asset_path, asset));
-      } else {
-        println!("Missing asset! \"{}\"", asset_path);
-      }
-
-      player.cached_assets.insert(asset_path);
+      assert_asset(
+        &self.socket,
+        &self.assets,
+        &mut self.players,
+        &vec![player_id.clone()],
+        &asset_path,
+      );
     }
 
-    // send asset_packets before anything else
-    asset_packets.append(&mut packets);
-    let packets = asset_packets;
+    let player = self.players.get_mut(player_id).unwrap();
 
     for packet in packets {
       player
@@ -397,17 +432,17 @@ impl Net {
 
       assert_asset(
         &self.socket,
-        area,
         &self.assets,
         &mut self.players,
+        area.get_connected_players(),
         &texture_path,
       );
 
       assert_asset(
         &self.socket,
-        area,
         &self.assets,
         &mut self.players,
+        area.get_connected_players(),
         &animation_path,
       );
 
@@ -464,17 +499,17 @@ impl Net {
 
       assert_asset(
         &self.socket,
-        area,
         &self.assets,
         &mut self.players,
+        area.get_connected_players(),
         &bot.texture_path,
       );
 
       assert_asset(
         &self.socket,
-        area,
         &self.assets,
         &mut self.players,
+        area.get_connected_players(),
         &bot.animation_path,
       );
 
@@ -549,17 +584,17 @@ impl Net {
 
       assert_asset(
         &self.socket,
-        area,
         &self.assets,
         &mut self.players,
+        area.get_connected_players(),
         &texture_path,
       );
 
       assert_asset(
         &self.socket,
-        area,
         &self.assets,
         &mut self.players,
+        area.get_connected_players(),
         &animation_path,
       );
 
@@ -627,10 +662,10 @@ impl Net {
 
       if map.is_dirty() {
         let map_path = get_map_path(map.get_name());
-        let map_asset = Asset::Text(map.render());
+        let map_asset = map.generate_asset();
 
-        update_cached_players(&self.socket, &mut self.players, &map_path, &map_asset);
         self.assets.insert(map_path.clone(), map_asset);
+        update_cached_players(&self.socket, &self.assets, &mut self.players, &map_path);
 
         let packet = ServerPacket::MapUpdate { map_path };
 
@@ -660,18 +695,26 @@ impl Net {
 
 fn update_cached_players(
   socket: &UdpSocket,
+  assets: &HashMap<String, Asset>,
   players: &mut HashMap<String, Player>,
-  path: &String,
-  asset: &Asset,
+  asset_path: &String,
 ) {
-  let reliability = Reliability::ReliableOrdered;
-  let packets = create_asset_stream(path, &asset);
+  use super::get_flattened_dependency_chain;
+  let assets_to_send = get_flattened_dependency_chain(assets, asset_path);
 
-  for player in players.values_mut() {
-    if player.cached_assets.contains(path) {
-      for packet in &packets {
-        // todo: handle in packet_shipper?
-        let _ = player.packet_shipper.send(socket, &reliability, &packet);
+  let reliability = Reliability::ReliableOrdered;
+
+  for asset_path in assets_to_send {
+    if let Some(asset) = assets.get(asset_path) {
+      let packets = create_asset_stream(asset_path, &asset);
+
+      for player in players.values_mut() {
+        if player.cached_assets.contains(asset_path) {
+          for packet in &packets {
+            // todo: handle in packet_shipper?
+            let _ = player.packet_shipper.send(socket, &reliability, &packet);
+          }
+        }
       }
     }
   }
@@ -679,13 +722,16 @@ fn update_cached_players(
 
 fn assert_asset(
   socket: &UdpSocket,
-  area: &Area,
   assets: &HashMap<String, Asset>,
   players: &mut HashMap<String, Player>,
+  player_ids: &Vec<String>,
   asset_path: &String,
 ) {
-  if let Some(asset) = assets.get(asset_path) {
-    let player_ids = area.get_connected_players();
+  use super::get_flattened_dependency_chain;
+  let assets_to_send = get_flattened_dependency_chain(assets, asset_path);
+
+  for asset_path in assets_to_send {
+    let asset = assets.get(asset_path).unwrap();
 
     let packets = create_asset_stream(asset_path, asset);
 
@@ -696,14 +742,14 @@ fn assert_asset(
         continue;
       }
 
+      player.cached_assets.insert(asset_path.clone());
+
       for packet in &packets {
         let _ = player
           .packet_shipper
           .send(socket, &Reliability::ReliableOrdered, &packet);
       }
     }
-  } else {
-    println!("Missing asset! \"{}\"", asset_path);
   }
 }
 
