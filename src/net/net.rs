@@ -258,7 +258,7 @@ impl Net {
     name: String,
     texture_data: Vec<u8>,
     animation_data: String,
-  ) -> std::io::Result<String> {
+  ) -> String {
     use uuid::Uuid;
 
     let id = Uuid::new_v4().to_string();
@@ -290,7 +290,7 @@ impl Net {
     area.add_player(player.navi.id.clone());
     self.players.insert(player.navi.id.clone(), player);
 
-    Ok(id)
+    id
   }
 
   pub(super) fn store_player_avatar(
@@ -323,7 +323,7 @@ impl Net {
     (texture_path, animation_path)
   }
 
-  pub(super) fn connect_player(&mut self, player_id: &String) -> std::io::Result<()> {
+  pub(super) fn connect_player(&mut self, player_id: &String) {
     use super::asset::get_map_path;
 
     let mut packets: Vec<ServerPacket> = Vec::new();
@@ -401,10 +401,8 @@ impl Net {
     for packet in packets {
       player
         .packet_shipper
-        .send(&self.socket, &Reliability::ReliableOrdered, &packet)?;
+        .send(&self.socket, &Reliability::ReliableOrdered, &packet);
     }
-
-    Ok(())
   }
 
   pub(super) fn mark_player_ready(&mut self, id: &String) {
@@ -676,16 +674,10 @@ impl Net {
     }
   }
 
-  pub(super) fn resend_backed_up_packets(&mut self) -> Vec<std::net::SocketAddr> {
-    let mut disconnected_addresses = Vec::new();
-
+  pub(super) fn resend_backed_up_packets(&mut self) {
     for player in self.players.values_mut() {
-      if let Err(_) = player.packet_shipper.resend_backed_up_packets(&self.socket) {
-        disconnected_addresses.push(player.socket_address);
-      }
+      player.packet_shipper.resend_backed_up_packets(&self.socket);
     }
-
-    disconnected_addresses
   }
 }
 
@@ -707,8 +699,7 @@ fn update_cached_players(
       for player in players.values_mut() {
         if player.cached_assets.contains(asset_path) {
           for packet in &packets {
-            // todo: handle in packet_shipper?
-            let _ = player.packet_shipper.send(socket, &reliability, &packet);
+            player.packet_shipper.send(socket, &reliability, &packet);
           }
         }
       }
@@ -746,7 +737,7 @@ fn assert_asset(
       player.cached_assets.insert(asset_path.clone());
 
       for packet in &packets {
-        let _ = player
+        player
           .packet_shipper
           .send(socket, &Reliability::ReliableOrdered, &packet);
       }
@@ -764,8 +755,6 @@ fn broadcast_to_area(
   for player_id in area.get_connected_players() {
     let player = players.get_mut(player_id).unwrap();
 
-    if let Err(err) = player.packet_shipper.send(socket, &reliability, &packet) {
-      println!("{:#}", err);
-    }
+    player.packet_shipper.send(socket, &reliability, &packet);
   }
 }

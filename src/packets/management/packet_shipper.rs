@@ -31,18 +31,13 @@ impl PacketShipper {
     }
   }
 
-  pub fn send(
-    &mut self,
-    socket: &UdpSocket,
-    reliability: &Reliability,
-    packet: &ServerPacket,
-  ) -> std::io::Result<()> {
+  pub fn send(&mut self, socket: &UdpSocket, reliability: &Reliability, packet: &ServerPacket) {
     match reliability {
       Reliability::Unreliable => {
         let mut data = vec![0];
         data.extend(build_packet(packet));
 
-        socket.send_to(&data, self.socket_address)?;
+        self.send_with_silenced_errors(socket, &data);
       }
       // ignore old packets
       Reliability::UnreliableSequenced => {
@@ -50,7 +45,7 @@ impl PacketShipper {
         write_u64(&mut data, self.next_unreliable_sequenced);
         data.extend(build_packet(packet));
 
-        socket.send_to(&data, self.socket_address)?;
+        self.send_with_silenced_errors(socket, &data);
 
         self.next_unreliable_sequenced += 1;
       }
@@ -59,7 +54,7 @@ impl PacketShipper {
         write_u64(&mut data, self.next_reliable);
         data.extend(build_packet(packet));
 
-        socket.send_to(&data, self.socket_address)?;
+        self.send_with_silenced_errors(socket, &data);
 
         self.backed_up_reliable.push(BackedUpPacket {
           id: self.next_reliable,
@@ -75,7 +70,7 @@ impl PacketShipper {
         write_u64(&mut data, self.next_reliable_ordered);
         data.extend(build_packet(packet));
 
-        socket.send_to(&data, self.socket_address)?;
+        self.send_with_silenced_errors(socket, &data);
 
         self.backed_up_reliable_ordered.push(BackedUpPacket {
           id: self.next_reliable_ordered,
@@ -86,11 +81,9 @@ impl PacketShipper {
         self.next_reliable_ordered += 1;
       }
     }
-
-    Ok(())
   }
 
-  pub fn resend_backed_up_packets(&self, socket: &UdpSocket) -> std::io::Result<()> {
+  pub fn resend_backed_up_packets(&self, socket: &UdpSocket) {
     let retry_delay = std::time::Duration::from_secs_f64(1.0 / TICK_RATE);
 
     for backed_up_packet in &self.backed_up_reliable {
@@ -98,7 +91,7 @@ impl PacketShipper {
         break;
       }
 
-      socket.send_to(&backed_up_packet.data, &self.socket_address)?;
+      self.send_with_silenced_errors(socket, &backed_up_packet.data);
     }
 
     for backed_up_packet in &self.backed_up_reliable_ordered {
@@ -106,10 +99,8 @@ impl PacketShipper {
         break;
       }
 
-      socket.send_to(&backed_up_packet.data, &self.socket_address)?;
+      self.send_with_silenced_errors(socket, &backed_up_packet.data);
     }
-
-    Ok(())
   }
 
   pub fn acknowledged(&mut self, reliability: Reliability, id: u64) {
@@ -136,5 +127,11 @@ impl PacketShipper {
       .iter()
       .position(|backed_up| backed_up.id == id)
       .map(|position| self.backed_up_reliable_ordered.remove(position));
+  }
+
+  fn send_with_silenced_errors(&self, socket: &UdpSocket, buf: &[u8]) {
+    // packet shipper does not guarantee packets being received, but can retry
+    // packet sorter will handle kicking
+    let _ = socket.send_to(buf, self.socket_address);
   }
 }

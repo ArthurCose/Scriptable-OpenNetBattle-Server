@@ -83,10 +83,8 @@ impl Server {
             plugin.tick(&mut self.net, elapsed_time.as_secs_f32());
           }
 
-          // resend pending packets, kick anyone who had errors
-          let mut kick_list = self.net.resend_backed_up_packets();
-
           // kick afk players
+          let mut kick_list = Vec::new();
           let max_silence = std::time::Duration::from_secs(5);
 
           for (socket_address, packet_sorter) in &mut self.packet_sorter_map {
@@ -101,6 +99,9 @@ impl Server {
           for socket_address in kick_list {
             self.disconnect_player(&socket_address);
           }
+
+          // resend pending packets
+          self.net.resend_backed_up_packets();
         }
         ThreadMessage::ClientPacket {
           socket_address,
@@ -316,7 +317,7 @@ impl Server {
           );
 
           if let Some((texture_data, animation_data)) = data_result {
-            self.connect_player(socket_address, username, texture_data, animation_data)?;
+            self.connect_player(socket_address, username, texture_data, animation_data);
           }
         }
         _ => {
@@ -338,25 +339,22 @@ impl Server {
     name: String,
     texture_data: Vec<u8>,
     animation_data: String,
-  ) -> std::io::Result<()> {
-    let player_id =
-      self
-        .net
-        .add_player(socket_address.clone(), name, texture_data, animation_data)?;
+  ) {
+    let player_id = self
+      .net
+      .add_player(socket_address.clone(), name, texture_data, animation_data);
 
     for plugin in &mut self.plugin_interfaces {
       plugin.handle_player_connect(&mut self.net, &player_id);
     }
 
-    self.net.connect_player(&player_id)?;
+    self.net.connect_player(&player_id);
 
     if self.config.log_connections {
       println!("{} connected", player_id);
     }
 
     self.player_id_map.insert(socket_address, player_id);
-
-    Ok(())
   }
 
   fn disconnect_player(&mut self, socket_address: &std::net::SocketAddr) {
