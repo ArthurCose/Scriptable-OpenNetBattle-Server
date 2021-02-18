@@ -59,8 +59,6 @@ impl Map {
     map.next_layer_id = unwrap_and_parse_or_default(map_element.attr("nextlayerid"));
     map.next_object_id = unwrap_and_parse_or_default(map_element.attr("nextobjectid"));
 
-    let mut object_layer_index = 0;
-
     for child in map_element.children() {
       match child.name() {
         "properties" => {
@@ -105,8 +103,6 @@ impl Map {
             .push(MapLayer::new(id, name, map.width, map.height, data));
         }
         "objectgroup" => {
-          object_layer_index += 1;
-
           for object_element in child.children() {
             let map_object = MapObject::from(object_element);
 
