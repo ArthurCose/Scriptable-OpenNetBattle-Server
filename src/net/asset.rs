@@ -21,7 +21,7 @@ pub fn get_player_animation_path(player_id: &String) -> String {
 }
 
 pub fn get_map_path(map_id: &String) -> String {
-  String::from("/server/maps/") + map_id + ".txt"
+  String::from("/server/maps/") + map_id + ".tmx"
 }
 
 pub fn get_flattened_dependency_chain<'a>(
