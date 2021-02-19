@@ -14,8 +14,6 @@ pub struct PacketHeaders {
   pub id: u64,
 }
 
-pub const MAX_BUFFER_LEN: usize = 10240;
-
 pub(super) const VERSION_ID: &str =
   "https://github.com/ArthurCose/Scriptable-OpenNetBattle-Server/tree/proposed-packets";
-pub(super) const VERSION_ITERATION: u64 = 4;
+pub(super) const VERSION_ITERATION: u64 = 5;

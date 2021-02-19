@@ -5,6 +5,7 @@ mod plugins;
 mod threads;
 
 use clap;
+use helpers::unwrap_and_parse_or_default;
 use plugins::LuaPluginInterface;
 
 fn main() {
@@ -31,6 +32,27 @@ fn main() {
                 }),
         )
         .arg(
+            clap::Arg::with_name("max_payload_size")
+                .long("max-payload-size")
+                .help("Maximum data size a packet can carry, excluding UDP headers (reduce for lower packet drop rate)")
+                .value_name("SIZE_IN_BYTES")
+                .default_value("10240")
+                .takes_value(true)
+                .validator(|value| {
+                    let error_message = "Invalid payload size";
+                    let max_payload_size = value
+                        .parse::<u16>()
+                        .map_err(|_| String::from(error_message))?;
+
+                    // max size defined by NetPlayConfig::MAX_BUFFER_LEN
+                    if max_payload_size >= 100 && max_payload_size <= 10240 {
+                        Ok(())
+                    } else {
+                        Err(String::from(error_message))
+                    }
+                }),
+        )
+        .arg(
             clap::Arg::with_name("log_connections")
                 .long("log-connections")
                 .help("Logs connects and disconnects"),
@@ -42,10 +64,11 @@ fn main() {
         )
         .arg(
             clap::Arg::with_name("player_asset_limit")
-                .default_value("5120") // 5 MiB - todo: reduce to 1 MiB?
                 .long("player-asset-limit")
-                .takes_value(true)
                 .help("Sets the file size limit for avatar files (in KiB)")
+                .value_name("SIZE_IN_KiB")
+                .default_value("5120") // 5 MiB - todo: reduce to 1 MiB?
+                .takes_value(true)
                 .validator(|value| match value.parse::<usize>() {
                     Ok(_) => Ok(()),
                     Err(_) => Err(String::from("Invalid file size")),
@@ -56,14 +79,12 @@ fn main() {
     let config = net::ServerConfig {
         // validators makes this safe to unwrap
         port: matches.value_of("port").unwrap().parse().unwrap(),
+        max_payload_size: unwrap_and_parse_or_default(matches.value_of("max_payload_size")),
         log_connections: matches.is_present("log_connections"),
         log_packets: matches.is_present("log_packets"),
-        player_asset_limit: matches
-            .value_of("player_asset_limit")
-            .unwrap()
-            .parse::<usize>()
-            .unwrap()
-            * 1024,
+        player_asset_limit: unwrap_and_parse_or_default::<usize>(
+            matches.value_of("player_asset_limit"),
+        ) * 1024,
     };
 
     let mut server = net::Server::new(config);

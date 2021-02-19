@@ -6,6 +6,7 @@ use std::rc::Rc;
 
 pub struct Net {
   socket: Rc<UdpSocket>,
+  max_payload_size: usize,
   areas: HashMap<String, Area>,
   default_area_id: String,
   players: HashMap<String, Player>,
@@ -14,7 +15,7 @@ pub struct Net {
 }
 
 impl Net {
-  pub fn new(socket: Rc<UdpSocket>) -> Net {
+  pub fn new(socket: Rc<UdpSocket>, max_payload_size: usize) -> Net {
     use super::asset::get_map_path;
     use std::fs::{read_dir, read_to_string};
 
@@ -45,6 +46,7 @@ impl Net {
 
     Net {
       socket,
+      max_payload_size,
       default_area_id: default_area_id.expect("No default (default.txt) area data found"),
       areas,
       players: HashMap::new(),
@@ -126,7 +128,13 @@ impl Net {
   pub fn set_asset(&mut self, path: String, asset: Asset) {
     self.assets.insert(path.clone(), asset);
 
-    update_cached_players(&self.socket, &self.assets, &mut self.players, &path);
+    update_cached_players(
+      &self.socket,
+      self.max_payload_size,
+      &self.assets,
+      &mut self.players,
+      &path,
+    );
   }
 
   pub fn remove_asset(&mut self, path: &String) {
@@ -204,6 +212,7 @@ impl Net {
       if player.ready {
         update_cached_players(
           &self.socket,
+          self.max_payload_size,
           &mut self.assets,
           &mut self.players,
           &texture_path,
@@ -211,6 +220,7 @@ impl Net {
 
         update_cached_players(
           &self.socket,
+          self.max_payload_size,
           &mut self.assets,
           &mut self.players,
           &animation_path,
@@ -389,6 +399,7 @@ impl Net {
     for asset_path in asset_paths {
       assert_asset(
         &self.socket,
+        self.max_payload_size,
         &self.assets,
         &mut self.players,
         &vec![player_id.clone()],
@@ -428,6 +439,7 @@ impl Net {
 
       assert_asset(
         &self.socket,
+        self.max_payload_size,
         &self.assets,
         &mut self.players,
         area.get_connected_players(),
@@ -436,6 +448,7 @@ impl Net {
 
       assert_asset(
         &self.socket,
+        self.max_payload_size,
         &self.assets,
         &mut self.players,
         area.get_connected_players(),
@@ -495,6 +508,7 @@ impl Net {
 
       assert_asset(
         &self.socket,
+        self.max_payload_size,
         &self.assets,
         &mut self.players,
         area.get_connected_players(),
@@ -503,6 +517,7 @@ impl Net {
 
       assert_asset(
         &self.socket,
+        self.max_payload_size,
         &self.assets,
         &mut self.players,
         area.get_connected_players(),
@@ -580,6 +595,7 @@ impl Net {
 
       update_cached_players(
         &self.socket,
+        self.max_payload_size,
         &mut self.assets,
         &mut self.players,
         &texture_path,
@@ -587,6 +603,7 @@ impl Net {
 
       update_cached_players(
         &self.socket,
+        self.max_payload_size,
         &mut self.assets,
         &mut self.players,
         &animation_path,
@@ -659,7 +676,13 @@ impl Net {
         let map_asset = map.generate_asset();
 
         self.assets.insert(map_path.clone(), map_asset);
-        update_cached_players(&self.socket, &self.assets, &mut self.players, &map_path);
+        update_cached_players(
+          &self.socket,
+          self.max_payload_size,
+          &self.assets,
+          &mut self.players,
+          &map_path,
+        );
 
         let packet = ServerPacket::MapUpdate { map_path };
 
@@ -683,6 +706,7 @@ impl Net {
 
 fn update_cached_players(
   socket: &UdpSocket,
+  max_payload_size: usize,
   assets: &HashMap<String, Asset>,
   players: &mut HashMap<String, Player>,
   asset_path: &String,
@@ -712,7 +736,7 @@ fn update_cached_players(
 
         // lazily create stream
         if packets.len() == 0 {
-          packets = create_asset_stream(asset_path, &asset);
+          packets = create_asset_stream(max_payload_size, asset_path, &asset);
         }
 
         for packet in &packets {
@@ -724,7 +748,7 @@ fn update_cached_players(
 
   // updating players who have this asset
   if let Some(asset) = assets.get(asset_path) {
-    let packets = create_asset_stream(asset_path, &asset);
+    let packets = create_asset_stream(max_payload_size, asset_path, &asset);
 
     for player in &mut players_to_update {
       for packet in &packets {
@@ -736,6 +760,7 @@ fn update_cached_players(
 
 fn assert_asset(
   socket: &UdpSocket,
+  max_payload_size: usize,
   assets: &HashMap<String, Asset>,
   players: &mut HashMap<String, Player>,
   player_ids: &Vec<String>,
@@ -758,7 +783,7 @@ fn assert_asset(
 
       // lazily create stream
       if packets.len() == 0 {
-        packets = create_asset_stream(asset_path, asset);
+        packets = create_asset_stream(max_payload_size, asset_path, asset);
       }
 
       player.cached_assets.insert(asset_path.clone());

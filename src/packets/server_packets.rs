@@ -1,12 +1,14 @@
 // Increment VERSION_ITERATION src/packets/mod.rs if packets are added or modified
 
 use super::bytes::*;
-use super::{MAX_BUFFER_LEN, VERSION_ID, VERSION_ITERATION};
+use super::{VERSION_ID, VERSION_ITERATION};
 use crate::net::{Asset, AssetData};
 
 #[derive(Debug)]
 pub enum ServerPacket<'a> {
-  Pong,
+  Pong {
+    max_payload_size: usize,
+  },
   Ack {
     reliability: u8,
     id: u64,
@@ -68,10 +70,11 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
   let mut buf = Vec::new();
 
   match packet {
-    ServerPacket::Pong => {
+    ServerPacket::Pong { max_payload_size } => {
       write_u16(&mut buf, 0);
       write_str(&mut buf, VERSION_ID);
       write_u64(&mut buf, VERSION_ITERATION);
+      write_u16(&mut buf, *max_payload_size as u16);
     }
     ServerPacket::Ack { reliability, id } => {
       write_u16(&mut buf, 1);
@@ -166,7 +169,11 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
   buf
 }
 
-pub fn create_asset_stream<'a>(name: &String, asset: &'a Asset) -> Vec<ServerPacket<'a>> {
+pub fn create_asset_stream<'a>(
+  max_payload_size: usize,
+  name: &String,
+  asset: &'a Asset,
+) -> Vec<ServerPacket<'a>> {
   // reliability type + id + packet type + data size
   const HEADER_SIZE: usize = 1 + 8 + 2 + 2 + 16;
 
@@ -182,7 +189,7 @@ pub fn create_asset_stream<'a>(name: &String, asset: &'a Asset) -> Vec<ServerPac
   let mut remaining_bytes = bytes.len();
 
   while remaining_bytes > 0 {
-    let available_room = MAX_BUFFER_LEN - HEADER_SIZE;
+    let available_room = max_payload_size - HEADER_SIZE;
     let size = if remaining_bytes < available_room {
       remaining_bytes
     } else {

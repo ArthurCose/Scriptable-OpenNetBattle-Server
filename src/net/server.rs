@@ -10,6 +10,7 @@ use std::rc::Rc;
 
 pub struct ServerConfig {
   pub port: u16,
+  pub max_payload_size: usize,
   pub log_connections: bool,
   pub log_packets: bool,
   pub player_asset_limit: usize,
@@ -44,7 +45,7 @@ impl Server {
       player_animation_buffer: HashMap::new(),
       player_id_map: HashMap::new(),
       packet_sorter_map: HashMap::new(),
-      net: Net::new(rc_socket.clone()),
+      net: Net::new(rc_socket.clone(), config.max_payload_size),
       plugin_interfaces: Vec::new(),
       socket: rc_socket,
       config,
@@ -65,7 +66,12 @@ impl Server {
 
     let (tx, rx) = mpsc::channel();
     create_clock_thread(tx.clone());
-    create_socket_thread(tx, self.socket.try_clone()?, self.config.log_packets);
+    create_socket_thread(
+      tx,
+      self.socket.try_clone()?,
+      self.config.max_payload_size,
+      self.config.log_packets,
+    );
 
     println!("Server started");
 
@@ -153,7 +159,9 @@ impl Server {
             println!("Received bad Ping packet from {}", socket_address);
           }
 
-          let buf = build_unreliable_packet(&ServerPacket::Pong);
+          let buf = build_unreliable_packet(&ServerPacket::Pong {
+            max_payload_size: self.config.max_payload_size,
+          });
           self.socket.send_to(&buf, socket_address)?;
         }
         ClientPacket::TextureStream { data } => {
@@ -274,7 +282,9 @@ impl Server {
             println!("Received Ping packet from {}", socket_address);
           }
 
-          let buf = build_unreliable_packet(&ServerPacket::Pong);
+          let buf = build_unreliable_packet(&ServerPacket::Pong {
+            max_payload_size: self.config.max_payload_size,
+          });
           self.socket.send_to(&buf, socket_address)?;
         }
         ClientPacket::TextureStream { data } => {

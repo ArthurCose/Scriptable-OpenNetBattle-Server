@@ -1,11 +1,16 @@
-use crate::packets::{parse_client_packet, MAX_BUFFER_LEN};
+use crate::packets::parse_client_packet;
 use crate::threads::ThreadMessage;
 use std::net::UdpSocket;
 use std::sync::mpsc;
 
-pub fn create_socket_thread(tx: mpsc::Sender<ThreadMessage>, socket: UdpSocket, log_packets: bool) {
+pub fn create_socket_thread(
+  tx: mpsc::Sender<ThreadMessage>,
+  socket: UdpSocket,
+  max_payload_size: usize,
+  log_packets: bool,
+) {
   std::thread::spawn(move || loop {
-    let mut buf = [0; MAX_BUFFER_LEN];
+    let mut buf = vec![0; max_payload_size];
 
     let wrapped_packet = socket.recv_from(&mut buf);
 
