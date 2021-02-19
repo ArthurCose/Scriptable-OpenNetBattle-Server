@@ -30,9 +30,7 @@ impl MapObject {
     let width: f32 = unwrap_and_parse_or_default(element.attr("width"));
     let height: f32 = unwrap_and_parse_or_default(element.attr("height"));
 
-    let data = if width == 0.0 && height == 0.0 {
-      MapObjectData::Point
-    } else if gid != 0 {
+    let data = if gid != 0 {
       MapObjectData::TileObject { gid }
     } else if element.has_child("polygon", minidom::NSChoice::Any) {
       let points_element = element
@@ -54,6 +52,8 @@ impl MapObject {
         .collect::<Vec<(f32, f32)>>();
 
       MapObjectData::Polygon { points }
+    } else if width == 0.0 && height == 0.0 {
+      MapObjectData::Point
     } else if element.has_child("ellipse", minidom::NSChoice::Any) {
       MapObjectData::Ellipse
     } else {
