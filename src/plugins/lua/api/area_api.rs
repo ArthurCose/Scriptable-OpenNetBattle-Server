@@ -79,7 +79,7 @@ pub fn add_area_api<'a, 'b>(
             gid,
             flipped_horizontally: flip_horizontal.unwrap_or(false),
             flipped_vertically: flip_vertical.unwrap_or(false),
-            rotated: rotate.unwrap_or(false),
+            flipped_anti_diagonally: rotate.unwrap_or(false),
           };
 
           Ok(area.get_map_mut().set_tile(x, y, z, tile))
