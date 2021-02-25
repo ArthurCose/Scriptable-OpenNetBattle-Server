@@ -49,7 +49,7 @@ Map:
 - Tile Height: 32
 - Tile Layer Format: CSV (required)
 - Create map in assets
-- Copy resources/ow/tiles as ./tiles (relative to server folder)
+- Copy resources/ow/tiles from the client to ./tiles (relative to server folder)
   - Server will not send assets from this folder,
     but will translate the path relative to resources/ow/maps to make use of resources on the client
 
@@ -101,7 +101,8 @@ function handle_player_move(player_id, x, y, z)
 function handle_player_avatar_change(player_id, texture_path, animation_path)
 function handle_player_emote(player_id, emote)
 -- function handle_tile_interaction(player_id, x, y, z)
--- function handle_player_conversation(player_id, other_id)
+-- function handle_object_interaction(player_id, object)
+-- function handle_navi_interaction(player_id, navi_id) -- navi_id is a player or bot id
 -- function handle_player_response(player_id, response) -- response is an index
 -- function handle_battle_completion(player_id, results)
 ```
@@ -119,21 +120,23 @@ Net.get_width(area_id)
 Net.get_height(area_id)
 Net.get_tile_gid(area_id, x, y, z)
 Net.set_tile(area_id, x, y, z, gid, flip_h?, flip_v?, rotate?)
+-- Net.list_map_objects(area_id) -- string[]
+-- Net.get_map_object(area_id, object_id) -- { id, name, type, x, y, z, width, height, properties }
 ```
 
 #### Bot API
 
 ```lua
-Net.list_bots(area_id)
+Net.list_bots(area_id) -- string[]
 Net.create_bot(id, name, area_id, texture_path, animation_path, x, y, z)
 Net.is_bot(id)
 Net.remove_bot(id)
 Net.get_bot_area(id)
 Net.get_bot_name(id)
 Net.set_bot_name(id)
-Net.get_bot_position(id)
+Net.get_bot_position(id) -- { x, y, z }
 Net.move_bot(id, x, y, z)
-Net.set_bot_avatar(id, avatar_id)
+Net.set_bot_avatar(id, texture_path, animation_path)
 Net.set_bot_emote(id, emote_id)
 -- Net.transfer(id, area_id)
 ```
@@ -141,12 +144,12 @@ Net.set_bot_emote(id, emote_id)
 #### Player API
 
 ```lua
-Net.list_players(area_id)
+Net.list_players(area_id) -- string[]
 Net.is_player(id)
 Net.get_player_area(id)
 Net.get_player_name(id)
 Net.set_player_name(id)
-Net.get_player_position(id)
+Net.get_player_position(id) -- { x, y, z }
 -- Net.get_player_avatar(id)
 Net.set_player_avatar(id, texture_path, animation_path)
 -- Net.lock_player(id)
