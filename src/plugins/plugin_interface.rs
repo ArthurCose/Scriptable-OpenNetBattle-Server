@@ -14,4 +14,5 @@ pub trait PluginInterface {
     animation_path: &String,
   );
   fn handle_player_emote(&mut self, net: &mut Net, player_id: &String, emote_id: u8);
+  fn handle_object_interaction(&mut self, net: &mut Net, player_id: &String, tile_object_id: u32);
 }

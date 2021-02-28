@@ -27,6 +27,21 @@ pub fn read_u16(buf: &mut &[u8]) -> Option<u16> {
   Some(data)
 }
 
+pub fn read_u32(buf: &mut &[u8]) -> Option<u32> {
+  use byteorder::{ByteOrder, LittleEndian};
+
+  if buf.len() < 4 {
+    *buf = &buf[buf.len()..];
+    return None;
+  }
+
+  let data = LittleEndian::read_u32(buf);
+
+  *buf = &buf[4..];
+
+  Some(data)
+}
+
 pub fn read_u64(buf: &mut &[u8]) -> Option<u64> {
   use byteorder::{ByteOrder, LittleEndian};
 

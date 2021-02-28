@@ -274,6 +274,15 @@ impl Server {
 
           self.net.set_player_emote(player_id, emote_id);
         }
+        ClientPacket::ObjectInteraction { tile_object_id } => {
+          if self.config.log_packets {
+            println!("Received ObjectInteraction packet from {}", socket_address);
+          }
+
+          for plugin in &mut self.plugin_interfaces {
+            plugin.handle_object_interaction(&mut self.net, player_id, tile_object_id);
+          }
+        }
       }
     } else {
       match client_packet {

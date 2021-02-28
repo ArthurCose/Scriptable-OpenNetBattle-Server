@@ -13,6 +13,7 @@ pub struct LuaPluginInterface {
   player_move_listeners: Vec<std::path::PathBuf>,
   player_avatar_change_listeners: Vec<std::path::PathBuf>,
   player_emote_listeners: Vec<std::path::PathBuf>,
+  object_interaction_listeners: Vec<std::path::PathBuf>,
 }
 
 impl LuaPluginInterface {
@@ -25,6 +26,7 @@ impl LuaPluginInterface {
       player_move_listeners: Vec::new(),
       player_avatar_change_listeners: Vec::new(),
       player_emote_listeners: Vec::new(),
+      object_interaction_listeners: Vec::new(),
     };
 
     plugin_interface
@@ -96,6 +98,10 @@ impl LuaPluginInterface {
 
       if let Ok(_) = globals.get::<_, rlua::Function>("handle_player_emote") {
         self.player_emote_listeners.push(script_dir.clone());
+      }
+
+      if let Ok(_) = globals.get::<_, rlua::Function>("handle_object_interaction") {
+        self.object_interaction_listeners.push(script_dir.clone());
       }
 
       Ok(())
@@ -183,6 +189,16 @@ impl PluginInterface for LuaPluginInterface {
       net,
       "handle_player_emote",
       |callback| callback.call((player_id.clone(), emote_id)),
+    );
+  }
+
+  fn handle_object_interaction(&mut self, net: &mut Net, player_id: &String, tile_object_id: u32) {
+    handle_event(
+      &mut self.scripts,
+      &self.object_interaction_listeners,
+      net,
+      "handle_object_interaction",
+      |callback| callback.call((player_id.clone(), tile_object_id)),
     );
   }
 }
