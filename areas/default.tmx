@@ -22,17 +22,17 @@
 0,2147483649,0,0,1,0,2,2,2,0,
 0,1,2147483649,1,2147483649,0,0,0,2147483687,0,
 0,0,0,2147483687,1,2147483686,0,38,37,2147483689,
-0,33,38,37,35,35,2147483689,39,34,44,
-0,0,39,36,34,34,44,38,34,43,
+0,33,38,37,35,35,2147483689,39,36,44,
+0,0,39,36,34,34,44,38,36,43,
 0,0,38,36,34,34,43,0,41,0,
 0,0,0,40,2147483692,42,0,0,0,0
 </data>
  </layer>
  <objectgroup id="5" name="Object Layer">
   <object id="18" gid="24" x="132" y="212" width="33" height="54"/>
-  <object id="21" gid="20" x="221" y="121" width="44" height="61"/>
-  <object id="29" gid="2147483676" x="174" y="95" width="34" height="52"/>
-  <object id="33" gid="28" x="31.5" y="81.5" width="34" height="52"/>
+  <object id="21" gid="20" x="233" y="131" width="44" height="61"/>
+  <object id="29" gid="2147483676" x="189" y="113" width="34" height="52"/>
+  <object id="33" gid="28" x="30.5" y="119.5" width="34" height="52"/>
   <object id="41" x="21" y="-11" width="62.5" height="25.5"/>
   <object id="42" x="76" y="-84" width="70" height="70">
    <ellipse/>
@@ -44,8 +44,8 @@
    <point/>
   </object>
   <object id="46" name="Home Warp" gid="15" x="128" y="256" width="60" height="32"/>
-  <object id="47" gid="20" x="37.5" y="37.5" width="44" height="61"/>
-  <object id="48" gid="20" x="198" y="70" width="44" height="61"/>
-  <object id="49" gid="20" x="262" y="102" width="44" height="61"/>
+  <object id="47" gid="2147483668" x="44" y="46" width="44" height="61"/>
+  <object id="48" gid="20" x="205" y="77" width="44" height="61"/>
+  <object id="49" gid="20" x="270" y="110" width="44" height="61"/>
  </objectgroup>
 </map>
