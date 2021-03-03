@@ -1,6 +1,7 @@
 use super::map::Map;
 
 pub struct Area {
+  id: String,
   map: Map,
   // cache
   connected_players: Vec<String>,
@@ -8,12 +9,17 @@ pub struct Area {
 }
 
 impl Area {
-  pub fn new(map: Map) -> Area {
+  pub fn new(id: String, map: Map) -> Area {
     Area {
+      id,
       map,
       connected_players: Vec::new(),
       connected_bots: Vec::new(),
     }
+  }
+
+  pub fn get_id(&self) -> &String {
+    &self.id
   }
 
   pub fn get_map(&self) -> &Map {

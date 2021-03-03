@@ -8,7 +8,6 @@ pub struct Net {
   socket: Rc<UdpSocket>,
   max_payload_size: usize,
   areas: HashMap<String, Area>,
-  default_area_id: String,
   players: HashMap<String, Player>,
   bots: HashMap<String, Navi>,
   assets: HashMap<String, Asset>,
@@ -23,31 +22,39 @@ impl Net {
     Net::load_assets_from_dir(&mut assets, &std::path::Path::new("assets"));
 
     let mut areas = HashMap::new();
-    let mut default_area_id = None;
+    let mut default_area_provided = false;
 
     for wrapped_dir_entry in read_dir("./areas").expect("Area folder missing! (./areas)") {
       if let Ok(map_dir_entry) = wrapped_dir_entry {
         let map_path = map_dir_entry.path();
+        let area_id = map_path
+          .file_stem()
+          .unwrap_or_default()
+          .to_string_lossy()
+          .into_owned();
 
         if let Ok(raw_map) = read_to_string(&map_path) {
           let mut map = Map::from(String::from(raw_map));
 
-          if map_path.file_name().unwrap() == "default.tmx" {
-            default_area_id = Some(map.get_name().clone());
+          if area_id == "default" {
+            default_area_provided = true
           }
 
           let map_asset = map.generate_asset();
 
-          assets.insert(get_map_path(map.get_name()), map_asset);
-          areas.insert(map.get_name().clone(), Area::new(map));
+          assets.insert(get_map_path(&area_id), map_asset);
+          areas.insert(area_id.clone(), Area::new(area_id, map));
         }
       }
+    }
+
+    if !default_area_provided {
+      panic!("No default (default.txt) area data found");
     }
 
     Net {
       socket,
       max_payload_size,
-      default_area_id: default_area_id.expect("No default (default.txt) area data found"),
       areas,
       players: HashMap::new(),
       bots: HashMap::new(),
@@ -107,10 +114,6 @@ impl Net {
         }
       }
     }
-  }
-
-  pub fn get_default_area_id(&self) -> &String {
-    &self.default_area_id
   }
 
   pub fn get_area(&self, area_id: &String) -> Option<&Area> {
@@ -276,7 +279,7 @@ impl Net {
     let (texture_path, animation_path) =
       self.store_player_avatar(&id, texture_data, animation_data);
 
-    let area_id = self.get_default_area_id().clone();
+    let area_id = String::from("default");
     let area = self.get_area_mut(&area_id).unwrap();
     let (spawn_x, spawn_y) = area.get_map().get_spawn();
 
@@ -669,10 +672,10 @@ impl Net {
     use super::asset::get_map_path;
 
     for area in self.areas.values_mut() {
+      let map_path = get_map_path(area.get_id());
       let map = area.get_map_mut();
 
       if map.is_dirty() {
-        let map_path = get_map_path(map.get_name());
         let map_asset = map.generate_asset();
 
         self.assets.insert(map_path.clone(), map_asset);

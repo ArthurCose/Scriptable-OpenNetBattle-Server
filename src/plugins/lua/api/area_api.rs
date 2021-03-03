@@ -9,15 +9,6 @@ pub fn add_area_api<'a, 'b>(
   net_ref: &'b RefCell<&mut Net>,
 ) -> rlua::Result<()> {
   api_table.set(
-    "get_default_area",
-    scope.create_function(move |_, ()| {
-      let net = net_ref.borrow();
-
-      Ok(net.get_default_area_id().clone())
-    })?,
-  )?;
-
-  api_table.set(
     "get_width",
     scope.create_function(move |_, area_id: String| {
       let mut net = net_ref.borrow_mut();
