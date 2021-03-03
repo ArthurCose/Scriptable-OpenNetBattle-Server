@@ -9,6 +9,7 @@ pub struct LuaPluginInterface {
   scripts: HashMap<std::path::PathBuf, Lua>,
   tick_listeners: Vec<std::path::PathBuf>,
   player_connect_listeners: Vec<std::path::PathBuf>,
+  player_transfer_listeners: Vec<std::path::PathBuf>,
   player_disconnect_listeners: Vec<std::path::PathBuf>,
   player_move_listeners: Vec<std::path::PathBuf>,
   player_avatar_change_listeners: Vec<std::path::PathBuf>,
@@ -24,6 +25,7 @@ impl LuaPluginInterface {
       scripts: HashMap::new(),
       tick_listeners: Vec::new(),
       player_connect_listeners: Vec::new(),
+      player_transfer_listeners: Vec::new(),
       player_disconnect_listeners: Vec::new(),
       player_move_listeners: Vec::new(),
       player_avatar_change_listeners: Vec::new(),
@@ -88,6 +90,10 @@ impl LuaPluginInterface {
         self.player_connect_listeners.push(script_dir.clone());
       }
 
+      if let Ok(_) = globals.get::<_, rlua::Function>("handle_player_transfer") {
+        self.player_transfer_listeners.push(script_dir.clone());
+      }
+
       if let Ok(_) = globals.get::<_, rlua::Function>("handle_player_disconnect") {
         self.player_disconnect_listeners.push(script_dir.clone());
       }
@@ -148,6 +154,16 @@ impl PluginInterface for LuaPluginInterface {
       &self.player_connect_listeners,
       net,
       "handle_player_connect",
+      |callback| callback.call(player_id.clone()),
+    );
+  }
+
+  fn handle_player_transfer(&mut self, net: &mut Net, player_id: &String) {
+    handle_event(
+      &mut self.scripts,
+      &self.player_transfer_listeners,
+      net,
+      "handle_player_transfer",
       |callback| callback.call(player_id.clone()),
     );
   }

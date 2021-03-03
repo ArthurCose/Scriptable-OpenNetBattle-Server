@@ -230,6 +230,15 @@ impl Server {
             println!("Received Ready packet from {}", socket_address);
           }
 
+          let player = self.net.get_player(player_id).unwrap();
+
+          // if the player is ready, this is a transfer
+          if player.ready {
+            for plugin in &mut self.plugin_interfaces {
+              plugin.handle_player_transfer(&mut self.net, &player_id);
+            }
+          }
+
           self.net.mark_player_ready(player_id);
         }
         ClientPacket::AvatarChange => {
