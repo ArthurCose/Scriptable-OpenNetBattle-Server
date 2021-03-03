@@ -17,6 +17,8 @@ pub enum ClientPacket {
   AvatarChange,
   Emote { emote_id: u8 },
   ObjectInteraction { tile_object_id: u32 },
+  NaviInteraction { navi_id: String },
+  TileInteraction { x: f32, y: f32, z: f32 },
 }
 
 pub fn parse_client_packet(buf: &[u8]) -> Option<(PacketHeaders, ClientPacket)> {
@@ -75,6 +77,14 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
     }),
     10 => Some(ClientPacket::ObjectInteraction {
       tile_object_id: read_u32(work_buf)?,
+    }),
+    11 => Some(ClientPacket::NaviInteraction {
+      navi_id: read_string(work_buf)?,
+    }),
+    12 => Some(ClientPacket::TileInteraction {
+      x: read_f32(work_buf)?,
+      y: read_f32(work_buf)?,
+      z: read_f32(work_buf)?,
     }),
     _ => None,
   }

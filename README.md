@@ -100,9 +100,9 @@ function handle_player_disconnect(player_id)
 function handle_player_move(player_id, x, y, z)
 function handle_player_avatar_change(player_id, texture_path, animation_path)
 function handle_player_emote(player_id, emote)
--- function handle_tile_interaction(player_id, x, y, z)
 function handle_object_interaction(player_id, object)
--- function handle_navi_interaction(player_id, navi_id) -- navi_id is a player or bot id
+function handle_navi_interaction(player_id, navi_id) -- navi_id is a player or bot id
+function handle_tile_interaction(player_id, x, y, z)
 -- function handle_player_response(player_id, response) -- response is an index
 -- function handle_battle_completion(player_id, results)
 ```

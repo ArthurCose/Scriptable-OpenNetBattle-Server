@@ -14,6 +14,8 @@ pub struct LuaPluginInterface {
   player_avatar_change_listeners: Vec<std::path::PathBuf>,
   player_emote_listeners: Vec<std::path::PathBuf>,
   object_interaction_listeners: Vec<std::path::PathBuf>,
+  navi_interaction_listeners: Vec<std::path::PathBuf>,
+  tile_interaction_listeners: Vec<std::path::PathBuf>,
 }
 
 impl LuaPluginInterface {
@@ -27,6 +29,8 @@ impl LuaPluginInterface {
       player_avatar_change_listeners: Vec::new(),
       player_emote_listeners: Vec::new(),
       object_interaction_listeners: Vec::new(),
+      navi_interaction_listeners: Vec::new(),
+      tile_interaction_listeners: Vec::new(),
     };
 
     plugin_interface
@@ -102,6 +106,14 @@ impl LuaPluginInterface {
 
       if let Ok(_) = globals.get::<_, rlua::Function>("handle_object_interaction") {
         self.object_interaction_listeners.push(script_dir.clone());
+      }
+
+      if let Ok(_) = globals.get::<_, rlua::Function>("handle_navi_interaction") {
+        self.navi_interaction_listeners.push(script_dir.clone());
+      }
+
+      if let Ok(_) = globals.get::<_, rlua::Function>("handle_tile_interaction") {
+        self.tile_interaction_listeners.push(script_dir.clone());
       }
 
       Ok(())
@@ -199,6 +211,26 @@ impl PluginInterface for LuaPluginInterface {
       net,
       "handle_object_interaction",
       |callback| callback.call((player_id.clone(), tile_object_id)),
+    );
+  }
+
+  fn handle_navi_interaction(&mut self, net: &mut Net, player_id: &String, navi_id: &String) {
+    handle_event(
+      &mut self.scripts,
+      &self.navi_interaction_listeners,
+      net,
+      "handle_navi_interaction",
+      |callback| callback.call((player_id.clone(), navi_id.clone())),
+    );
+  }
+
+  fn handle_tile_interaction(&mut self, net: &mut Net, player_id: &String, x: f32, y: f32, z: f32) {
+    handle_event(
+      &mut self.scripts,
+      &self.tile_interaction_listeners,
+      net,
+      "handle_tile_interaction",
+      |callback| callback.call((player_id.clone(), x, y, z)),
     );
   }
 }

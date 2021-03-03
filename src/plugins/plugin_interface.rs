@@ -15,4 +15,6 @@ pub trait PluginInterface {
   );
   fn handle_player_emote(&mut self, net: &mut Net, player_id: &String, emote_id: u8);
   fn handle_object_interaction(&mut self, net: &mut Net, player_id: &String, tile_object_id: u32);
+  fn handle_navi_interaction(&mut self, net: &mut Net, player_id: &String, navi_id: &String);
+  fn handle_tile_interaction(&mut self, net: &mut Net, player_id: &String, x: f32, y: f32, z: f32);
 }

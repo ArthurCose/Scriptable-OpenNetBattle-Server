@@ -283,6 +283,24 @@ impl Server {
             plugin.handle_object_interaction(&mut self.net, player_id, tile_object_id);
           }
         }
+        ClientPacket::NaviInteraction { navi_id } => {
+          if self.config.log_packets {
+            println!("Received ObjectInteraction packet from {}", socket_address);
+          }
+
+          for plugin in &mut self.plugin_interfaces {
+            plugin.handle_navi_interaction(&mut self.net, player_id, &navi_id);
+          }
+        }
+        ClientPacket::TileInteraction { x, y, z } => {
+          if self.config.log_packets {
+            println!("Received TileInteraction packet from {}", socket_address);
+          }
+
+          for plugin in &mut self.plugin_interfaces {
+            plugin.handle_tile_interaction(&mut self.net, player_id, x, y, z);
+          }
+        }
       }
     } else {
       match client_packet {
