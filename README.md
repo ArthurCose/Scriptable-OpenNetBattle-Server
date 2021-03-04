@@ -91,11 +91,11 @@ Commented functions are in development and require changes to the client (specif
 ```Lua
 function tick(delta_time)
 function handle_player_connect(player_id)
+function handle_player_transfer(player_id)
 
 -- For the following functions: internal values are not set until after execution
 -- this means Players.get_player_position(id) will provide the old position of the player, etc
 
--- function handle_player_transfer(player_id, area_id)
 function handle_player_disconnect(player_id)
 function handle_player_move(player_id, x, y, z)
 function handle_player_avatar_change(player_id, texture_path, animation_path)
@@ -114,7 +114,9 @@ Interactions with the cyberworld are performed through functions attached to a g
 #### Area API
 
 ```Lua
-Net.get_default_area()
+-- area_id is the filename without extension
+-- ./assets/my_area.tmx would be my_area
+
 -- Net.create_area(area_id)
 Net.get_width(area_id)
 Net.get_height(area_id)
@@ -140,7 +142,7 @@ Net.get_bot_position(id) -- { x, y, z }
 Net.move_bot(id, x, y, z)
 Net.set_bot_avatar(id, texture_path, animation_path)
 Net.set_bot_emote(id, emote_id)
--- Net.transfer(id, area_id)
+Net.transfer_bot(id, area_id, warp_in?, x?, y?, z?)
 ```
 
 #### Player API
@@ -160,12 +162,12 @@ Net.set_player_avatar(id, texture_path, animation_path)
 -- Net.send_player_message(id, message)
 -- Net.send_player_question(id, question)
 -- Net.send_player_menu(id, options)
--- Net.move_player_camera(id, x, y)
--- Net.slide_camera(id, x, y)
+-- Net.move_player_camera(id, x, y, z)
+-- Net.slide_camera(id, x, y, z)
 -- Net.unlock_player_camera(id)
 -- Net.send_virus(id, data)
 -- Net.initiate_pvp(player_1_id, player_2_id, data)
--- Net.transfer(id, area_id)
+Net.transfer_player(id, area_id, warp_in?, x?, y?, z?)
 -- Net.transfer_server(id, server)
 ```
 
@@ -186,12 +188,7 @@ Net.set_player_avatar(id, texture_path, animation_path)
   - Virus battle
   - Transfer?
     - Send the player to a different server.
-  - Reset Map
-    - Remove players, map tiles, etc.
-    - Allows for multiple areas with one server.
 - Serverbound
-  - Interaction with Navi (Conversation)
-  - Interaction with Tile (Interact)
   - Menu Response (for Message, MessageQuestion, etc)
     - Allows scripting the next action (textbox, camera movement, etc).
 
