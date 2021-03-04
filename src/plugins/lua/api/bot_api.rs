@@ -177,5 +177,40 @@ pub fn add_bot_api<'a, 'b>(
     })?,
   )?;
 
+  api_table.set(
+    "transfer_bot",
+    scope.create_function(
+      move |_,
+            (id, area_id, warp_in_option, x_option, y_option, z_option): (
+        String,
+        String,
+        Option<bool>,
+        Option<f32>,
+        Option<f32>,
+        Option<f32>,
+      )| {
+        let mut net = net_ref.borrow_mut();
+        let warp_in = warp_in_option.unwrap_or(true);
+        let x;
+        let y;
+        let z;
+
+        if let Some(area) = net.get_area(&area_id) {
+          let spawn = area.get_map().get_spawn();
+
+          x = x_option.unwrap_or(spawn.0);
+          y = y_option.unwrap_or(spawn.1);
+          z = z_option.unwrap_or(0.0);
+        } else {
+          return Err(create_area_error(&area_id));
+        }
+
+        net.transfer_bot(&id, &area_id, warp_in, x, y, z);
+
+        Ok(())
+      },
+    )?,
+  )?;
+
   Ok(())
 }

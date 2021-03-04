@@ -708,6 +708,80 @@ impl Net {
     }
   }
 
+  pub fn transfer_bot(
+    &mut self,
+    id: &String,
+    area_id: &String,
+    warp_in: bool,
+    x: f32,
+    y: f32,
+    z: f32,
+  ) {
+    if let None = self.areas.get(area_id) {
+      // non existent area
+      return;
+    }
+
+    if let Some(bot) = self.bots.get_mut(id) {
+      let previous_area = self.areas.get_mut(&bot.area_id).unwrap();
+      previous_area.remove_bot(&id);
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.players,
+        previous_area,
+        Reliability::Reliable,
+        ServerPacket::NaviDisconnected {
+          ticket: id.clone(),
+          warp_out: warp_in,
+        },
+      );
+
+      bot.area_id = area_id.clone();
+      bot.x = x;
+      bot.y = y;
+      bot.z = z;
+
+      let area = self.areas.get_mut(area_id).unwrap();
+      area.add_bot(id.clone());
+
+      assert_asset(
+        &self.socket,
+        self.max_payload_size,
+        &self.assets,
+        &mut self.players,
+        area.get_connected_players(),
+        &bot.texture_path,
+      );
+
+      assert_asset(
+        &self.socket,
+        self.max_payload_size,
+        &self.assets,
+        &mut self.players,
+        area.get_connected_players(),
+        &bot.animation_path,
+      );
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.players,
+        area,
+        Reliability::Reliable,
+        ServerPacket::NaviConnected {
+          ticket: id.clone(),
+          name: bot.name.clone(),
+          texture_path: bot.texture_path.clone(),
+          animation_path: bot.animation_path.clone(),
+          x: bot.x,
+          y: bot.y,
+          z: bot.z,
+          warp_in,
+        },
+      );
+    }
+  }
+
   pub fn set_bot_avatar(&mut self, id: &String, texture_path: String, animation_path: String) {
     if let Some(bot) = self.bots.get_mut(id) {
       bot.texture_path = texture_path.clone();
