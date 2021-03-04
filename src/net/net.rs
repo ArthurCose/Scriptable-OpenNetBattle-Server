@@ -406,6 +406,7 @@ impl Net {
         x: spawn_x,
         y: spawn_y,
         z: 0.0,
+        solid: false,
       },
       warp_in: true,
       ready: false,
@@ -520,6 +521,7 @@ impl Net {
         x: other_client.navi.x,
         y: other_client.navi.y,
         z: other_client.navi.z,
+        solid: other_client.navi.solid,
         warp_in: false,
       });
     }
@@ -539,6 +541,7 @@ impl Net {
         x: bot.x,
         y: bot.y,
         z: bot.z,
+        solid: bot.solid,
         warp_in: false,
       });
     }
@@ -585,6 +588,7 @@ impl Net {
         x: client.navi.x,
         y: client.navi.y,
         z: client.navi.z,
+        solid: client.navi.solid,
         warp_in: client.warp_in,
       };
 
@@ -639,6 +643,7 @@ impl Net {
         x: bot.x,
         y: bot.y,
         z: bot.z,
+        solid: bot.solid,
         warp_in: true,
       };
 
@@ -782,6 +787,7 @@ impl Net {
           x: bot.x,
           y: bot.y,
           z: bot.z,
+          solid: bot.solid,
           warp_in,
         },
       );

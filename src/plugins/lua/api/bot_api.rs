@@ -28,7 +28,7 @@ pub fn add_bot_api<'a, 'b>(
     "create_bot",
     scope.create_function(
       move |_,
-            (id, name, area_id, texture_path, animation_path, x, y, z): (
+            (id, name, area_id, texture_path, animation_path, x, y, z, solid): (
         String,
         String,
         String,
@@ -37,6 +37,7 @@ pub fn add_bot_api<'a, 'b>(
         f32,
         f32,
         f32,
+        Option<bool>,
       )| {
         let mut net = net_ref.borrow_mut();
 
@@ -50,6 +51,7 @@ pub fn add_bot_api<'a, 'b>(
             x,
             y,
             z,
+            solid: solid.unwrap_or_default(),
           };
 
           net.add_bot(bot);

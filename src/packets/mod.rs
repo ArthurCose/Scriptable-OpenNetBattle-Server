@@ -16,4 +16,4 @@ pub struct PacketHeaders {
 
 pub(super) const VERSION_ID: &str =
   "https://github.com/ArthurCose/Scriptable-OpenNetBattle-Server/tree/proposed-packets";
-pub(super) const VERSION_ITERATION: u64 = 8;
+pub(super) const VERSION_ITERATION: u64 = 9;

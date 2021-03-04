@@ -36,6 +36,7 @@ pub enum ServerPacket<'a> {
     x: f32,
     y: f32,
     z: f32,
+    solid: bool,
     warp_in: bool,
   },
   NaviDisconnected {
@@ -130,6 +131,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       x,
       y,
       z,
+      solid,
       warp_in,
     } => {
       write_u16(&mut buf, 8);
@@ -140,6 +142,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_f32(&mut buf, *x);
       write_f32(&mut buf, *y);
       write_f32(&mut buf, *z);
+      write_bool(&mut buf, *solid);
       write_bool(&mut buf, *warp_in);
     }
     ServerPacket::NaviDisconnected { ticket, warp_out } => {
