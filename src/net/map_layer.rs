@@ -55,7 +55,7 @@ impl MapLayer {
         .chunks(self.width)
         .map(|row| {
           row
-            .into_iter()
+            .iter()
             .map(|gid| gid.to_string())
             .collect::<Vec<String>>()
             .join(",")

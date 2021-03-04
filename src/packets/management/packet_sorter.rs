@@ -34,6 +34,7 @@ impl PacketSorter {
     &self.last_message_time
   }
 
+  #[allow(clippy::comparison_chain)]
   pub fn sort_packet(
     &mut self,
     socket: &UdpSocket,

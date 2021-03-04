@@ -4,7 +4,6 @@ mod packets;
 mod plugins;
 mod threads;
 
-use clap;
 use helpers::unwrap_and_parse_or_default;
 use plugins::LuaPluginInterface;
 
@@ -45,7 +44,7 @@ fn main() {
                         .map_err(|_| String::from(error_message))?;
 
                     // max size defined by NetPlayConfig::MAX_BUFFER_LEN
-                    if max_payload_size >= 100 && max_payload_size <= 10240 {
+                    if (100..=10240).contains(&max_payload_size) {
                         Ok(())
                     } else {
                         Err(String::from(error_message))

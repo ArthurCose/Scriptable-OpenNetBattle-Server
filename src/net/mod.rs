@@ -1,3 +1,6 @@
+#[allow(clippy::module_inception)]
+mod net;
+
 mod area;
 pub mod asset;
 mod client;
@@ -5,7 +8,6 @@ mod map;
 mod map_layer;
 mod map_object;
 mod navi;
-mod net;
 mod server;
 mod tile;
 

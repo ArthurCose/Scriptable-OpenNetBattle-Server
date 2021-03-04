@@ -1,7 +1,7 @@
 // readers
 
 pub fn read_byte(buf: &mut &[u8]) -> Option<u8> {
-  if buf.len() == 0 {
+  if buf.is_empty() {
     return None;
   }
 
@@ -75,12 +75,12 @@ pub fn read_f32(buf: &mut &[u8]) -> Option<f32> {
 pub fn read_string(buf: &mut &[u8]) -> Option<String> {
   let terminator_pos = buf.iter().position(|&b| b == 0);
 
-  terminator_pos.and_then(|index| {
+  terminator_pos.map(|index| {
     let string_slice = std::str::from_utf8(&buf[0..index]).unwrap();
 
     *buf = &buf[index + 1..];
 
-    Some(String::from(string_slice))
+    String::from(string_slice)
   })
 }
 
@@ -131,7 +131,7 @@ pub fn write_str(buf: &mut Vec<u8>, data: &str) {
   buf.push(0);
 }
 
-pub fn write_string(buf: &mut Vec<u8>, data: &String) {
+pub fn write_string(buf: &mut Vec<u8>, data: &str) {
   // todo: endianness may be an issue
   buf.extend(data.as_bytes());
   buf.push(0);

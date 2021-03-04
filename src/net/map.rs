@@ -2,7 +2,6 @@ use super::map_layer::MapLayer;
 use super::map_object::MapObject;
 use super::{Asset, Tile};
 use crate::helpers::unwrap_and_parse_or_default;
-use minidom;
 
 pub struct TilesetInfo {
   first_gid: u32,
@@ -138,6 +137,7 @@ impl Map {
     self.tilesets.iter().map(|tileset_info| &tileset_info.path)
   }
 
+  #[allow(dead_code)]
   pub fn get_name(&self) -> &String {
     &self.name
   }
@@ -151,7 +151,7 @@ impl Map {
   }
 
   pub fn get_spawn(&self) -> (f32, f32) {
-    return (self.spawn_x, self.spawn_y);
+    (self.spawn_x, self.spawn_y)
   }
 
   pub fn get_tile(&self, x: usize, y: usize, z: usize) -> Tile {
@@ -243,7 +243,7 @@ impl Map {
       dependencies: self
         .get_tileset_paths()
         .filter(|path| path.starts_with("/server/")) // tileset provided by server
-        .map(|path| path.clone())
+        .cloned()
         .collect(),
     }
   }

@@ -1,8 +1,8 @@
 use super::lua_errors::create_area_error;
 use crate::net::{Net, Tile};
-use rlua;
 use std::cell::RefCell;
 
+#[allow(clippy::type_complexity)]
 pub fn add_area_api<'a, 'b>(
   api_table: &rlua::Table<'a>,
   scope: &rlua::Scope<'a, 'b>,
@@ -73,7 +73,8 @@ pub fn add_area_api<'a, 'b>(
             flipped_anti_diagonally: rotate.unwrap_or(false),
           };
 
-          Ok(area.get_map_mut().set_tile(x, y, z, tile))
+          area.get_map_mut().set_tile(x, y, z, tile);
+          Ok(())
         } else {
           Err(create_area_error(&area_id))
         }

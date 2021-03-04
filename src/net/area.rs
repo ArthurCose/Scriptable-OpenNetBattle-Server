@@ -18,7 +18,7 @@ impl Area {
     }
   }
 
-  pub fn get_id(&self) -> &String {
+  pub fn get_id(&self) -> &str {
     &self.id
   }
 
@@ -38,7 +38,7 @@ impl Area {
     self.connected_players.push(player_id);
   }
 
-  pub(super) fn remove_player(&mut self, player_id: &String) {
+  pub(super) fn remove_player(&mut self, player_id: &str) {
     self
       .connected_players
       .iter()
@@ -54,7 +54,7 @@ impl Area {
     self.connected_bots.push(bot_id);
   }
 
-  pub(super) fn remove_bot(&mut self, bot_id: &String) {
+  pub(super) fn remove_bot(&mut self, bot_id: &str) {
     self
       .connected_bots
       .iter()

@@ -1,9 +1,8 @@
 use super::lua_errors::{create_area_error, create_player_error};
 use crate::net::Net;
-use rlua;
 use std::cell::RefCell;
 
-pub fn add_player_api<'a, 'b, 'c>(
+pub fn add_player_api<'a, 'b>(
   api_table: &rlua::Table<'a>,
   scope: &rlua::Scope<'a, 'b>,
   net_ref: &'b RefCell<&mut Net>,
@@ -15,7 +14,7 @@ pub fn add_player_api<'a, 'b, 'c>(
 
       if let Some(area) = net.get_area_mut(&area_id) {
         let connected_players = area.get_connected_players();
-        let result: Vec<String> = connected_players.iter().map(|id| id.clone()).collect();
+        let result: Vec<String> = connected_players.to_vec();
 
         Ok(result)
       } else {
@@ -29,11 +28,7 @@ pub fn add_player_api<'a, 'b, 'c>(
     scope.create_function(move |_, id: String| {
       let net = net_ref.borrow();
 
-      if let Some(_) = net.get_player(&id) {
-        Ok(true)
-      } else {
-        Ok(false)
-      }
+      Ok(net.get_player(&id).is_some())
     })?,
   )?;
 

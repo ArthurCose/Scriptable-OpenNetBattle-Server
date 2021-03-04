@@ -35,7 +35,7 @@ impl Net {
           .into_owned();
 
         if let Ok(raw_map) = read_to_string(&map_path) {
-          let mut map = Map::from(String::from(raw_map));
+          let mut map = Map::from(raw_map);
 
           if area_id == "default" {
             default_area_provided = true
@@ -76,7 +76,7 @@ impl Net {
             Net::load_assets_from_dir(assets, &path);
           } else {
             let path_string = String::from("/server/") + path.to_str().unwrap_or_default();
-            let extension_index = path_string.rfind(".").unwrap_or(path_string.len());
+            let extension_index = path_string.rfind('.').unwrap_or_else(|| path_string.len());
             let extension = path_string.to_lowercase().split_off(extension_index);
 
             let asset_data = if extension == ".ogg" {
@@ -117,15 +117,16 @@ impl Net {
     }
   }
 
-  pub fn get_area(&self, area_id: &String) -> Option<&Area> {
+  pub fn get_area(&self, area_id: &str) -> Option<&Area> {
     self.areas.get(area_id)
   }
 
-  pub fn get_area_mut(&mut self, area_id: &String) -> Option<&mut Area> {
+  pub fn get_area_mut(&mut self, area_id: &str) -> Option<&mut Area> {
     self.areas.get_mut(area_id)
   }
 
-  pub fn get_asset(&self, path: &String) -> Option<&Asset> {
+  #[allow(dead_code)]
+  pub fn get_asset(&self, path: &str) -> Option<&Asset> {
     self.assets.get(path)
   }
 
@@ -141,30 +142,31 @@ impl Net {
     );
   }
 
-  pub fn remove_asset(&mut self, path: &String) {
+  #[allow(dead_code)]
+  pub fn remove_asset(&mut self, path: &str) {
     self.assets.remove(path);
   }
 
-  pub fn get_player(&self, id: &String) -> Option<&Navi> {
+  pub fn get_player(&self, id: &str) -> Option<&Navi> {
     self.clients.get(id).map(|client| &client.navi)
   }
 
-  pub(super) fn get_client(&self, id: &String) -> Option<&Client> {
+  pub(super) fn get_client(&self, id: &str) -> Option<&Client> {
     self.clients.get(id)
   }
 
-  pub(super) fn get_client_mut(&mut self, id: &String) -> Option<&mut Client> {
+  pub(super) fn get_client_mut(&mut self, id: &str) -> Option<&mut Client> {
     self.clients.get_mut(id)
   }
 
-  pub fn set_player_name(&mut self, id: &String, name: String) {
+  pub fn set_player_name(&mut self, id: &str, name: String) {
     if let Some(client) = self.clients.get_mut(id) {
       client.navi.name = name.clone();
 
       // skip if client has not even been sent to anyone yet
       if client.ready {
         let packet = ServerPacket::NaviSetName {
-          ticket: id.clone(),
+          ticket: id.to_string(),
           name,
         };
 
@@ -181,7 +183,7 @@ impl Net {
     }
   }
 
-  pub fn move_player(&mut self, id: &String, x: f32, y: f32, z: f32) {
+  pub fn move_player(&mut self, id: &str, x: f32, y: f32, z: f32) {
     if let Some(client) = self.clients.get_mut(id) {
       client.navi.x = x;
       client.navi.y = y;
@@ -190,7 +192,7 @@ impl Net {
       // skip if client has not even been sent to anyone yet
       if client.ready {
         let packet = ServerPacket::NaviMove {
-          ticket: id.clone(),
+          ticket: id.to_string(),
           x,
           y,
           z,
@@ -211,14 +213,14 @@ impl Net {
 
   pub fn transfer_player(
     &mut self,
-    id: &String,
-    area_id: &String,
+    id: &str,
+    area_id: &str,
     warp_in: bool,
     x: f32,
     y: f32,
     z: f32,
   ) {
-    if let None = self.areas.get(area_id) {
+    if self.areas.get(area_id).is_none() {
       // non existent area
       return;
     }
@@ -229,10 +231,13 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       let previous_area = self.areas.get_mut(&client.navi.area_id).unwrap();
 
-      if !previous_area.get_connected_players().contains(&id) {
+      if !previous_area
+        .get_connected_players()
+        .contains(&id.to_string())
+      {
         // client has not been added to any area yet
         // assume client was transferred on initial connection by a plugin
-        client.navi.area_id = area_id.clone();
+        client.navi.area_id = area_id.to_string();
         return;
       }
 
@@ -254,7 +259,7 @@ impl Net {
         previous_area,
         Reliability::Reliable,
         ServerPacket::NaviDisconnected {
-          ticket: id.clone(),
+          ticket: id.to_string(),
           warp_out: warp_in,
         },
       );
@@ -265,7 +270,7 @@ impl Net {
     }
 
     let area = self.areas.get_mut(area_id).unwrap();
-    area.add_player(id.clone());
+    area.add_player(id.to_string());
 
     assert_asset(
       &self.socket,
@@ -293,14 +298,14 @@ impl Net {
       &self.socket,
       &Reliability::ReliableOrdered,
       &ServerPacket::NaviMove {
-        ticket: id.clone(),
+        ticket: id.to_string(),
         x,
         y,
         z,
       },
     );
 
-    client.navi.area_id = area_id.clone();
+    client.navi.area_id = area_id.to_string();
     client.warp_in = warp_in;
 
     client.packet_shipper.send(
@@ -310,7 +315,7 @@ impl Net {
     );
   }
 
-  pub fn set_player_avatar(&mut self, id: &String, texture_path: String, animation_path: String) {
+  pub fn set_player_avatar(&mut self, id: &str, texture_path: String, animation_path: String) {
     if let Some(client) = self.clients.get_mut(id) {
       client.navi.texture_path = texture_path.clone();
       client.navi.animation_path = animation_path.clone();
@@ -322,7 +327,7 @@ impl Net {
         update_cached_clients(
           &self.socket,
           self.max_payload_size,
-          &mut self.assets,
+          &self.assets,
           &mut self.clients,
           &texture_path,
         );
@@ -330,13 +335,13 @@ impl Net {
         update_cached_clients(
           &self.socket,
           self.max_payload_size,
-          &mut self.assets,
+          &self.assets,
           &mut self.clients,
           &animation_path,
         );
 
         let packet = ServerPacket::NaviSetAvatar {
-          ticket: id.clone(),
+          ticket: id.to_string(),
           texture_path,
           animation_path,
         };
@@ -352,10 +357,10 @@ impl Net {
     }
   }
 
-  pub fn player_emote(&mut self, id: &String, emote_id: u8) {
+  pub fn player_emote(&mut self, id: &str, emote_id: u8) {
     if let Some(client) = self.clients.get(id) {
       let packet = ServerPacket::NaviEmote {
-        ticket: id.clone(),
+        ticket: id.to_string(),
         emote_id,
       };
 
@@ -414,7 +419,7 @@ impl Net {
 
   pub(super) fn store_player_avatar(
     &mut self,
-    player_id: &String,
+    player_id: &str,
     texture_data: Vec<u8>,
     animation_data: String,
   ) -> (String, String) {
@@ -442,7 +447,7 @@ impl Net {
     (texture_path, animation_path)
   }
 
-  pub(super) fn connect_client(&mut self, player_id: &String) {
+  pub(super) fn connect_client(&mut self, player_id: &str) {
     let client = self.clients.get(player_id).unwrap();
     let area_id = client.navi.area_id.clone();
     let texture_path = client.navi.texture_path.clone();
@@ -473,7 +478,7 @@ impl Net {
 
     // todo: send position
     let packet = ServerPacket::Login {
-      ticket: player_id.clone(),
+      ticket: player_id.to_string(),
     };
 
     let client = self.clients.get_mut(player_id).unwrap();
@@ -483,7 +488,7 @@ impl Net {
       .send(&self.socket, &Reliability::ReliableOrdered, &packet);
   }
 
-  fn send_area(&mut self, player_id: &String, area_id: &String) {
+  fn send_area(&mut self, player_id: &str, area_id: &str) {
     use super::asset::get_map_path;
 
     let mut packets: Vec<ServerPacket> = Vec::new();
@@ -539,7 +544,7 @@ impl Net {
     }
 
     // send asset_packets before anything else
-    let asset_recievers = vec![player_id.clone()];
+    let asset_recievers = vec![player_id.to_string()];
 
     for asset_path in asset_paths {
       assert_asset(
@@ -547,7 +552,7 @@ impl Net {
         self.max_payload_size,
         &self.assets,
         &mut self.clients,
-        &asset_recievers,
+        &&asset_recievers[..],
         &asset_path,
       );
     }
@@ -562,7 +567,7 @@ impl Net {
   }
 
   // handles first join and completed transfer
-  pub(super) fn mark_client_ready(&mut self, id: &String) {
+  pub(super) fn mark_client_ready(&mut self, id: &str) {
     if let Some(client) = self.clients.get_mut(id) {
       client.ready = true;
 
@@ -573,10 +578,10 @@ impl Net {
       let animation_path = client.navi.animation_path.clone();
 
       let packet = ServerPacket::NaviConnected {
-        ticket: player_id.clone(),
+        ticket: player_id,
         name: client.navi.name.clone(),
-        texture_path: texture_path.clone(),
-        animation_path: animation_path.clone(),
+        texture_path,
+        animation_path,
         x: client.navi.x,
         y: client.navi.y,
         z: client.navi.z,
@@ -593,7 +598,7 @@ impl Net {
     }
   }
 
-  pub fn remove_player(&mut self, id: &String) {
+  pub fn remove_player(&mut self, id: &str) {
     use super::asset;
 
     self.assets.remove(&asset::get_player_texture_path(id));
@@ -608,7 +613,7 @@ impl Net {
       area.remove_player(&client.navi.id);
 
       let packet = ServerPacket::NaviDisconnected {
-        ticket: id.clone(),
+        ticket: id.to_string(),
         warp_out: true,
       };
 
@@ -667,16 +672,16 @@ impl Net {
     }
   }
 
-  pub fn get_bot(&self, id: &String) -> Option<&Navi> {
+  pub fn get_bot(&self, id: &str) -> Option<&Navi> {
     self.bots.get(id)
   }
 
-  pub fn set_bot_name(&mut self, id: &String, name: String) {
+  pub fn set_bot_name(&mut self, id: &str, name: String) {
     if let Some(bot) = self.bots.get_mut(id) {
       bot.name = name.clone();
 
       let packet = ServerPacket::NaviSetName {
-        ticket: id.clone(),
+        ticket: id.to_string(),
         name,
       };
 
@@ -692,14 +697,14 @@ impl Net {
     }
   }
 
-  pub fn move_bot(&mut self, id: &String, x: f32, y: f32, z: f32) {
+  pub fn move_bot(&mut self, id: &str, x: f32, y: f32, z: f32) {
     if let Some(bot) = self.bots.get_mut(id) {
       bot.x = x;
       bot.y = y;
       bot.z = z;
 
       let packet = ServerPacket::NaviMove {
-        ticket: id.clone(),
+        ticket: id.to_string(),
         x,
         y,
         z,
@@ -717,16 +722,8 @@ impl Net {
     }
   }
 
-  pub fn transfer_bot(
-    &mut self,
-    id: &String,
-    area_id: &String,
-    warp_in: bool,
-    x: f32,
-    y: f32,
-    z: f32,
-  ) {
-    if let None = self.areas.get(area_id) {
+  pub fn transfer_bot(&mut self, id: &str, area_id: &str, warp_in: bool, x: f32, y: f32, z: f32) {
+    if self.areas.get(area_id).is_none() {
       // non existent area
       return;
     }
@@ -741,18 +738,18 @@ impl Net {
         previous_area,
         Reliability::Reliable,
         ServerPacket::NaviDisconnected {
-          ticket: id.clone(),
+          ticket: id.to_string(),
           warp_out: warp_in,
         },
       );
 
-      bot.area_id = area_id.clone();
+      bot.area_id = area_id.to_string();
       bot.x = x;
       bot.y = y;
       bot.z = z;
 
       let area = self.areas.get_mut(area_id).unwrap();
-      area.add_bot(id.clone());
+      area.add_bot(id.to_string());
 
       assert_asset(
         &self.socket,
@@ -778,7 +775,7 @@ impl Net {
         area,
         Reliability::Reliable,
         ServerPacket::NaviConnected {
-          ticket: id.clone(),
+          ticket: id.to_string(),
           name: bot.name.clone(),
           texture_path: bot.texture_path.clone(),
           animation_path: bot.animation_path.clone(),
@@ -791,7 +788,7 @@ impl Net {
     }
   }
 
-  pub fn set_bot_avatar(&mut self, id: &String, texture_path: String, animation_path: String) {
+  pub fn set_bot_avatar(&mut self, id: &str, texture_path: String, animation_path: String) {
     if let Some(bot) = self.bots.get_mut(id) {
       bot.texture_path = texture_path.clone();
       bot.animation_path = animation_path.clone();
@@ -801,7 +798,7 @@ impl Net {
       update_cached_clients(
         &self.socket,
         self.max_payload_size,
-        &mut self.assets,
+        &self.assets,
         &mut self.clients,
         &texture_path,
       );
@@ -809,15 +806,15 @@ impl Net {
       update_cached_clients(
         &self.socket,
         self.max_payload_size,
-        &mut self.assets,
+        &self.assets,
         &mut self.clients,
         &animation_path,
       );
 
       let packet = ServerPacket::NaviSetAvatar {
-        ticket: id.clone(),
-        texture_path: texture_path,
-        animation_path: animation_path,
+        ticket: id.to_string(),
+        texture_path,
+        animation_path,
       };
 
       broadcast_to_area(
@@ -830,10 +827,10 @@ impl Net {
     }
   }
 
-  pub fn set_bot_emote(&mut self, id: &String, emote_id: u8) {
+  pub fn set_bot_emote(&mut self, id: &str, emote_id: u8) {
     if let Some(bot) = self.bots.get(id) {
       let packet = ServerPacket::NaviEmote {
-        ticket: id.clone(),
+        ticket: id.to_string(),
         emote_id,
       };
 
@@ -849,7 +846,7 @@ impl Net {
     }
   }
 
-  pub fn remove_bot(&mut self, id: &String) {
+  pub fn remove_bot(&mut self, id: &str) {
     if let Some(bot) = self.bots.remove(id) {
       let area = self
         .areas
@@ -859,7 +856,7 @@ impl Net {
       area.remove_bot(&bot.id);
 
       let packet = ServerPacket::NaviDisconnected {
-        ticket: id.clone(),
+        ticket: id.to_string(),
         warp_out: true,
       };
 
@@ -917,7 +914,7 @@ fn update_cached_clients(
   max_payload_size: usize,
   assets: &HashMap<String, Asset>,
   clients: &mut HashMap<String, Client>,
-  asset_path: &String,
+  asset_path: &str,
 ) {
   use super::get_flattened_dependency_chain;
   let mut dependencies = get_flattened_dependency_chain(assets, asset_path);
@@ -940,10 +937,10 @@ fn update_cached_clients(
           continue;
         }
 
-        client.cached_assets.insert(asset_path.clone());
+        client.cached_assets.insert(asset_path.to_string());
 
         // lazily create stream
-        if packets.len() == 0 {
+        if packets.is_empty() {
           packets = create_asset_stream(max_payload_size, asset_path, &asset);
         }
 
@@ -971,8 +968,8 @@ fn assert_asset(
   max_payload_size: usize,
   assets: &HashMap<String, Asset>,
   clients: &mut HashMap<String, Client>,
-  player_ids: &Vec<String>,
-  asset_path: &String,
+  player_ids: &[String],
+  asset_path: &str,
 ) {
   use super::get_flattened_dependency_chain;
   let assets_to_send = get_flattened_dependency_chain(assets, asset_path);
@@ -990,11 +987,11 @@ fn assert_asset(
       }
 
       // lazily create stream
-      if packets.len() == 0 {
+      if packets.is_empty() {
         packets = create_asset_stream(max_payload_size, asset_path, asset);
       }
 
-      client.cached_assets.insert(asset_path.clone());
+      client.cached_assets.insert(asset_path.to_string());
 
       for packet in &packets {
         client

@@ -21,7 +21,7 @@ pub struct LuaPluginInterface {
 
 impl LuaPluginInterface {
   pub fn new() -> LuaPluginInterface {
-    let plugin_interface = LuaPluginInterface {
+    LuaPluginInterface {
       scripts: HashMap::new(),
       tick_listeners: Vec::new(),
       player_connect_listeners: Vec::new(),
@@ -33,9 +33,7 @@ impl LuaPluginInterface {
       object_interaction_listeners: Vec::new(),
       navi_interaction_listeners: Vec::new(),
       tile_interaction_listeners: Vec::new(),
-    };
-
-    plugin_interface
+    }
   }
 
   fn load_scripts(&mut self, net_ref: &mut Net) -> std::io::Result<()> {
@@ -82,43 +80,70 @@ impl LuaPluginInterface {
         Ok(())
       })?;
 
-      if let Ok(_) = globals.get::<_, rlua::Function>("tick") {
+      if globals.get::<_, rlua::Function>("tick").is_ok() {
         self.tick_listeners.push(script_dir.clone());
       }
 
-      if let Ok(_) = globals.get::<_, rlua::Function>("handle_player_connect") {
+      if globals
+        .get::<_, rlua::Function>("handle_player_connect")
+        .is_ok()
+      {
         self.player_connect_listeners.push(script_dir.clone());
       }
 
-      if let Ok(_) = globals.get::<_, rlua::Function>("handle_player_transfer") {
+      if globals
+        .get::<_, rlua::Function>("handle_player_transfer")
+        .is_ok()
+      {
         self.player_transfer_listeners.push(script_dir.clone());
       }
 
-      if let Ok(_) = globals.get::<_, rlua::Function>("handle_player_disconnect") {
+      if globals
+        .get::<_, rlua::Function>("handle_player_disconnect")
+        .is_ok()
+      {
         self.player_disconnect_listeners.push(script_dir.clone());
       }
 
-      if let Ok(_) = globals.get::<_, rlua::Function>("handle_player_move") {
+      if globals
+        .get::<_, rlua::Function>("handle_player_move")
+        .is_ok()
+      {
         self.player_move_listeners.push(script_dir.clone());
       }
 
-      if let Ok(_) = globals.get::<_, rlua::Function>("handle_player_avatar_change") {
+      if globals
+        .get::<_, rlua::Function>("handle_player_avatar_change")
+        .is_ok()
+      {
         self.player_avatar_change_listeners.push(script_dir.clone());
       }
 
-      if let Ok(_) = globals.get::<_, rlua::Function>("handle_player_emote") {
+      if globals
+        .get::<_, rlua::Function>("handle_player_emote")
+        .is_ok()
+      {
         self.player_emote_listeners.push(script_dir.clone());
       }
 
-      if let Ok(_) = globals.get::<_, rlua::Function>("handle_object_interaction") {
+      if globals
+        .get::<_, rlua::Function>("handle_object_interaction")
+        .is_ok()
+      {
         self.object_interaction_listeners.push(script_dir.clone());
       }
 
-      if let Ok(_) = globals.get::<_, rlua::Function>("handle_navi_interaction") {
+      if globals
+        .get::<_, rlua::Function>("handle_navi_interaction")
+        .is_ok()
+      {
         self.navi_interaction_listeners.push(script_dir.clone());
       }
 
-      if let Ok(_) = globals.get::<_, rlua::Function>("handle_tile_interaction") {
+      if globals
+        .get::<_, rlua::Function>("handle_tile_interaction")
+        .is_ok()
+      {
         self.tile_interaction_listeners.push(script_dir.clone());
       }
 
@@ -148,112 +173,106 @@ impl PluginInterface for LuaPluginInterface {
     );
   }
 
-  fn handle_player_connect(&mut self, net: &mut Net, player_id: &String) {
+  fn handle_player_connect(&mut self, net: &mut Net, player_id: &str) {
     handle_event(
       &mut self.scripts,
       &self.player_connect_listeners,
       net,
       "handle_player_connect",
-      |callback| callback.call(player_id.clone()),
+      |callback| callback.call(player_id),
     );
   }
 
-  fn handle_player_transfer(&mut self, net: &mut Net, player_id: &String) {
+  fn handle_player_transfer(&mut self, net: &mut Net, player_id: &str) {
     handle_event(
       &mut self.scripts,
       &self.player_transfer_listeners,
       net,
       "handle_player_transfer",
-      |callback| callback.call(player_id.clone()),
+      |callback| callback.call(player_id),
     );
   }
 
-  fn handle_player_disconnect(&mut self, net: &mut Net, player_id: &String) {
+  fn handle_player_disconnect(&mut self, net: &mut Net, player_id: &str) {
     handle_event(
       &mut self.scripts,
       &self.player_disconnect_listeners,
       net,
       "handle_player_disconnect",
-      |callback| callback.call(player_id.clone()),
+      |callback| callback.call(player_id),
     );
   }
 
-  fn handle_player_move(&mut self, net: &mut Net, player_id: &String, x: f32, y: f32, z: f32) {
+  fn handle_player_move(&mut self, net: &mut Net, player_id: &str, x: f32, y: f32, z: f32) {
     handle_event(
       &mut self.scripts,
       &self.player_move_listeners,
       net,
       "handle_player_move",
-      |callback| callback.call((player_id.clone(), x, y, z)),
+      |callback| callback.call((player_id, x, y, z)),
     );
   }
 
   fn handle_player_avatar_change(
     &mut self,
     net: &mut Net,
-    player_id: &String,
-    texture_path: &String,
-    animation_path: &String,
+    player_id: &str,
+    texture_path: &str,
+    animation_path: &str,
   ) {
     handle_event(
       &mut self.scripts,
       &self.player_avatar_change_listeners,
       net,
       "handle_player_avatar_change",
-      |callback| {
-        callback.call((
-          player_id.clone(),
-          texture_path.clone(),
-          animation_path.clone(),
-        ))
-      },
+      |callback| callback.call((player_id, texture_path, animation_path)),
     );
   }
 
-  fn handle_player_emote(&mut self, net: &mut Net, player_id: &String, emote_id: u8) {
+  fn handle_player_emote(&mut self, net: &mut Net, player_id: &str, emote_id: u8) {
     handle_event(
       &mut self.scripts,
       &self.player_emote_listeners,
       net,
       "handle_player_emote",
-      |callback| callback.call((player_id.clone(), emote_id)),
+      |callback| callback.call((player_id, emote_id)),
     );
   }
 
-  fn handle_object_interaction(&mut self, net: &mut Net, player_id: &String, tile_object_id: u32) {
+  fn handle_object_interaction(&mut self, net: &mut Net, player_id: &str, tile_object_id: u32) {
     handle_event(
       &mut self.scripts,
       &self.object_interaction_listeners,
       net,
       "handle_object_interaction",
-      |callback| callback.call((player_id.clone(), tile_object_id)),
+      |callback| callback.call((player_id, tile_object_id)),
     );
   }
 
-  fn handle_navi_interaction(&mut self, net: &mut Net, player_id: &String, navi_id: &String) {
+  fn handle_navi_interaction(&mut self, net: &mut Net, player_id: &str, navi_id: &str) {
     handle_event(
       &mut self.scripts,
       &self.navi_interaction_listeners,
       net,
       "handle_navi_interaction",
-      |callback| callback.call((player_id.clone(), navi_id.clone())),
+      |callback| callback.call((player_id, navi_id)),
     );
   }
 
-  fn handle_tile_interaction(&mut self, net: &mut Net, player_id: &String, x: f32, y: f32, z: f32) {
+  fn handle_tile_interaction(&mut self, net: &mut Net, player_id: &str, x: f32, y: f32, z: f32) {
     handle_event(
       &mut self.scripts,
       &self.tile_interaction_listeners,
       net,
       "handle_tile_interaction",
-      |callback| callback.call((player_id.clone(), x, y, z)),
+      |callback| callback.call((player_id, x, y, z)),
     );
   }
 }
 
 fn handle_event<F>(
   scripts: &mut HashMap<std::path::PathBuf, Lua>,
-  event_listeners: &Vec<std::path::PathBuf>,
+  event_listeners: &[std::path::PathBuf],
   net: &mut Net,
   event_fn_name: &str,
   fn_caller: F,

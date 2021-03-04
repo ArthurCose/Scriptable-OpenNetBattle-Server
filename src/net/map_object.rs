@@ -1,5 +1,4 @@
 use crate::helpers::unwrap_and_parse_or_default;
-use minidom;
 
 pub struct MapObject {
   pub id: u32,
@@ -39,7 +38,7 @@ impl MapObject {
       let points_str = points_element.attr("points").unwrap_or_default();
 
       let points = points_str
-        .split(" ")
+        .split(' ')
         .map(|point_str| {
           let comma_index = point_str.find(',')?;
 
@@ -73,7 +72,7 @@ impl MapObject {
   }
 
   pub fn render(&mut self) -> String {
-    let name_string = if self.name.len() > 0 {
+    let name_string = if !self.name.is_empty() {
       format!(" name=\"{}\"", self.name)
     } else {
       String::default()

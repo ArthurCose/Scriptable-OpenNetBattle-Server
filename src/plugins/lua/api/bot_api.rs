@@ -1,7 +1,6 @@
 use super::lua_errors::{create_area_error, create_bot_error};
 use crate::net::Navi;
 use crate::net::Net;
-use rlua;
 use std::cell::RefCell;
 
 pub fn add_bot_api<'a, 'b>(
@@ -16,7 +15,7 @@ pub fn add_bot_api<'a, 'b>(
 
       if let Some(area) = net.get_area_mut(&area_id) {
         let connected_bots = area.get_connected_bots();
-        let result: Vec<String> = connected_bots.iter().map(|id| id.clone()).collect();
+        let result: Vec<String> = connected_bots.to_vec();
 
         Ok(result)
       } else {
@@ -41,7 +40,7 @@ pub fn add_bot_api<'a, 'b>(
       )| {
         let mut net = net_ref.borrow_mut();
 
-        if let Some(_) = net.get_area_mut(&area_id) {
+        if net.get_area_mut(&area_id).is_some() {
           let bot = Navi {
             id,
             name,
@@ -68,11 +67,7 @@ pub fn add_bot_api<'a, 'b>(
     scope.create_function(move |_, id: String| {
       let net = net_ref.borrow();
 
-      if let Some(_) = net.get_bot(&id) {
-        Ok(true)
-      } else {
-        Ok(false)
-      }
+      Ok(net.get_bot(&id).is_some())
     })?,
   )?;
 

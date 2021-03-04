@@ -97,7 +97,7 @@ impl Server {
             let last_message = packet_sorter.get_last_message_time();
 
             if last_message.elapsed() > max_silence {
-              kick_list.push(socket_address.clone())
+              kick_list.push(*socket_address)
             }
           }
 
@@ -114,21 +114,21 @@ impl Server {
           headers,
           packet,
         } => {
-          if !matches!(headers.reliability, Reliability::Unreliable) {
-            if !self.packet_sorter_map.contains_key(&socket_address) {
-              let packet_sorter = PacketSorter::new(socket_address);
-              self.packet_sorter_map.insert(socket_address, packet_sorter);
+          if !matches!(headers.reliability, Reliability::Unreliable)
+            && !self.packet_sorter_map.contains_key(&socket_address)
+          {
+            let packet_sorter = PacketSorter::new(socket_address);
+            self.packet_sorter_map.insert(socket_address, packet_sorter);
 
-              if self.config.log_connections {
-                println!("{} connected", socket_address);
-              }
+            if self.config.log_connections {
+              println!("{} connected", socket_address);
             }
           }
 
           if let Some(packet_sorter) = self.packet_sorter_map.get_mut(&socket_address) {
             if let Ok(packets) = packet_sorter.sort_packet(&self.socket, headers, packet) {
               for packet in packets {
-                if let Err(_) = self.handle_packet(socket_address, packet) {
+                if self.handle_packet(socket_address, packet).is_err() {
                   self.disconnect_client(&socket_address);
                   break;
                 }
@@ -388,7 +388,7 @@ impl Server {
   ) {
     let player_id = self
       .net
-      .add_player(socket_address.clone(), name, texture_data, animation_data);
+      .add_player(socket_address, name, texture_data, animation_data);
 
     for plugin in &mut self.plugin_interfaces {
       plugin.handle_player_connect(&mut self.net, &player_id);

@@ -181,7 +181,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
 
 pub fn create_asset_stream<'a>(
   max_payload_size: usize,
-  name: &String,
+  name: &str,
   asset: &'a Asset,
 ) -> Vec<ServerPacket<'a>> {
   // reliability type + id + packet type + data size
@@ -216,7 +216,7 @@ pub fn create_asset_stream<'a>(
   }
 
   packets.push(ServerPacket::AssetStreamComplete {
-    name: name.clone(),
+    name: name.to_string(),
     asset,
   });
 

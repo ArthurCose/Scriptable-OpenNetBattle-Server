@@ -12,22 +12,22 @@ pub enum AssetData {
   SFMLImage(Vec<u8>),
 }
 
-pub fn get_player_texture_path(player_id: &String) -> String {
+pub fn get_player_texture_path(player_id: &str) -> String {
   String::from("/server/navis/") + player_id + ".texture"
 }
 
-pub fn get_player_animation_path(player_id: &String) -> String {
+pub fn get_player_animation_path(player_id: &str) -> String {
   String::from("/server/navis/") + player_id + ".animation"
 }
 
-pub fn get_map_path(map_id: &String) -> String {
+pub fn get_map_path(map_id: &str) -> String {
   String::from("/server/maps/") + map_id + ".tmx"
 }
 
 pub fn get_flattened_dependency_chain<'a>(
   assets: &'a std::collections::HashMap<String, Asset>,
-  asset_path: &'a String,
-) -> Vec<&'a String> {
+  asset_path: &'a str,
+) -> Vec<&'a str> {
   let mut chain = Vec::new();
   build_flattened_dependency_chain_with_recursion(assets, asset_path, &mut chain);
   chain
@@ -35,12 +35,12 @@ pub fn get_flattened_dependency_chain<'a>(
 
 fn build_flattened_dependency_chain_with_recursion<'a>(
   assets: &'a std::collections::HashMap<String, Asset>,
-  asset_path: &'a String,
-  chain: &mut Vec<&'a String>,
+  asset_path: &'a str,
+  chain: &mut Vec<&'a str>,
 ) {
   if let Some(asset) = assets.get(asset_path) {
     for dependency_path in &asset.dependencies {
-      if chain.contains(&dependency_path) {
+      if chain.contains(&&dependency_path[..]) {
         continue;
       }
 
@@ -51,7 +51,7 @@ fn build_flattened_dependency_chain_with_recursion<'a>(
   }
 }
 
-pub(super) fn translate_tsx(path: &std::path::PathBuf, data: &String) -> Option<String> {
+pub(super) fn translate_tsx(path: &std::path::PathBuf, data: &str) -> Option<String> {
   use crate::helpers::normalize_path;
 
   let root_path = std::path::Path::new("/server");
@@ -83,7 +83,7 @@ pub(super) fn translate_tsx(path: &std::path::PathBuf, data: &String) -> Option<
   Some(String::from_utf8_lossy(&output[..]).into_owned())
 }
 
-pub(super) fn resolve_tsx_dependencies(data: &String) -> Vec<String> {
+pub(super) fn resolve_tsx_dependencies(data: &str) -> Vec<String> {
   let mut dependencies = Vec::new();
 
   if let Ok(tileset_element) = data.parse::<minidom::Element>() {
