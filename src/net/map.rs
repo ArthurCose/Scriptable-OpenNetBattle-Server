@@ -118,8 +118,8 @@ impl Map {
             map_object.z = object_layers as f32;
 
             if map_object.name == "Home Warp" {
-              map.spawn_x = map_object.x;
-              map.spawn_y = map_object.y;
+              map.spawn_x = map_object.x + map_object.height / 2.0;
+              map.spawn_y = map_object.y + map_object.height / 2.0;
             }
 
             map.objects.push(map_object);
