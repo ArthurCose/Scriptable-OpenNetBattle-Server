@@ -58,6 +58,9 @@ impl Map {
     map.next_layer_id = unwrap_and_parse_or_default(map_element.attr("nextlayerid"));
     map.next_object_id = unwrap_and_parse_or_default(map_element.attr("nextobjectid"));
 
+    let scale_x = 1.0 / (map.tile_width / 2.0);
+    let scale_y = 1.0 / map.tile_height;
+
     let mut object_layers = 0;
 
     for child in map_element.children() {
@@ -111,7 +114,7 @@ impl Map {
         }
         "objectgroup" => {
           for object_element in child.children() {
-            let mut map_object = MapObject::from(object_element);
+            let mut map_object = MapObject::from(object_element, scale_x, scale_y);
             map_object.z = object_layers as f32;
 
             if map_object.name == "Home Warp" {
@@ -212,6 +215,9 @@ impl Map {
         ));
       }
 
+      let scale_x = 1.0 / (self.tile_width / 2.0);
+      let scale_y = 1.0 / self.tile_height;
+
       for layer_index in 0..self.layers.len() {
         text.push(self.layers[layer_index].render());
 
@@ -220,7 +226,7 @@ impl Map {
         text.push(String::from("<objectgroup>"));
         for object in &mut self.objects {
           if object.z >= layer_float && object.z < layer_float + 1.0 {
-            text.push(object.render());
+            text.push(object.render(scale_x, scale_y));
           }
         }
         text.push(String::from("</objectgroup>"));

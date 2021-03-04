@@ -20,14 +20,14 @@ pub enum MapObjectData {
 }
 
 impl MapObject {
-  pub fn from(element: &minidom::Element) -> MapObject {
+  pub fn from(element: &minidom::Element, scale_x: f32, scale_y: f32) -> MapObject {
     let name = element.attr("name").unwrap_or_default().to_string();
     let id: u32 = unwrap_and_parse_or_default(element.attr("id"));
     let gid: u32 = unwrap_and_parse_or_default(element.attr("gid"));
-    let x: f32 = unwrap_and_parse_or_default(element.attr("x"));
-    let y: f32 = unwrap_and_parse_or_default(element.attr("y"));
-    let width: f32 = unwrap_and_parse_or_default(element.attr("width"));
-    let height: f32 = unwrap_and_parse_or_default(element.attr("height"));
+    let x = unwrap_and_parse_or_default::<f32>(element.attr("x")) * scale_x;
+    let y = unwrap_and_parse_or_default::<f32>(element.attr("y")) * scale_y;
+    let width = unwrap_and_parse_or_default::<f32>(element.attr("width")) * scale_x;
+    let height = unwrap_and_parse_or_default::<f32>(element.attr("height")) * scale_y;
 
     let data = if gid != 0 {
       MapObjectData::TileObject { gid }
@@ -71,7 +71,7 @@ impl MapObject {
     }
   }
 
-  pub fn render(&mut self) -> String {
+  pub fn render(&mut self, scale_x: f32, scale_y: f32) -> String {
     let name_string = if !self.name.is_empty() {
       format!(" name=\"{}\"", self.name)
     } else {
@@ -101,7 +101,11 @@ impl MapObject {
     }
 
     let dimensions_string = if self.width != 0.0 && self.height != 0.0 {
-      format!(" width=\"{}\" height=\"{}\"", self.width, self.height)
+      format!(
+        " width=\"{}\" height=\"{}\"",
+        self.width / scale_x,
+        self.height / scale_y
+      )
     } else {
       String::default()
     };
@@ -112,7 +116,13 @@ impl MapObject {
         {}\
       </object>\
       ",
-      self.id, name_string, gid_string, self.x, self.y, dimensions_string, data_string
+      self.id,
+      name_string,
+      gid_string,
+      self.x / scale_x,
+      self.y / scale_y,
+      dimensions_string,
+      data_string
     )
   }
 }
