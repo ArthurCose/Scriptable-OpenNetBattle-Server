@@ -134,14 +134,12 @@ pub fn add_player_api<'a, 'b>(
         let y;
         let z;
 
-        if let Some(area) = net.get_area(&area_id) {
-          let spawn = area.get_map().get_spawn();
-
-          x = x_option.unwrap_or(spawn.0);
-          y = y_option.unwrap_or(spawn.1);
-          z = z_option.unwrap_or(0.0);
+        if let Some(player) = net.get_player(&id) {
+          x = x_option.unwrap_or(player.x);
+          y = y_option.unwrap_or(player.y);
+          z = z_option.unwrap_or(player.z);
         } else {
-          return Err(create_area_error(&area_id));
+          return Err(create_player_error(&id));
         }
 
         net.transfer_player(&id, &area_id, warp_in, x, y, z);

@@ -192,14 +192,12 @@ pub fn add_bot_api<'a, 'b>(
         let y;
         let z;
 
-        if let Some(area) = net.get_area(&area_id) {
-          let spawn = area.get_map().get_spawn();
-
-          x = x_option.unwrap_or(spawn.0);
-          y = y_option.unwrap_or(spawn.1);
-          z = z_option.unwrap_or(0.0);
+        if let Some(bot) = net.get_bot(&id) {
+          x = x_option.unwrap_or(bot.x);
+          y = y_option.unwrap_or(bot.y);
+          z = z_option.unwrap_or(bot.z);
         } else {
-          return Err(create_area_error(&area_id));
+          return Err(create_bot_error(&id));
         }
 
         net.transfer_bot(&id, &area_id, warp_in, x, y, z);

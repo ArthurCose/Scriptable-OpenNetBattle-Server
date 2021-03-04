@@ -117,6 +117,7 @@ impl Net {
     }
   }
 
+  #[allow(dead_code)]
   pub fn get_area(&self, area_id: &str) -> Option<&Area> {
     self.areas.get(area_id)
   }
