@@ -446,6 +446,28 @@ impl Net {
   pub(super) fn connect_client(&mut self, player_id: &String) {
     let client = self.clients.get(player_id).unwrap();
     let area_id = client.navi.area_id.clone();
+    let texture_path = client.navi.texture_path.clone();
+    let animation_path = client.navi.animation_path.clone();
+
+    let area = self.areas.get_mut(&area_id).unwrap();
+
+    assert_asset(
+      &self.socket,
+      self.max_payload_size,
+      &self.assets,
+      &mut self.clients,
+      area.get_connected_players(),
+      &texture_path,
+    );
+
+    assert_asset(
+      &self.socket,
+      self.max_payload_size,
+      &self.assets,
+      &mut self.clients,
+      area.get_connected_players(),
+      &animation_path,
+    );
 
     self.send_area(player_id, &area_id);
 
@@ -560,24 +582,6 @@ impl Net {
         z: client.navi.z,
         warp_in: client.warp_in,
       };
-
-      assert_asset(
-        &self.socket,
-        self.max_payload_size,
-        &self.assets,
-        &mut self.clients,
-        area.get_connected_players(),
-        &texture_path,
-      );
-
-      assert_asset(
-        &self.socket,
-        self.max_payload_size,
-        &self.assets,
-        &mut self.clients,
-        area.get_connected_players(),
-        &animation_path,
-      );
 
       broadcast_to_area(
         &self.socket,
