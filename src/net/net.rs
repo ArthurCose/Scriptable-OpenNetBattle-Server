@@ -407,7 +407,6 @@ impl Net {
       cached_assets: HashSet::new(),
     };
 
-    area.add_player(client.navi.id.clone());
     self.clients.insert(client.navi.id.clone(), client);
 
     id
@@ -450,6 +449,7 @@ impl Net {
     let animation_path = client.navi.animation_path.clone();
 
     let area = self.areas.get_mut(&area_id).unwrap();
+    area.add_player(client.navi.id.clone());
 
     assert_asset(
       &self.socket,
