@@ -1,4 +1,5 @@
-use super::{Area, Asset, AssetData, Map, Navi, Player};
+use super::client::Client;
+use super::{Area, Asset, AssetData, Map, Navi};
 use crate::packets::{create_asset_stream, PacketShipper, Reliability, ServerPacket};
 use std::collections::{HashMap, HashSet};
 use std::net::UdpSocket;
@@ -8,7 +9,7 @@ pub struct Net {
   socket: Rc<UdpSocket>,
   max_payload_size: usize,
   areas: HashMap<String, Area>,
-  players: HashMap<String, Player>,
+  clients: HashMap<String, Client>,
   bots: HashMap<String, Navi>,
   assets: HashMap<String, Asset>,
 }
@@ -56,7 +57,7 @@ impl Net {
       socket,
       max_payload_size,
       areas,
-      players: HashMap::new(),
+      clients: HashMap::new(),
       bots: HashMap::new(),
       assets,
     }
@@ -131,11 +132,11 @@ impl Net {
   pub fn set_asset(&mut self, path: String, asset: Asset) {
     self.assets.insert(path.clone(), asset);
 
-    update_cached_players(
+    update_cached_clients(
       &self.socket,
       self.max_payload_size,
       &self.assets,
-      &mut self.players,
+      &mut self.clients,
       &path,
     );
   }
@@ -144,30 +145,34 @@ impl Net {
     self.assets.remove(path);
   }
 
-  pub fn get_player(&self, id: &String) -> Option<&Player> {
-    self.players.get(id)
+  pub fn get_player(&self, id: &String) -> Option<&Navi> {
+    self.clients.get(id).map(|client| &client.navi)
   }
 
-  pub(super) fn get_player_mut(&mut self, id: &String) -> Option<&mut Player> {
-    self.players.get_mut(id)
+  pub(super) fn get_client(&self, id: &String) -> Option<&Client> {
+    self.clients.get(id)
+  }
+
+  pub(super) fn get_client_mut(&mut self, id: &String) -> Option<&mut Client> {
+    self.clients.get_mut(id)
   }
 
   pub fn set_player_name(&mut self, id: &String, name: String) {
-    if let Some(player) = self.players.get_mut(id) {
-      player.navi.name = name.clone();
+    if let Some(client) = self.clients.get_mut(id) {
+      client.navi.name = name.clone();
 
-      // skip if player has not even been sent to anyone yet
-      if player.ready {
+      // skip if client has not even been sent to anyone yet
+      if client.ready {
         let packet = ServerPacket::NaviSetName {
           ticket: id.clone(),
           name,
         };
 
-        let area = self.areas.get(&player.navi.area_id).unwrap();
+        let area = self.areas.get(&client.navi.area_id).unwrap();
 
         broadcast_to_area(
           &self.socket,
-          &mut self.players,
+          &mut self.clients,
           area,
           Reliability::Reliable,
           packet,
@@ -177,13 +182,13 @@ impl Net {
   }
 
   pub fn move_player(&mut self, id: &String, x: f32, y: f32, z: f32) {
-    if let Some(player) = self.players.get_mut(id) {
-      player.navi.x = x;
-      player.navi.y = y;
-      player.navi.z = z;
+    if let Some(client) = self.clients.get_mut(id) {
+      client.navi.x = x;
+      client.navi.y = y;
+      client.navi.z = z;
 
-      // skip if player has not even been sent to anyone yet
-      if player.ready {
+      // skip if client has not even been sent to anyone yet
+      if client.ready {
         let packet = ServerPacket::NaviMove {
           ticket: id.clone(),
           x,
@@ -191,11 +196,11 @@ impl Net {
           z,
         };
 
-        let area = self.areas.get(&player.navi.area_id).unwrap();
+        let area = self.areas.get(&client.navi.area_id).unwrap();
 
         broadcast_to_area(
           &self.socket,
-          &mut self.players,
+          &mut self.clients,
           area,
           Reliability::UnreliableSequenced,
           packet,
@@ -221,31 +226,31 @@ impl Net {
     let texture_path;
     let animation_path;
 
-    if let Some(player) = self.players.get_mut(id) {
-      let previous_area = self.areas.get_mut(&player.navi.area_id).unwrap();
+    if let Some(client) = self.clients.get_mut(id) {
+      let previous_area = self.areas.get_mut(&client.navi.area_id).unwrap();
 
       if !previous_area.get_connected_players().contains(&id) {
-        // player has not been added to any area yet
-        // assume player was transferred on initial connection by a plugin
-        player.navi.area_id = area_id.clone();
+        // client has not been added to any area yet
+        // assume client was transferred on initial connection by a plugin
+        client.navi.area_id = area_id.clone();
         return;
       }
 
-      texture_path = player.navi.texture_path.clone();
-      animation_path = player.navi.animation_path.clone();
+      texture_path = client.navi.texture_path.clone();
+      animation_path = client.navi.animation_path.clone();
 
-      player.packet_shipper.send(
+      client.packet_shipper.send(
         &self.socket,
         &Reliability::ReliableOrdered,
         &ServerPacket::TransferStart,
       );
 
-      let previous_area = self.areas.get_mut(&player.navi.area_id).unwrap();
+      let previous_area = self.areas.get_mut(&client.navi.area_id).unwrap();
       previous_area.remove_player(&id);
 
       broadcast_to_area(
         &self.socket,
-        &mut self.players,
+        &mut self.clients,
         previous_area,
         Reliability::Reliable,
         ServerPacket::NaviDisconnected {
@@ -255,7 +260,7 @@ impl Net {
       );
     } else {
       // allows us to safely unwrap after this
-      // as long as send_area doesn't delete the player (why would it?)
+      // as long as send_area doesn't delete the client (why would it?)
       return;
     }
 
@@ -266,7 +271,7 @@ impl Net {
       &self.socket,
       self.max_payload_size,
       &self.assets,
-      &mut self.players,
+      &mut self.clients,
       area.get_connected_players(),
       &texture_path,
     );
@@ -275,16 +280,16 @@ impl Net {
       &self.socket,
       self.max_payload_size,
       &self.assets,
-      &mut self.players,
+      &mut self.clients,
       area.get_connected_players(),
       &animation_path,
     );
 
     self.send_area(id, &area_id);
 
-    let mut player = self.players.get_mut(id).unwrap();
+    let mut client = self.clients.get_mut(id).unwrap();
 
-    player.packet_shipper.send(
+    client.packet_shipper.send(
       &self.socket,
       &Reliability::ReliableOrdered,
       &ServerPacket::NaviMove {
@@ -295,10 +300,10 @@ impl Net {
       },
     );
 
-    player.navi.area_id = area_id.clone();
-    player.warp_in = warp_in;
+    client.navi.area_id = area_id.clone();
+    client.warp_in = warp_in;
 
-    player.packet_shipper.send(
+    client.packet_shipper.send(
       &self.socket,
       &Reliability::ReliableOrdered,
       &ServerPacket::TransferComplete,
@@ -306,27 +311,27 @@ impl Net {
   }
 
   pub fn set_player_avatar(&mut self, id: &String, texture_path: String, animation_path: String) {
-    if let Some(player) = self.players.get_mut(id) {
-      player.navi.texture_path = texture_path.clone();
-      player.navi.animation_path = animation_path.clone();
+    if let Some(client) = self.clients.get_mut(id) {
+      client.navi.texture_path = texture_path.clone();
+      client.navi.animation_path = animation_path.clone();
 
-      let area = self.areas.get(&player.navi.area_id).unwrap();
+      let area = self.areas.get(&client.navi.area_id).unwrap();
 
-      // skip if player has not even been sent to anyone yet
-      if player.ready {
-        update_cached_players(
+      // skip if client has not even been sent to anyone yet
+      if client.ready {
+        update_cached_clients(
           &self.socket,
           self.max_payload_size,
           &mut self.assets,
-          &mut self.players,
+          &mut self.clients,
           &texture_path,
         );
 
-        update_cached_players(
+        update_cached_clients(
           &self.socket,
           self.max_payload_size,
           &mut self.assets,
-          &mut self.players,
+          &mut self.clients,
           &animation_path,
         );
 
@@ -338,7 +343,7 @@ impl Net {
 
         broadcast_to_area(
           &self.socket,
-          &mut self.players,
+          &mut self.clients,
           area,
           Reliability::ReliableOrdered,
           packet,
@@ -347,18 +352,18 @@ impl Net {
     }
   }
 
-  pub fn set_player_emote(&mut self, id: &String, emote_id: u8) {
-    if let Some(player) = self.players.get(id) {
+  pub fn player_emote(&mut self, id: &String, emote_id: u8) {
+    if let Some(client) = self.clients.get(id) {
       let packet = ServerPacket::NaviEmote {
         ticket: id.clone(),
         emote_id,
       };
 
-      let area = self.areas.get(&player.navi.area_id).unwrap();
+      let area = self.areas.get(&client.navi.area_id).unwrap();
 
       broadcast_to_area(
         &self.socket,
-        &mut self.players,
+        &mut self.clients,
         area,
         Reliability::Reliable,
         packet,
@@ -384,7 +389,7 @@ impl Net {
     let area = self.get_area_mut(&area_id).unwrap();
     let (spawn_x, spawn_y) = area.get_map().get_spawn();
 
-    let player = Player {
+    let client = Client {
       socket_address,
       packet_shipper: PacketShipper::new(socket_address),
       navi: Navi {
@@ -402,8 +407,8 @@ impl Net {
       cached_assets: HashSet::new(),
     };
 
-    area.add_player(player.navi.id.clone());
-    self.players.insert(player.navi.id.clone(), player);
+    area.add_player(client.navi.id.clone());
+    self.clients.insert(client.navi.id.clone(), client);
 
     id
   }
@@ -438,9 +443,9 @@ impl Net {
     (texture_path, animation_path)
   }
 
-  pub(super) fn connect_player(&mut self, player_id: &String) {
-    let player = self.players.get(player_id).unwrap();
-    let area_id = player.navi.area_id.clone();
+  pub(super) fn connect_client(&mut self, player_id: &String) {
+    let client = self.clients.get(player_id).unwrap();
+    let area_id = client.navi.area_id.clone();
 
     self.send_area(player_id, &area_id);
 
@@ -449,9 +454,9 @@ impl Net {
       ticket: player_id.clone(),
     };
 
-    let player = self.players.get_mut(player_id).unwrap();
+    let client = self.clients.get_mut(player_id).unwrap();
 
-    player
+    client
       .packet_shipper
       .send(&self.socket, &Reliability::ReliableOrdered, &packet);
   }
@@ -469,25 +474,25 @@ impl Net {
 
     let area = self.areas.get(area_id).unwrap();
 
-    // send players
+    // send clients
     for other_player_id in area.get_connected_players() {
       if other_player_id == player_id {
         continue;
       }
 
-      let other_player = self.players.get(other_player_id).unwrap();
+      let other_client = self.clients.get(other_player_id).unwrap();
 
-      asset_paths.push(other_player.navi.texture_path.clone());
-      asset_paths.push(other_player.navi.animation_path.clone());
+      asset_paths.push(other_client.navi.texture_path.clone());
+      asset_paths.push(other_client.navi.animation_path.clone());
 
       packets.push(ServerPacket::NaviConnected {
-        ticket: other_player.navi.id.clone(),
-        name: other_player.navi.name.clone(),
-        texture_path: other_player.navi.texture_path.clone(),
-        animation_path: other_player.navi.animation_path.clone(),
-        x: other_player.navi.x,
-        y: other_player.navi.y,
-        z: other_player.navi.z,
+        ticket: other_client.navi.id.clone(),
+        name: other_client.navi.name.clone(),
+        texture_path: other_client.navi.texture_path.clone(),
+        animation_path: other_client.navi.animation_path.clone(),
+        x: other_client.navi.x,
+        y: other_client.navi.y,
+        z: other_client.navi.z,
         warp_in: false,
       });
     }
@@ -519,48 +524,48 @@ impl Net {
         &self.socket,
         self.max_payload_size,
         &self.assets,
-        &mut self.players,
+        &mut self.clients,
         &asset_recievers,
         &asset_path,
       );
     }
 
-    let player = self.players.get_mut(player_id).unwrap();
+    let client = self.clients.get_mut(player_id).unwrap();
 
     for packet in packets {
-      player
+      client
         .packet_shipper
         .send(&self.socket, &Reliability::ReliableOrdered, &packet);
     }
   }
 
   // handles first join and completed transfer
-  pub(super) fn mark_player_ready(&mut self, id: &String) {
-    if let Some(player) = self.players.get_mut(id) {
-      player.ready = true;
+  pub(super) fn mark_client_ready(&mut self, id: &String) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.ready = true;
 
-      // clone id to end mutable player lifetime
-      let player_id = player.navi.id.clone();
-      let area = self.areas.get_mut(&player.navi.area_id).unwrap();
-      let texture_path = player.navi.texture_path.clone();
-      let animation_path = player.navi.animation_path.clone();
+      // clone id to end mutable client lifetime
+      let player_id = client.navi.id.clone();
+      let area = self.areas.get_mut(&client.navi.area_id).unwrap();
+      let texture_path = client.navi.texture_path.clone();
+      let animation_path = client.navi.animation_path.clone();
 
       let packet = ServerPacket::NaviConnected {
         ticket: player_id.clone(),
-        name: player.navi.name.clone(),
+        name: client.navi.name.clone(),
         texture_path: texture_path.clone(),
         animation_path: animation_path.clone(),
-        x: player.navi.x,
-        y: player.navi.y,
-        z: player.navi.z,
-        warp_in: player.warp_in,
+        x: client.navi.x,
+        y: client.navi.y,
+        z: client.navi.z,
+        warp_in: client.warp_in,
       };
 
       assert_asset(
         &self.socket,
         self.max_payload_size,
         &self.assets,
-        &mut self.players,
+        &mut self.clients,
         area.get_connected_players(),
         &texture_path,
       );
@@ -569,14 +574,14 @@ impl Net {
         &self.socket,
         self.max_payload_size,
         &self.assets,
-        &mut self.players,
+        &mut self.clients,
         area.get_connected_players(),
         &animation_path,
       );
 
       broadcast_to_area(
         &self.socket,
-        &mut self.players,
+        &mut self.clients,
         area,
         Reliability::ReliableOrdered,
         packet,
@@ -590,13 +595,13 @@ impl Net {
     self.assets.remove(&asset::get_player_texture_path(id));
     self.assets.remove(&asset::get_player_animation_path(id));
 
-    if let Some(player) = self.players.remove(id) {
+    if let Some(client) = self.clients.remove(id) {
       let area = self
         .areas
-        .get_mut(&player.navi.area_id)
-        .expect("Missing area for removed player");
+        .get_mut(&client.navi.area_id)
+        .expect("Missing area for removed client");
 
-      area.remove_player(&player.navi.id);
+      area.remove_player(&client.navi.id);
 
       let packet = ServerPacket::NaviDisconnected {
         ticket: id.clone(),
@@ -605,7 +610,7 @@ impl Net {
 
       broadcast_to_area(
         &self.socket,
-        &mut self.players,
+        &mut self.clients,
         area,
         Reliability::Reliable,
         packet,
@@ -632,7 +637,7 @@ impl Net {
         &self.socket,
         self.max_payload_size,
         &self.assets,
-        &mut self.players,
+        &mut self.clients,
         area.get_connected_players(),
         &bot.texture_path,
       );
@@ -641,14 +646,14 @@ impl Net {
         &self.socket,
         self.max_payload_size,
         &self.assets,
-        &mut self.players,
+        &mut self.clients,
         area.get_connected_players(),
         &bot.animation_path,
       );
 
       broadcast_to_area(
         &self.socket,
-        &mut self.players,
+        &mut self.clients,
         area,
         Reliability::ReliableOrdered,
         packet,
@@ -675,7 +680,7 @@ impl Net {
 
       broadcast_to_area(
         &self.socket,
-        &mut self.players,
+        &mut self.clients,
         area,
         Reliability::Reliable,
         packet,
@@ -700,7 +705,7 @@ impl Net {
 
       broadcast_to_area(
         &self.socket,
-        &mut self.players,
+        &mut self.clients,
         area,
         Reliability::UnreliableSequenced,
         packet,
@@ -728,7 +733,7 @@ impl Net {
 
       broadcast_to_area(
         &self.socket,
-        &mut self.players,
+        &mut self.clients,
         previous_area,
         Reliability::Reliable,
         ServerPacket::NaviDisconnected {
@@ -749,7 +754,7 @@ impl Net {
         &self.socket,
         self.max_payload_size,
         &self.assets,
-        &mut self.players,
+        &mut self.clients,
         area.get_connected_players(),
         &bot.texture_path,
       );
@@ -758,14 +763,14 @@ impl Net {
         &self.socket,
         self.max_payload_size,
         &self.assets,
-        &mut self.players,
+        &mut self.clients,
         area.get_connected_players(),
         &bot.animation_path,
       );
 
       broadcast_to_area(
         &self.socket,
-        &mut self.players,
+        &mut self.clients,
         area,
         Reliability::Reliable,
         ServerPacket::NaviConnected {
@@ -789,19 +794,19 @@ impl Net {
 
       let area = self.areas.get(&bot.area_id).unwrap();
 
-      update_cached_players(
+      update_cached_clients(
         &self.socket,
         self.max_payload_size,
         &mut self.assets,
-        &mut self.players,
+        &mut self.clients,
         &texture_path,
       );
 
-      update_cached_players(
+      update_cached_clients(
         &self.socket,
         self.max_payload_size,
         &mut self.assets,
-        &mut self.players,
+        &mut self.clients,
         &animation_path,
       );
 
@@ -813,7 +818,7 @@ impl Net {
 
       broadcast_to_area(
         &self.socket,
-        &mut self.players,
+        &mut self.clients,
         area,
         Reliability::ReliableOrdered,
         packet,
@@ -832,7 +837,7 @@ impl Net {
 
       broadcast_to_area(
         &self.socket,
-        &mut self.players,
+        &mut self.clients,
         area,
         Reliability::Reliable,
         packet,
@@ -856,7 +861,7 @@ impl Net {
 
       broadcast_to_area(
         &self.socket,
-        &mut self.players,
+        &mut self.clients,
         area,
         Reliability::Reliable,
         packet,
@@ -875,11 +880,11 @@ impl Net {
         let map_asset = map.generate_asset();
 
         self.assets.insert(map_path.clone(), map_asset);
-        update_cached_players(
+        update_cached_clients(
           &self.socket,
           self.max_payload_size,
           &self.assets,
-          &mut self.players,
+          &mut self.clients,
           &map_path,
         );
 
@@ -887,7 +892,7 @@ impl Net {
 
         broadcast_to_area(
           &self.socket,
-          &mut self.players,
+          &mut self.clients,
           area,
           Reliability::ReliableOrdered,
           packet,
@@ -897,17 +902,17 @@ impl Net {
   }
 
   pub(super) fn resend_backed_up_packets(&mut self) {
-    for player in self.players.values_mut() {
-      player.packet_shipper.resend_backed_up_packets(&self.socket);
+    for client in self.clients.values_mut() {
+      client.packet_shipper.resend_backed_up_packets(&self.socket);
     }
   }
 }
 
-fn update_cached_players(
+fn update_cached_clients(
   socket: &UdpSocket,
   max_payload_size: usize,
   assets: &HashMap<String, Asset>,
-  players: &mut HashMap<String, Player>,
+  clients: &mut HashMap<String, Client>,
   asset_path: &String,
 ) {
   use super::get_flattened_dependency_chain;
@@ -916,9 +921,9 @@ fn update_cached_players(
 
   let reliability = Reliability::ReliableOrdered;
 
-  let mut players_to_update: Vec<&mut Player> = players
+  let mut clients_to_update: Vec<&mut Client> = clients
     .values_mut()
-    .filter(|player| player.cached_assets.contains(asset_path))
+    .filter(|client| client.cached_assets.contains(asset_path))
     .collect();
 
   // asserting dependencies
@@ -926,12 +931,12 @@ fn update_cached_players(
     if let Some(asset) = assets.get(asset_path) {
       let mut packets = Vec::new();
 
-      for player in &mut players_to_update {
-        if player.cached_assets.contains(asset_path) {
+      for client in &mut clients_to_update {
+        if client.cached_assets.contains(asset_path) {
           continue;
         }
 
-        player.cached_assets.insert(asset_path.clone());
+        client.cached_assets.insert(asset_path.clone());
 
         // lazily create stream
         if packets.len() == 0 {
@@ -939,19 +944,19 @@ fn update_cached_players(
         }
 
         for packet in &packets {
-          player.packet_shipper.send(socket, &reliability, &packet);
+          client.packet_shipper.send(socket, &reliability, &packet);
         }
       }
     }
   }
 
-  // updating players who have this asset
+  // updating clients who have this asset
   if let Some(asset) = assets.get(asset_path) {
     let packets = create_asset_stream(max_payload_size, asset_path, &asset);
 
-    for player in &mut players_to_update {
+    for client in &mut clients_to_update {
       for packet in &packets {
-        player.packet_shipper.send(socket, &reliability, &packet);
+        client.packet_shipper.send(socket, &reliability, &packet);
       }
     }
   }
@@ -961,7 +966,7 @@ fn assert_asset(
   socket: &UdpSocket,
   max_payload_size: usize,
   assets: &HashMap<String, Asset>,
-  players: &mut HashMap<String, Player>,
+  clients: &mut HashMap<String, Client>,
   player_ids: &Vec<String>,
   asset_path: &String,
 ) {
@@ -974,9 +979,9 @@ fn assert_asset(
     let mut packets: Vec<ServerPacket> = Vec::new();
 
     for player_id in player_ids {
-      let player = players.get_mut(player_id).unwrap();
+      let client = clients.get_mut(player_id).unwrap();
 
-      if player.cached_assets.contains(asset_path) {
+      if client.cached_assets.contains(asset_path) {
         continue;
       }
 
@@ -985,10 +990,10 @@ fn assert_asset(
         packets = create_asset_stream(max_payload_size, asset_path, asset);
       }
 
-      player.cached_assets.insert(asset_path.clone());
+      client.cached_assets.insert(asset_path.clone());
 
       for packet in &packets {
-        player
+        client
           .packet_shipper
           .send(socket, &Reliability::ReliableOrdered, &packet);
       }
@@ -998,14 +1003,14 @@ fn assert_asset(
 
 fn broadcast_to_area(
   socket: &UdpSocket,
-  players: &mut HashMap<String, Player>,
+  clients: &mut HashMap<String, Client>,
   area: &Area,
   reliability: Reliability,
   packet: ServerPacket,
 ) {
   for player_id in area.get_connected_players() {
-    let player = players.get_mut(player_id).unwrap();
+    let client = clients.get_mut(player_id).unwrap();
 
-    player.packet_shipper.send(socket, &reliability, &packet);
+    client.packet_shipper.send(socket, &reliability, &packet);
   }
 }

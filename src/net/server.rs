@@ -89,7 +89,7 @@ impl Server {
             plugin.tick(&mut self.net, elapsed_time.as_secs_f32());
           }
 
-          // kick afk players
+          // kick afk clients
           let mut kick_list = Vec::new();
           let max_silence = std::time::Duration::from_secs(5);
 
@@ -101,9 +101,9 @@ impl Server {
             }
           }
 
-          // actually kick players
+          // actually kick clients
           for socket_address in kick_list {
-            self.disconnect_player(&socket_address);
+            self.disconnect_client(&socket_address);
           }
 
           // resend pending packets
@@ -129,12 +129,12 @@ impl Server {
             if let Ok(packets) = packet_sorter.sort_packet(&self.socket, headers, packet) {
               for packet in packets {
                 if let Err(_) = self.handle_packet(socket_address, packet) {
-                  self.disconnect_player(&socket_address);
+                  self.disconnect_client(&socket_address);
                   break;
                 }
               }
             } else {
-              self.disconnect_player(&socket_address);
+              self.disconnect_client(&socket_address);
             }
           } else {
             // ignoring errors, no packet sorter = never connected
@@ -196,8 +196,8 @@ impl Server {
             );
           }
 
-          let player = self.net.get_player_mut(player_id).unwrap();
-          player.packet_shipper.acknowledged(reliability, id);
+          let client = self.net.get_client_mut(player_id).unwrap();
+          client.packet_shipper.acknowledged(reliability, id);
         }
         ClientPacket::Login {
           username: _,
@@ -212,7 +212,7 @@ impl Server {
             println!("Received Logout packet from {}", socket_address);
           }
 
-          self.disconnect_player(&socket_address);
+          self.disconnect_client(&socket_address);
         }
         ClientPacket::Position { x, y, z } => {
           if self.config.log_packets {
@@ -230,23 +230,23 @@ impl Server {
             println!("Received Ready packet from {}", socket_address);
           }
 
-          let player = self.net.get_player(player_id).unwrap();
+          let client = self.net.get_client(player_id).unwrap();
 
-          // if the player is ready, this is a transfer
-          if player.ready {
+          // if the client is ready, this is a transfer
+          if client.ready {
             for plugin in &mut self.plugin_interfaces {
               plugin.handle_player_transfer(&mut self.net, &player_id);
             }
           }
 
-          self.net.mark_player_ready(player_id);
+          self.net.mark_client_ready(player_id);
         }
         ClientPacket::AvatarChange => {
           if self.config.log_packets {
             println!("Received Avatar Change packet from {}", socket_address);
           }
 
-          let data_result = collect_streamed_player_data(
+          let data_result = collect_streamed_client_data(
             &mut self.player_texture_buffer,
             &mut self.player_animation_buffer,
             &socket_address,
@@ -281,7 +281,7 @@ impl Server {
             plugin.handle_player_emote(&mut self.net, player_id, emote_id);
           }
 
-          self.net.set_player_emote(player_id, emote_id);
+          self.net.player_emote(player_id, emote_id);
         }
         ClientPacket::ObjectInteraction { tile_object_id } => {
           if self.config.log_packets {
@@ -355,7 +355,7 @@ impl Server {
             println!("Received Login packet from {}", socket_address);
           }
 
-          let data_result = collect_streamed_player_data(
+          let data_result = collect_streamed_client_data(
             &mut self.player_texture_buffer,
             &mut self.player_animation_buffer,
             &socket_address,
@@ -363,14 +363,14 @@ impl Server {
           );
 
           if let Some((texture_data, animation_data)) = data_result {
-            self.connect_player(socket_address, username, texture_data, animation_data);
+            self.connect_client(socket_address, username, texture_data, animation_data);
           }
         }
         _ => {
           if self.config.log_packets {
             println!("Received bad packet from {}", socket_address);
             println!("{:?}", client_packet);
-            println!("Connected players: {:?}", self.player_id_map.keys());
+            println!("Connected clients: {:?}", self.player_id_map.keys());
           }
         }
       }
@@ -379,7 +379,7 @@ impl Server {
     Ok(())
   }
 
-  fn connect_player(
+  fn connect_client(
     &mut self,
     socket_address: std::net::SocketAddr,
     name: String,
@@ -394,7 +394,7 @@ impl Server {
       plugin.handle_player_connect(&mut self.net, &player_id);
     }
 
-    self.net.connect_player(&player_id);
+    self.net.connect_client(&player_id);
 
     if self.config.log_connections {
       println!("{} connected", player_id);
@@ -403,7 +403,7 @@ impl Server {
     self.player_id_map.insert(socket_address, player_id);
   }
 
-  fn disconnect_player(&mut self, socket_address: &std::net::SocketAddr) {
+  fn disconnect_client(&mut self, socket_address: &std::net::SocketAddr) {
     if let Some(player_id) = self.player_id_map.remove(&socket_address) {
       for plugin in &mut self.plugin_interfaces {
         plugin.handle_player_disconnect(&mut self.net, &player_id);
@@ -442,7 +442,7 @@ fn append_texture_data(
   }
 }
 
-fn collect_streamed_player_data(
+fn collect_streamed_client_data(
   player_texture_buffer: &mut HashMap<std::net::SocketAddr, Vec<u8>>,
   player_animation_buffer: &mut HashMap<std::net::SocketAddr, Vec<u8>>,
   socket_address: &std::net::SocketAddr,
