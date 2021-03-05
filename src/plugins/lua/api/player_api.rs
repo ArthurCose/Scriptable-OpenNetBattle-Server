@@ -150,6 +150,54 @@ pub fn add_player_api<'a, 'b>(
   )?;
 
   api_table.set(
+    "message_player",
+    scope.create_function(
+      move |_,
+            (id, message, mug_texture_path, mug_animation_path): (
+        String,
+        String,
+        Option<String>,
+        Option<String>,
+      )| {
+        let mut net = net_ref.borrow_mut();
+
+        net.message_player(
+          &id,
+          &message,
+          &mug_texture_path.unwrap_or_default(),
+          &mug_animation_path.unwrap_or_default(),
+        );
+
+        Ok(())
+      },
+    )?,
+  )?;
+
+  api_table.set(
+    "question_player",
+    scope.create_function(
+      move |_,
+            (id, message, mug_texture_path, mug_animation_path): (
+        String,
+        String,
+        Option<String>,
+        Option<String>,
+      )| {
+        let mut net = net_ref.borrow_mut();
+
+        net.question_player(
+          &id,
+          &message,
+          &mug_texture_path.unwrap_or_default(),
+          &mug_animation_path.unwrap_or_default(),
+        );
+
+        Ok(())
+      },
+    )?,
+  )?;
+
+  api_table.set(
     "transfer_player",
     scope.create_function(
       move |_,

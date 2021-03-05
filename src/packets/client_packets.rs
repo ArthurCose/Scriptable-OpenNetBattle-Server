@@ -19,6 +19,7 @@ pub enum ClientPacket {
   ObjectInteraction { tile_object_id: u32 },
   NaviInteraction { navi_id: String },
   TileInteraction { x: f32, y: f32, z: f32 },
+  DialogResponse { response: u8 },
 }
 
 pub fn parse_client_packet(buf: &[u8]) -> Option<(PacketHeaders, ClientPacket)> {
@@ -85,6 +86,9 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
       x: read_f32(work_buf)?,
       y: read_f32(work_buf)?,
       z: read_f32(work_buf)?,
+    }),
+    13 => Some(ClientPacket::DialogResponse {
+      response: read_byte(work_buf)?,
     }),
     _ => None,
   }

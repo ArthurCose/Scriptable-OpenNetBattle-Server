@@ -17,6 +17,7 @@ pub struct LuaPluginInterface {
   object_interaction_listeners: Vec<std::path::PathBuf>,
   navi_interaction_listeners: Vec<std::path::PathBuf>,
   tile_interaction_listeners: Vec<std::path::PathBuf>,
+  dialog_response_listeners: Vec<std::path::PathBuf>,
 }
 
 impl LuaPluginInterface {
@@ -33,6 +34,7 @@ impl LuaPluginInterface {
       object_interaction_listeners: Vec::new(),
       navi_interaction_listeners: Vec::new(),
       tile_interaction_listeners: Vec::new(),
+      dialog_response_listeners: Vec::new(),
     }
   }
 
@@ -145,6 +147,13 @@ impl LuaPluginInterface {
         .is_ok()
       {
         self.tile_interaction_listeners.push(script_dir.clone());
+      }
+
+      if globals
+        .get::<_, rlua::Function>("handle_player_response")
+        .is_ok()
+      {
+        self.dialog_response_listeners.push(script_dir.clone());
       }
 
       Ok(())
@@ -266,6 +275,16 @@ impl PluginInterface for LuaPluginInterface {
       net,
       "handle_tile_interaction",
       |callback| callback.call((player_id, x, y, z)),
+    );
+  }
+
+  fn handle_dialog_response(&mut self, net: &mut Net, player_id: &str, response: u8) {
+    handle_event(
+      &mut self.scripts,
+      &self.dialog_response_listeners,
+      net,
+      "handle_player_response",
+      |callback| callback.call((player_id, response)),
     );
   }
 }

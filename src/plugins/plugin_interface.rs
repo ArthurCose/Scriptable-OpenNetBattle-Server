@@ -18,4 +18,5 @@ pub trait PluginInterface {
   fn handle_object_interaction(&mut self, net: &mut Net, player_id: &str, tile_object_id: u32);
   fn handle_navi_interaction(&mut self, net: &mut Net, player_id: &str, navi_id: &str);
   fn handle_tile_interaction(&mut self, net: &mut Net, player_id: &str, x: f32, y: f32, z: f32);
+  fn handle_dialog_response(&mut self, net: &mut Net, player_id: &str, response: u8);
 }

@@ -310,6 +310,15 @@ impl Server {
             plugin.handle_tile_interaction(&mut self.net, player_id, x, y, z);
           }
         }
+        ClientPacket::DialogResponse { response } => {
+          if self.config.log_packets {
+            println!("Received Dialog Response packet from {}", socket_address);
+          }
+
+          for plugin in &mut self.plugin_interfaces {
+            plugin.handle_dialog_response(&mut self.net, player_id, response);
+          }
+        }
       }
     } else {
       match client_packet {

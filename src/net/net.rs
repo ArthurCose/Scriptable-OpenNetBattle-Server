@@ -245,6 +245,70 @@ impl Net {
     );
   }
 
+  pub fn message_player(
+    &mut self,
+    id: &str,
+    message: &str,
+    mug_texture_path: &str,
+    mug_animation_path: &str,
+  ) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::Message {
+          message: message.to_string(),
+          mug_texture_path: mug_texture_path.to_string(),
+          mug_animation_path: mug_animation_path.to_string(),
+        },
+      );
+    }
+  }
+
+  pub fn question_player(
+    &mut self,
+    id: &str,
+    message: &str,
+    mug_texture_path: &str,
+    mug_animation_path: &str,
+  ) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::Question {
+          message: message.to_string(),
+          mug_texture_path: mug_texture_path.to_string(),
+          mug_animation_path: mug_animation_path.to_string(),
+        },
+      );
+    }
+  }
+
+  pub fn quiz_player(
+    &mut self,
+    id: &str,
+    option_a: &str,
+    option_b: &str,
+    option_c: &str,
+    mug_texture_path: &str,
+    mug_animation_path: &str,
+  ) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::Quiz {
+          option_a: option_a.to_string(),
+          option_b: option_b.to_string(),
+          option_c: option_c.to_string(),
+          mug_texture_path: mug_texture_path.to_string(),
+          mug_animation_path: mug_animation_path.to_string(),
+        },
+      );
+    }
+  }
+
   pub fn transfer_player(
     &mut self,
     id: &str,
