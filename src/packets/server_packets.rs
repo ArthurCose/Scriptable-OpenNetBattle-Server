@@ -28,6 +28,13 @@ pub enum ServerPacket<'a> {
   },
   TransferStart,
   TransferComplete,
+  LockInput,
+  UnlockInput,
+  Move {
+    x: f32,
+    y: f32,
+    z: f32,
+  },
   NaviConnected {
     ticket: String,
     name: String,
@@ -123,6 +130,18 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     ServerPacket::TransferComplete => {
       write_u16(&mut buf, 7);
     }
+    ServerPacket::LockInput => {
+      write_u16(&mut buf, 8);
+    }
+    ServerPacket::UnlockInput => {
+      write_u16(&mut buf, 9);
+    }
+    ServerPacket::Move { x, y, z } => {
+      write_u16(&mut buf, 10);
+      write_f32(&mut buf, *x);
+      write_f32(&mut buf, *y);
+      write_f32(&mut buf, *z);
+    }
     ServerPacket::NaviConnected {
       ticket,
       name,
@@ -134,7 +153,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       solid,
       warp_in,
     } => {
-      write_u16(&mut buf, 8);
+      write_u16(&mut buf, 11);
       write_string(&mut buf, ticket);
       write_string(&mut buf, name);
       write_string(&mut buf, texture_path);
@@ -146,17 +165,17 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_bool(&mut buf, *warp_in);
     }
     ServerPacket::NaviDisconnected { ticket, warp_out } => {
-      write_u16(&mut buf, 9);
+      write_u16(&mut buf, 12);
       write_string(&mut buf, ticket);
       write_bool(&mut buf, *warp_out);
     }
     ServerPacket::NaviSetName { ticket, name } => {
-      write_u16(&mut buf, 10);
+      write_u16(&mut buf, 13);
       write_string(&mut buf, ticket);
       write_string(&mut buf, name);
     }
     ServerPacket::NaviMove { ticket, x, y, z } => {
-      write_u16(&mut buf, 11);
+      write_u16(&mut buf, 14);
       write_string(&mut buf, ticket);
       write_f32(&mut buf, *x);
       write_f32(&mut buf, *y);
@@ -167,13 +186,13 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       texture_path,
       animation_path,
     } => {
-      write_u16(&mut buf, 12);
+      write_u16(&mut buf, 15);
       write_string(&mut buf, ticket);
       write_string(&mut buf, texture_path);
       write_string(&mut buf, animation_path);
     }
     ServerPacket::NaviEmote { ticket, emote_id } => {
-      write_u16(&mut buf, 13);
+      write_u16(&mut buf, 16);
       buf.push(*emote_id);
       write_string(&mut buf, ticket);
     }

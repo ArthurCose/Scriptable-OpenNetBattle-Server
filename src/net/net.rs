@@ -184,32 +184,65 @@ impl Net {
     }
   }
 
+  pub fn lock_player_input(&mut self, id: &str) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::LockInput,
+      );
+    }
+  }
+
+  pub fn unlock_player_input(&mut self, id: &str) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::UnlockInput,
+      );
+    }
+  }
+
   pub fn move_player(&mut self, id: &str, x: f32, y: f32, z: f32) {
     if let Some(client) = self.clients.get_mut(id) {
-      client.navi.x = x;
-      client.navi.y = y;
-      client.navi.z = z;
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::Move { x, y, z },
+      );
 
-      // skip if client has not even been sent to anyone yet
-      if client.ready {
-        let packet = ServerPacket::NaviMove {
-          ticket: id.to_string(),
-          x,
-          y,
-          z,
-        };
-
-        let area = self.areas.get(&client.navi.area_id).unwrap();
-
-        broadcast_to_area(
-          &self.socket,
-          &mut self.clients,
-          area,
-          Reliability::UnreliableSequenced,
-          packet,
-        );
-      }
+      // don't update internal position, allow the client to update this
     }
+  }
+
+  pub(crate) fn update_player_position(&mut self, id: &str, x: f32, y: f32, z: f32) {
+    let client = self.clients.get_mut(id).unwrap();
+    client.navi.x = x;
+    client.navi.y = y;
+    client.navi.z = z;
+
+    // skip if client has not even been sent to anyone yet
+    if !client.ready {
+      return;
+    }
+
+    let packet = ServerPacket::NaviMove {
+      ticket: id.to_string(),
+      x,
+      y,
+      z,
+    };
+
+    let area = self.areas.get(&client.navi.area_id).unwrap();
+
+    broadcast_to_area(
+      &self.socket,
+      &mut self.clients,
+      area,
+      Reliability::UnreliableSequenced,
+      packet,
+    );
   }
 
   pub fn transfer_player(
@@ -295,19 +328,14 @@ impl Net {
 
     let mut client = self.clients.get_mut(id).unwrap();
 
+    client.navi.area_id = area_id.to_string();
+    client.warp_in = warp_in;
+
     client.packet_shipper.send(
       &self.socket,
       &Reliability::ReliableOrdered,
-      &ServerPacket::NaviMove {
-        ticket: id.to_string(),
-        x,
-        y,
-        z,
-      },
+      &ServerPacket::Move { x, y, z },
     );
-
-    client.navi.area_id = area_id.to_string();
-    client.warp_in = warp_in;
 
     client.packet_shipper.send(
       &self.socket,

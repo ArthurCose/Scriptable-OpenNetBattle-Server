@@ -223,7 +223,7 @@ impl Server {
             plugin.handle_player_move(&mut self.net, player_id, x, y, z);
           }
 
-          self.net.move_player(player_id, x, y, z);
+          self.net.update_player_position(player_id, x, y, z);
         }
         ClientPacket::Ready => {
           if self.config.log_packets {

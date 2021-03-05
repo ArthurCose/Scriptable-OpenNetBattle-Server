@@ -117,6 +117,39 @@ pub fn add_player_api<'a, 'b>(
   )?;
 
   api_table.set(
+    "lock_player_input",
+    scope.create_function(move |_, id: String| {
+      let mut net = net_ref.borrow_mut();
+
+      net.lock_player_input(&id);
+
+      Ok(())
+    })?,
+  )?;
+
+  api_table.set(
+    "unlock_player_input",
+    scope.create_function(move |_, id: String| {
+      let mut net = net_ref.borrow_mut();
+
+      net.unlock_player_input(&id);
+
+      Ok(())
+    })?,
+  )?;
+
+  api_table.set(
+    "move_player",
+    scope.create_function(move |_, (id, x, y, z): (String, f32, f32, f32)| {
+      let mut net = net_ref.borrow_mut();
+
+      net.move_player(&id, x, y, z);
+
+      Ok(())
+    })?,
+  )?;
+
+  api_table.set(
     "transfer_player",
     scope.create_function(
       move |_,
