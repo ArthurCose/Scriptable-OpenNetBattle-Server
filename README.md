@@ -103,7 +103,7 @@ function handle_player_emote(player_id, emote)
 function handle_object_interaction(player_id, object)
 function handle_navi_interaction(player_id, navi_id) -- navi_id is a player or bot id
 function handle_tile_interaction(player_id, x, y, z)
--- function handle_player_response(player_id, response) -- response is an index
+function handle_player_response(player_id, response) -- response is an index
 -- function handle_battle_completion(player_id, results)
 ```
 
@@ -159,9 +159,9 @@ Net.set_player_avatar(id, texture_path, animation_path)
 Net.lock_player(id)
 Net.unlock_player(id)
 Net.move_player(id, x, y, z)
--- Net.send_player_message(id, message, mug_texture_path, mug_animation_path)
--- Net.send_player_question(id, question, mug_texture_path, mug_animation_path)
--- Net.send_player_menu(id, options)
+Net.message_player(id, message, mug_texture_path?, mug_animation_path?)
+Net.question_player(id, question, mug_texture_path?, mug_animation_path?)
+-- Net.quiz_player(id, option_a, option_b, option_c, mug_texture_path?, mug_animation_path?)
 -- Net.move_player_camera(id, x, y, z)
 -- Net.slide_camera(id, x, y, z)
 -- Net.unlock_player_camera(id)
@@ -176,11 +176,7 @@ Net.transfer_player(id, area_id, warp_in?, x?, y?, z?)
 ### Packets
 
 - Clientbound
-  - Message
-  - Question
   - Menu
-  - Lock/Unlock player
-    - Useful for cutscenes.
   - Move/Warp player (recycle existing packets?)
   - Move camera (locks camera)
   - Slide camera (locks camera)
