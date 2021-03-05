@@ -13,7 +13,7 @@ function tick(delta_time)
   bot._tick(delta_time)
 end
 
-function handle_player_conversation(player_id, other_id)
+function handle_navi_interaction(player_id, other_id)
   bot._handle_player_conversation(player_id, other_id)
 end
 
@@ -22,5 +22,9 @@ function handle_player_response(player_id, response)
 end
 
 function handle_player_disconnect(player_id)
+  bot._handle_player_disconnect(player_id)
+end
+
+function handle_player_transfer(player_id)
   bot._handle_player_disconnect(player_id)
 end

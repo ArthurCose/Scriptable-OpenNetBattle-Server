@@ -9,7 +9,9 @@ local function create_custom_bot(id, name, area_id, texture_path, animation_path
     talking_to = nil,
     speed = 1.2,
     size = .35,
-    solid = solid
+    _solid = solid,
+    mug_texture_path = nil,
+    mug_animation_path = nil
   }
 
   function bot._tick(delta_time)
@@ -52,13 +54,17 @@ local function create_custom_bot(id, name, area_id, texture_path, animation_path
     end
   end
 
+  function bot.message_player(player_id, message)
+    Net.message_player(player_id, message, bot.mug_texture_path, bot.mug_animation_path)
+  end
+
   function bot._handle_player_conversation(player_id, other_id)
     if bot.talking_to or other_id ~= bot._id then
-      Net.send_player_message(player_id, "Sorry I'm busy talking to someone right now.")
+      bot.message_player(player_id, "Sorry I'm busy talking to someone right now.")
       return
     end
 
-    Net.send_player_message(player_id, "Hello!")
+    bot.message_player(player_id, "Hello!")
 
     bot.talking_to = player_id
 
