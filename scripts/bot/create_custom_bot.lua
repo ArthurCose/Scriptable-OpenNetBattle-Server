@@ -1,7 +1,6 @@
-local function create_custom_bot(id, name, area_id, texture_path, animation_path, x, y, z)
+local function create_custom_bot(id, name, area_id, texture_path, animation_path, x, y, z, solid)
   local bot = {
     _id = id,
-    _area_id = area_id,
     x = x,
     y = y,
     z = z,
@@ -9,7 +8,8 @@ local function create_custom_bot(id, name, area_id, texture_path, animation_path
     _path_target_index = 1,
     talking_to = nil,
     speed = 1.2,
-    size = .3
+    size = .35,
+    solid = solid
   }
 
   function bot._tick(delta_time)
@@ -18,7 +18,8 @@ local function create_custom_bot(id, name, area_id, texture_path, animation_path
       return
     end
 
-    local player_ids = Net.list_players(bot._area_id)
+    local area_id = Net.get_bot_area(bot._id);
+    local player_ids = Net.list_players(area_id)
 
     for i = 1, #player_ids, 1 do
       local player_pos = Net.get_player_position(player_ids[i])
@@ -79,7 +80,7 @@ local function create_custom_bot(id, name, area_id, texture_path, animation_path
     end
   end
 
-  Net.create_bot(id, name, area_id, texture_path, animation_path, x, y, z)
+  Net.create_bot(id, name, area_id, texture_path, animation_path, x, y, z, solid)
 
   return bot
 end
