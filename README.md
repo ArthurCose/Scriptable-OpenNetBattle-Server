@@ -132,7 +132,7 @@ Net.set_tile(area_id, x, y, z, gid, flip_h?, flip_v?, rotate?)
 
 ```lua
 Net.list_bots(area_id) -- string[]
-Net.create_bot(id, name, area_id, texture_path, animation_path, x, y, z)
+Net.create_bot(id, name, area_id, texture_path, animation_path, x, y, z, solid?)
 Net.is_bot(id)
 Net.remove_bot(id)
 Net.get_bot_area(id)
