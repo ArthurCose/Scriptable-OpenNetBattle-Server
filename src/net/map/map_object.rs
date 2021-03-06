@@ -3,6 +3,7 @@ use crate::helpers::unwrap_and_parse_or_default;
 pub struct MapObject {
   pub id: u32,
   pub name: String,
+  pub visible: bool,
   pub x: f32,
   pub y: f32,
   pub z: f32,
@@ -22,6 +23,7 @@ pub enum MapObjectData {
 impl MapObject {
   pub fn from(element: &minidom::Element, scale_x: f32, scale_y: f32) -> MapObject {
     let name = element.attr("name").unwrap_or_default().to_string();
+    let visible: bool = element.attr("visible").unwrap_or_default() != "0";
     let id: u32 = unwrap_and_parse_or_default(element.attr("id"));
     let gid: u32 = unwrap_and_parse_or_default(element.attr("gid"));
     let x = unwrap_and_parse_or_default::<f32>(element.attr("x")) * scale_x;
@@ -62,6 +64,7 @@ impl MapObject {
     MapObject {
       id,
       name,
+      visible,
       x,
       y,
       z: 0.0,
@@ -74,6 +77,18 @@ impl MapObject {
   pub fn render(&mut self, scale_x: f32, scale_y: f32) -> String {
     let name_string = if !self.name.is_empty() {
       format!(" name=\"{}\"", self.name)
+    } else {
+      String::default()
+    };
+
+    let visible_str = if !self.visible { " visible=\"0\"" } else { "" };
+
+    let dimensions_string = if self.width != 0.0 && self.height != 0.0 {
+      format!(
+        " width=\"{}\" height=\"{}\"",
+        self.width / scale_x,
+        self.height / scale_y
+      )
     } else {
       String::default()
     };
@@ -100,19 +115,9 @@ impl MapObject {
       }
     }
 
-    let dimensions_string = if self.width != 0.0 && self.height != 0.0 {
-      format!(
-        " width=\"{}\" height=\"{}\"",
-        self.width / scale_x,
-        self.height / scale_y
-      )
-    } else {
-      String::default()
-    };
-
     format!(
       "\
-      <object id=\"{}\"{}{} x=\"{}\" y=\"{}\"{}>\
+      <object id=\"{}\"{}{} x=\"{}\" y=\"{}\"{}{}>\
         {}\
       </object>\
       ",
@@ -122,7 +127,8 @@ impl MapObject {
       self.x / scale_x,
       self.y / scale_y,
       dimensions_string,
-      data_string
+      visible_str,
+      data_string,
     )
   }
 }
