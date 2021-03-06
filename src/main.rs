@@ -35,7 +35,7 @@ fn main() {
                 .long("max-payload-size")
                 .help("Maximum data size a packet can carry, excluding UDP headers (reduce for lower packet drop rate)")
                 .value_name("SIZE_IN_BYTES")
-                .default_value("10240")
+                .default_value("1400")
                 .takes_value(true)
                 .validator(|value| {
                     let error_message = "Invalid payload size";
