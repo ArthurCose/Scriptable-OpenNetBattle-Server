@@ -32,6 +32,10 @@ impl Server {
     let addr = format!("0.0.0.0:{}", config.port);
     let socket = UdpSocket::bind(addr).expect("Couldn't bind to address");
 
+    socket
+      .set_nonblocking(true)
+      .expect("Couldn't make socket nonblocking");
+
     match socket.take_error() {
       Ok(None) => println!("Server listening on: {}", config.port),
       Ok(Some(err)) => panic!("UdpSocket error: {:?}", err),

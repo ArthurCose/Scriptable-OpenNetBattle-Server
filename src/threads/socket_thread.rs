@@ -9,6 +9,10 @@ pub fn create_socket_thread(
   max_payload_size: usize,
   log_packets: bool,
 ) {
+  socket
+    .set_nonblocking(false)
+    .expect("Couldn't set the socket to blocking for the listening thread");
+
   std::thread::spawn(move || loop {
     let mut buf = vec![0; max_payload_size];
 
