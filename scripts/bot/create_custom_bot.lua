@@ -58,8 +58,12 @@ local function create_custom_bot(id, name, area_id, texture_path, animation_path
     Net.message_player(player_id, message, bot.mug_texture_path, bot.mug_animation_path)
   end
 
-  function bot._handle_player_conversation(player_id, other_id)
-    if bot.talking_to or other_id ~= bot._id then
+  function bot._handle_navi_interaction(player_id, other_id)
+    if other_id ~= bot._id then
+      return
+    end
+
+    if bot.talking_to then
       bot.message_player(player_id, "Sorry I'm busy talking to someone right now.")
       return
     end
