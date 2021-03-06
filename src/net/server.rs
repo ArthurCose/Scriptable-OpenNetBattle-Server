@@ -163,7 +163,7 @@ impl Server {
         }
         ClientPacket::TextureStream { data } => {
           if self.config.log_packets {
-            println!("Received Texture Stream packet from {}", socket_address);
+            println!("Received TextureStream packet from {}", socket_address);
           }
 
           append_texture_data(
@@ -175,7 +175,7 @@ impl Server {
         }
         ClientPacket::AnimationStream { data } => {
           if self.config.log_packets {
-            println!("Received Animation Stream packet from {}", socket_address);
+            println!("Received AnimationStream packet from {}", socket_address);
           }
 
           append_texture_data(
@@ -240,7 +240,7 @@ impl Server {
         }
         ClientPacket::AvatarChange => {
           if self.config.log_packets {
-            println!("Received Avatar Change packet from {}", socket_address);
+            println!("Received AvatarChange packet from {}", socket_address);
           }
 
           let data_result = collect_streamed_client_data(
@@ -291,7 +291,7 @@ impl Server {
         }
         ClientPacket::NaviInteraction { navi_id } => {
           if self.config.log_packets {
-            println!("Received ObjectInteraction packet from {}", socket_address);
+            println!("Received NaviInteraction packet from {}", socket_address);
           }
 
           for plugin in &mut self.plugin_interfaces {
@@ -309,7 +309,7 @@ impl Server {
         }
         ClientPacket::DialogResponse { response } => {
           if self.config.log_packets {
-            println!("Received Dialog Response packet from {}", socket_address);
+            println!("Received DialogResponse packet from {}", socket_address);
           }
 
           for plugin in &mut self.plugin_interfaces {
@@ -331,7 +331,7 @@ impl Server {
         }
         ClientPacket::TextureStream { data } => {
           if self.config.log_packets {
-            println!("Received Texture Stream packet from {}", socket_address);
+            println!("Received TextureStream packet from {}", socket_address);
           }
 
           append_texture_data(
@@ -343,7 +343,7 @@ impl Server {
         }
         ClientPacket::AnimationStream { data } => {
           if self.config.log_packets {
-            println!("Received Animation Stream packet from {}", socket_address);
+            println!("Received AnimationStream packet from {}", socket_address);
           }
 
           append_texture_data(
