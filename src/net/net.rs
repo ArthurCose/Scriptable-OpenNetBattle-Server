@@ -1,5 +1,6 @@
 use super::client::Client;
 use super::map::Map;
+use super::server::ServerConfig;
 use super::{Area, Asset, AssetData, Navi};
 use crate::packets::{create_asset_stream, PacketShipper, Reliability, ServerPacket};
 use std::collections::{HashMap, HashSet};
@@ -9,6 +10,7 @@ use std::rc::Rc;
 pub struct Net {
   socket: Rc<UdpSocket>,
   max_payload_size: usize,
+  resend_budget: usize,
   areas: HashMap<String, Area>,
   clients: HashMap<String, Client>,
   bots: HashMap<String, Navi>,
@@ -16,7 +18,7 @@ pub struct Net {
 }
 
 impl Net {
-  pub fn new(socket: Rc<UdpSocket>, max_payload_size: usize) -> Net {
+  pub fn new(socket: Rc<UdpSocket>, server_config: &ServerConfig) -> Net {
     use super::asset::get_map_path;
     use std::fs::{read_dir, read_to_string};
 
@@ -56,7 +58,8 @@ impl Net {
 
     Net {
       socket,
-      max_payload_size,
+      max_payload_size: server_config.max_payload_size,
+      resend_budget: server_config.resend_budget,
       areas,
       clients: HashMap::new(),
       bots: HashMap::new(),
@@ -490,7 +493,7 @@ impl Net {
 
     let client = Client {
       socket_address,
-      packet_shipper: PacketShipper::new(socket_address),
+      packet_shipper: PacketShipper::new(socket_address, self.resend_budget),
       navi: Navi {
         id: id.clone(),
         name,

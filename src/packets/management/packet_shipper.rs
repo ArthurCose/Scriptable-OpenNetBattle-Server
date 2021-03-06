@@ -12,6 +12,7 @@ struct BackedUpPacket {
 
 pub struct PacketShipper {
   socket_address: std::net::SocketAddr,
+  resend_budget: usize,
   next_unreliable_sequenced: u64,
   next_reliable: u64,
   next_reliable_ordered: u64,
@@ -20,9 +21,10 @@ pub struct PacketShipper {
 }
 
 impl PacketShipper {
-  pub fn new(socket_address: std::net::SocketAddr) -> PacketShipper {
+  pub fn new(socket_address: std::net::SocketAddr, resend_budget: usize) -> PacketShipper {
     PacketShipper {
       socket_address,
+      resend_budget,
       next_unreliable_sequenced: 0,
       next_reliable: 0,
       next_reliable_ordered: 0,
@@ -86,20 +88,27 @@ impl PacketShipper {
   pub fn resend_backed_up_packets(&self, socket: &UdpSocket) {
     let retry_delay = std::time::Duration::from_secs_f64(1.0 / TICK_RATE);
 
-    for backed_up_packet in &self.backed_up_reliable {
-      if backed_up_packet.creation_time.elapsed() < retry_delay {
+    let mut remaining_budget = self.resend_budget as isize;
+
+    use itertools::Itertools;
+
+    let reliable_iter = self
+      .backed_up_reliable
+      .iter()
+      .take_while(|backed_up_packet| backed_up_packet.creation_time.elapsed() >= retry_delay);
+
+    let reliable_ordered_iter = self
+      .backed_up_reliable_ordered
+      .iter()
+      .take_while(|backed_up_packet| backed_up_packet.creation_time.elapsed() >= retry_delay);
+
+    for backed_up_packet in reliable_iter.interleave(reliable_ordered_iter) {
+      if remaining_budget < 0 {
         break;
       }
 
       self.send_with_silenced_errors(socket, &backed_up_packet.data);
-    }
-
-    for backed_up_packet in &self.backed_up_reliable_ordered {
-      if backed_up_packet.creation_time.elapsed() < retry_delay {
-        break;
-      }
-
-      self.send_with_silenced_errors(socket, &backed_up_packet.data);
+      remaining_budget -= backed_up_packet.data.len() as isize;
     }
   }
 

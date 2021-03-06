@@ -62,6 +62,25 @@ fn main() {
                 }),
         )
         .arg(
+            clap::Arg::with_name("resend_budget")
+                .long("resend-budget")
+                .help("Budget of bytes each client has for the server to spend on resending packets")
+                .value_name("SIZE_IN_BYTES")
+                .default_value("65536") // nearest power of a power of two to (test data / 2 skips / 2 for safety / 2 reliability types)
+                .takes_value(true)
+                .validator(|value| {
+                    let error_message = "Invalid size";
+
+                    let resend_budget = value.parse::<isize>().map_err(|_| String::from(error_message))?;
+
+                    if resend_budget < 0 {
+                        Err(String::from(error_message))
+                    } else {
+                        Ok(())
+                    }
+                }),
+        )
+        .arg(
             clap::Arg::with_name("player_asset_limit")
                 .long("player-asset-limit")
                 .help("Sets the file size limit for avatar files (in KiB)")
@@ -81,6 +100,7 @@ fn main() {
         log_connections: matches.is_present("log_connections"),
         log_packets: matches.is_present("log_packets"),
         max_payload_size: unwrap_and_parse_or_default(matches.value_of("max_payload_size")),
+        resend_budget: matches.value_of("port").unwrap().parse().unwrap(),
         player_asset_limit: unwrap_and_parse_or_default::<usize>(
             matches.value_of("player_asset_limit"),
         ) * 1024,

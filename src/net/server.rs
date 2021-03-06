@@ -13,6 +13,7 @@ pub struct ServerConfig {
   pub log_connections: bool,
   pub log_packets: bool,
   pub max_payload_size: usize,
+  pub resend_budget: usize,
   pub player_asset_limit: usize,
 }
 
@@ -49,7 +50,7 @@ impl Server {
       player_animation_buffer: HashMap::new(),
       player_id_map: HashMap::new(),
       packet_sorter_map: HashMap::new(),
-      net: Net::new(rc_socket.clone(), config.max_payload_size),
+      net: Net::new(rc_socket.clone(), &config),
       plugin_interfaces: Vec::new(),
       socket: rc_socket,
       config,
