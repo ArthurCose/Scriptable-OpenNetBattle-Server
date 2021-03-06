@@ -16,7 +16,6 @@ local function create_custom_bot(id, name, area_id, texture_path, animation_path
 
   function bot._tick(delta_time)
     if bot.talking_to ~= nil then
-      Net.move_bot(bot._id, bot.x, bot.y, bot.z)
       return
     end
 

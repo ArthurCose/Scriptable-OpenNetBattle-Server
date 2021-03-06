@@ -106,8 +106,7 @@ impl Server {
             self.disconnect_client(&socket_address);
           }
 
-          // resend pending packets
-          self.net.resend_backed_up_packets();
+          self.net.tick();
         }
         ThreadMessage::ClientPacket {
           socket_address,
@@ -142,8 +141,6 @@ impl Server {
           }
         }
       }
-
-      self.net.broadcast_map_changes();
     }
   }
 

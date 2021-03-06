@@ -801,23 +801,6 @@ impl Net {
       bot.x = x;
       bot.y = y;
       bot.z = z;
-
-      let packet = ServerPacket::NaviMove {
-        ticket: id.to_string(),
-        x,
-        y,
-        z,
-      };
-
-      let area = self.areas.get(&bot.area_id).unwrap();
-
-      broadcast_to_area(
-        &self.socket,
-        &mut self.clients,
-        area,
-        Reliability::UnreliableSequenced,
-        packet,
-      );
     }
   }
 
@@ -970,7 +953,34 @@ impl Net {
     }
   }
 
-  pub(super) fn broadcast_map_changes(&mut self) {
+  pub(super) fn tick(&mut self) {
+    self.resend_backed_up_packets();
+    self.broadcast_bot_positions();
+    self.broadcast_map_changes();
+  }
+
+  fn broadcast_bot_positions(&mut self) {
+    for bot in self.bots.values() {
+      let packet = ServerPacket::NaviMove {
+        ticket: bot.id.clone(),
+        x: bot.x,
+        y: bot.y,
+        z: bot.z,
+      };
+
+      let area = self.areas.get(&bot.area_id).unwrap();
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.clients,
+        area,
+        Reliability::UnreliableSequenced,
+        packet,
+      );
+    }
+  }
+
+  fn broadcast_map_changes(&mut self) {
     use super::asset::get_map_path;
 
     for area in self.areas.values_mut() {
@@ -1002,7 +1012,7 @@ impl Net {
     }
   }
 
-  pub(super) fn resend_backed_up_packets(&mut self) {
+  fn resend_backed_up_packets(&mut self) {
     for client in self.clients.values_mut() {
       client.packet_shipper.resend_backed_up_packets(&self.socket);
     }
