@@ -31,6 +31,16 @@ fn main() {
                 }),
         )
         .arg(
+            clap::Arg::with_name("log_connections")
+                .long("log-connections")
+                .help("Logs connects and disconnects"),
+        )
+        .arg(
+            clap::Arg::with_name("log_packets")
+                .long("log-packets")
+                .help("Logs received packets (useful for debugging)"),
+        )
+        .arg(
             clap::Arg::with_name("max_payload_size")
                 .long("max-payload-size")
                 .help("Maximum data size a packet can carry, excluding UDP headers (reduce for lower packet drop rate)")
@@ -52,16 +62,6 @@ fn main() {
                 }),
         )
         .arg(
-            clap::Arg::with_name("log_connections")
-                .long("log-connections")
-                .help("Logs connects and disconnects"),
-        )
-        .arg(
-            clap::Arg::with_name("log_packets")
-                .long("log-packets")
-                .help("Logs received packets (useful for debugging)"),
-        )
-        .arg(
             clap::Arg::with_name("player_asset_limit")
                 .long("player-asset-limit")
                 .help("Sets the file size limit for avatar files (in KiB)")
@@ -78,9 +78,9 @@ fn main() {
     let config = net::ServerConfig {
         // validators makes this safe to unwrap
         port: matches.value_of("port").unwrap().parse().unwrap(),
-        max_payload_size: unwrap_and_parse_or_default(matches.value_of("max_payload_size")),
         log_connections: matches.is_present("log_connections"),
         log_packets: matches.is_present("log_packets"),
+        max_payload_size: unwrap_and_parse_or_default(matches.value_of("max_payload_size")),
         player_asset_limit: unwrap_and_parse_or_default::<usize>(
             matches.value_of("player_asset_limit"),
         ) * 1024,

@@ -10,9 +10,9 @@ use std::rc::Rc;
 
 pub struct ServerConfig {
   pub port: u16,
-  pub max_payload_size: usize,
   pub log_connections: bool,
   pub log_packets: bool,
+  pub max_payload_size: usize,
   pub player_asset_limit: usize,
 }
 
