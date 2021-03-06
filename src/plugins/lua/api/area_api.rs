@@ -1,5 +1,6 @@
 use super::lua_errors::create_area_error;
-use crate::net::{Net, Tile};
+use crate::net::map::Tile;
+use crate::net::Net;
 use std::cell::RefCell;
 
 #[allow(clippy::type_complexity)]

@@ -1,6 +1,7 @@
+use super::super::Asset;
 use super::map_layer::MapLayer;
 use super::map_object::MapObject;
-use super::{Asset, Tile};
+use super::Tile;
 use crate::helpers::unwrap_and_parse_or_default;
 
 pub struct TilesetInfo {
@@ -242,7 +243,7 @@ impl Map {
   }
 
   pub fn generate_asset(&mut self) -> Asset {
-    use super::AssetData;
+    use super::super::AssetData;
 
     Asset {
       data: AssetData::Text(self.render()),

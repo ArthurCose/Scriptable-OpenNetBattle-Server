@@ -1,5 +1,6 @@
 use super::client::Client;
-use super::{Area, Asset, AssetData, Map, Navi};
+use super::map::Map;
+use super::{Area, Asset, AssetData, Navi};
 use crate::packets::{create_asset_stream, PacketShipper, Reliability, ServerPacket};
 use std::collections::{HashMap, HashSet};
 use std::net::UdpSocket;
