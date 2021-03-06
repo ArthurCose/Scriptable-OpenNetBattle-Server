@@ -1,3 +1,4 @@
+#[allow(clippy::module_inception)]
 mod map;
 mod map_layer;
 mod map_object;

@@ -3,6 +3,7 @@ use crate::helpers::unwrap_and_parse_or_default;
 pub struct MapObject {
   pub id: u32,
   pub name: String,
+  pub object_type: String,
   pub visible: bool,
   pub x: f32,
   pub y: f32,
@@ -23,6 +24,7 @@ pub enum MapObjectData {
 impl MapObject {
   pub fn from(element: &minidom::Element, scale_x: f32, scale_y: f32) -> MapObject {
     let name = element.attr("name").unwrap_or_default().to_string();
+    let object_type = element.attr("type").unwrap_or_default().to_string();
     let visible: bool = element.attr("visible").unwrap_or_default() != "0";
     let id: u32 = unwrap_and_parse_or_default(element.attr("id"));
     let gid: u32 = unwrap_and_parse_or_default(element.attr("gid"));
@@ -64,6 +66,7 @@ impl MapObject {
     MapObject {
       id,
       name,
+      object_type,
       visible,
       x,
       y,

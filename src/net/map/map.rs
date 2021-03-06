@@ -179,6 +179,18 @@ impl Map {
     }
   }
 
+  pub fn get_objects(&self) -> &Vec<MapObject> {
+    &self.objects
+  }
+
+  pub fn get_object_by_id(&self, id: u32) -> Option<&MapObject> {
+    self.objects.iter().find(|&o| o.id == id)
+  }
+
+  pub fn get_object_by_name(&self, name: &str) -> Option<&MapObject> {
+    self.objects.iter().find(|&o| o.name == name)
+  }
+
   pub fn is_dirty(&self) -> bool {
     !self.cached
   }

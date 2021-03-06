@@ -120,18 +120,23 @@ Interactions with the cyberworld are performed through functions attached to a g
 -- Net.create_area(area_id)
 Net.get_width(area_id)
 Net.get_height(area_id)
+-- Net.get_area_name(area_id)
+-- Net.get_song()
+-- Net.set_song(path)
+-- Net.get_spawn_position(area_id) -- { x, y, z }
 -- Net.get_tile_set(area_id, tile_gid) -- { name, firstGid, tileCount, tileWidth, tileHeight, properties }
 -- Net.get_tile_set(area_id, name) -- { name, firstGid, tileCount, tileWidth, tileHeight, properties }
 Net.get_tile_gid(area_id, x, y, z)
 Net.set_tile(area_id, x, y, z, gid, flip_h?, flip_v?, rotate?)
--- Net.list_map_objects(area_id) -- string[]
--- Net.get_map_object(area_id, object_id) -- { id, name, type, x, y, z, width, height, properties }
+Net.list_objects(area_id) -- object_id[]
+Net.get_object_by_id(area_id, object_id) -- { id, name, type, visible, x, y, z, width, height, data }?
+Net.get_object_by_name(area_id, name) -- { id, name, type, visible, x, y, z, width, height, data }?
 ```
 
 #### Bot API
 
 ```lua
-Net.list_bots(area_id) -- string[]
+Net.list_bots(area_id) -- id[]
 Net.create_bot(id, name, area_id, texture_path, animation_path, x, y, z, solid?)
 Net.is_bot(id)
 Net.remove_bot(id)
@@ -148,7 +153,7 @@ Net.transfer_bot(id, area_id, warp_in?, x?, y?, z?)
 #### Player API
 
 ```lua
-Net.list_players(area_id) -- string[]
+Net.list_players(area_id) -- id[]
 Net.is_player(id)
 Net.get_player_area(id)
 Net.get_player_name(id)
