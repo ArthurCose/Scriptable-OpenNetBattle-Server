@@ -22,38 +22,18 @@ pub struct Server {
   player_animation_buffer: HashMap<std::net::SocketAddr, Vec<u8>>,
   player_id_map: HashMap<std::net::SocketAddr, String>,
   packet_sorter_map: HashMap<std::net::SocketAddr, PacketSorter>,
-  net: Net,
   plugin_interfaces: Vec<Box<dyn PluginInterface>>,
-  socket: Rc<UdpSocket>,
   config: ServerConfig,
 }
 
 impl Server {
   pub fn new(config: ServerConfig) -> Server {
-    let addr = format!("0.0.0.0:{}", config.port);
-    let socket = UdpSocket::bind(addr).expect("Couldn't bind to address");
-
-    // set write timeout to effectively act as non blocking
-    socket
-      .set_write_timeout(Some(std::time::Duration::from_nanos(1)))
-      .expect("Failed to set write timeout");
-
-    match socket.take_error() {
-      Ok(None) => println!("Server listening on: {}", config.port),
-      Ok(Some(err)) => panic!("UdpSocket error: {:?}", err),
-      Err(err) => panic!("UdpSocket.take_error failed: {:?}", err),
-    }
-
-    let rc_socket = Rc::new(socket);
-
     Server {
       player_texture_buffer: HashMap::new(),
       player_animation_buffer: HashMap::new(),
       player_id_map: HashMap::new(),
       packet_sorter_map: HashMap::new(),
-      net: Net::new(rc_socket.clone(), &config),
       plugin_interfaces: Vec::new(),
-      socket: rc_socket,
       config,
     }
   }
@@ -66,15 +46,25 @@ impl Server {
     use std::sync::mpsc;
     use std::time::Instant;
 
+    let addr = format!("0.0.0.0:{}", self.config.port);
+    let socket = UdpSocket::bind(addr)?;
+
+    socket.take_error()?;
+
+    println!("Server listening on: {}", self.config.port);
+
+    let socket = Rc::new(socket);
+    let mut net = Net::new(socket.clone(), &self.config);
+
     for plugin_interface in &mut self.plugin_interfaces {
-      plugin_interface.init(&mut self.net);
+      plugin_interface.init(&mut net);
     }
 
     let (tx, rx) = mpsc::channel();
     create_clock_thread(tx.clone());
     create_socket_thread(
       tx,
-      self.socket.try_clone()?,
+      socket.try_clone()?,
       self.config.max_payload_size,
       self.config.log_packets,
     );
@@ -92,7 +82,7 @@ impl Server {
           time = Instant::now();
 
           for plugin in &mut self.plugin_interfaces {
-            plugin.tick(&mut self.net, elapsed_time.as_secs_f32());
+            plugin.tick(&mut net, elapsed_time.as_secs_f32());
           }
 
           // kick afk clients
@@ -109,10 +99,10 @@ impl Server {
 
           // actually kick clients
           for socket_address in kick_list {
-            self.disconnect_client(&socket_address);
+            self.disconnect_client(&mut net, &socket_address);
           }
 
-          self.net.tick();
+          net.tick();
         }
         ThreadMessage::ClientPacket {
           socket_address,
@@ -131,19 +121,22 @@ impl Server {
           }
 
           if let Some(packet_sorter) = self.packet_sorter_map.get_mut(&socket_address) {
-            if let Ok(packets) = packet_sorter.sort_packet(&self.socket, headers, packet) {
+            if let Ok(packets) = packet_sorter.sort_packet(&socket, headers, packet) {
               for packet in packets {
-                if self.handle_packet(socket_address, packet).is_err() {
-                  self.disconnect_client(&socket_address);
+                if self
+                  .handle_packet(&mut net, &socket, socket_address, packet)
+                  .is_err()
+                {
+                  self.disconnect_client(&mut net, &socket_address);
                   break;
                 }
               }
             } else {
-              self.disconnect_client(&socket_address);
+              self.disconnect_client(&mut net, &socket_address);
             }
           } else {
             // ignoring errors, no packet sorter = never connected
-            let _ = self.handle_packet(socket_address, packet);
+            let _ = self.handle_packet(&mut net, &socket, socket_address, packet);
           }
         }
       }
@@ -152,6 +145,8 @@ impl Server {
 
   fn handle_packet(
     &mut self,
+    net: &mut Net,
+    socket: &std::net::UdpSocket,
     socket_address: std::net::SocketAddr,
     client_packet: ClientPacket,
   ) -> std::io::Result<()> {
@@ -165,7 +160,7 @@ impl Server {
           let buf = build_unreliable_packet(&ServerPacket::Pong {
             max_payload_size: self.config.max_payload_size,
           });
-          self.socket.send_to(&buf, socket_address)?;
+          socket.send_to(&buf, socket_address)?;
         }
         ClientPacket::TextureStream { data } => {
           if self.config.log_packets {
@@ -199,7 +194,7 @@ impl Server {
             );
           }
 
-          let client = self.net.get_client_mut(player_id).unwrap();
+          let client = net.get_client_mut(player_id).unwrap();
           client.packet_shipper.acknowledged(reliability, id);
         }
         ClientPacket::Login {
@@ -215,7 +210,7 @@ impl Server {
             println!("Received Logout packet from {}", socket_address);
           }
 
-          self.disconnect_client(&socket_address);
+          self.disconnect_client(net, &socket_address);
         }
         ClientPacket::Position { x, y, z } => {
           if self.config.log_packets {
@@ -223,26 +218,26 @@ impl Server {
           }
 
           for plugin in &mut self.plugin_interfaces {
-            plugin.handle_player_move(&mut self.net, player_id, x, y, z);
+            plugin.handle_player_move(net, player_id, x, y, z);
           }
 
-          self.net.update_player_position(player_id, x, y, z);
+          net.update_player_position(player_id, x, y, z);
         }
         ClientPacket::Ready => {
           if self.config.log_packets {
             println!("Received Ready packet from {}", socket_address);
           }
 
-          let client = self.net.get_client(player_id).unwrap();
+          let client = net.get_client(player_id).unwrap();
 
           // if the client is ready, this is a transfer
           if client.ready {
             for plugin in &mut self.plugin_interfaces {
-              plugin.handle_player_transfer(&mut self.net, &player_id);
+              plugin.handle_player_transfer(net, &player_id);
             }
           }
 
-          self.net.mark_client_ready(player_id);
+          net.mark_client_ready(player_id);
         }
         ClientPacket::AvatarChange => {
           if self.config.log_packets {
@@ -258,21 +253,13 @@ impl Server {
 
           if let Some((texture_data, animation_data)) = data_result {
             let (texture_path, animation_path) =
-              self
-                .net
-                .store_player_avatar(player_id, texture_data, animation_data);
+              net.store_player_avatar(player_id, texture_data, animation_data);
 
             for plugin in &mut self.plugin_interfaces {
-              plugin.handle_player_avatar_change(
-                &mut self.net,
-                player_id,
-                &texture_path,
-                &animation_path,
-              );
+              plugin.handle_player_avatar_change(net, player_id, &texture_path, &animation_path);
             }
-            self
-              .net
-              .set_player_avatar(player_id, texture_path, animation_path);
+
+            net.set_player_avatar(player_id, texture_path, animation_path);
           }
         }
         ClientPacket::Emote { emote_id } => {
@@ -281,10 +268,10 @@ impl Server {
           }
 
           for plugin in &mut self.plugin_interfaces {
-            plugin.handle_player_emote(&mut self.net, player_id, emote_id);
+            plugin.handle_player_emote(net, player_id, emote_id);
           }
 
-          self.net.player_emote(player_id, emote_id);
+          net.player_emote(player_id, emote_id);
         }
         ClientPacket::ObjectInteraction { tile_object_id } => {
           if self.config.log_packets {
@@ -292,7 +279,7 @@ impl Server {
           }
 
           for plugin in &mut self.plugin_interfaces {
-            plugin.handle_object_interaction(&mut self.net, player_id, tile_object_id);
+            plugin.handle_object_interaction(net, player_id, tile_object_id);
           }
         }
         ClientPacket::NaviInteraction { navi_id } => {
@@ -301,7 +288,7 @@ impl Server {
           }
 
           for plugin in &mut self.plugin_interfaces {
-            plugin.handle_navi_interaction(&mut self.net, player_id, &navi_id);
+            plugin.handle_navi_interaction(net, player_id, &navi_id);
           }
         }
         ClientPacket::TileInteraction { x, y, z } => {
@@ -310,7 +297,7 @@ impl Server {
           }
 
           for plugin in &mut self.plugin_interfaces {
-            plugin.handle_tile_interaction(&mut self.net, player_id, x, y, z);
+            plugin.handle_tile_interaction(net, player_id, x, y, z);
           }
         }
         ClientPacket::DialogResponse { response } => {
@@ -319,7 +306,7 @@ impl Server {
           }
 
           for plugin in &mut self.plugin_interfaces {
-            plugin.handle_dialog_response(&mut self.net, player_id, response);
+            plugin.handle_dialog_response(net, player_id, response);
           }
         }
       }
@@ -333,7 +320,7 @@ impl Server {
           let buf = build_unreliable_packet(&ServerPacket::Pong {
             max_payload_size: self.config.max_payload_size,
           });
-          self.socket.send_to(&buf, socket_address)?;
+          socket.send_to(&buf, socket_address)?;
         }
         ClientPacket::TextureStream { data } => {
           if self.config.log_packets {
@@ -375,7 +362,7 @@ impl Server {
           );
 
           if let Some((texture_data, animation_data)) = data_result {
-            self.connect_client(socket_address, username, texture_data, animation_data);
+            self.connect_client(net, socket_address, username, texture_data, animation_data);
           }
         }
         _ => {
@@ -393,20 +380,19 @@ impl Server {
 
   fn connect_client(
     &mut self,
+    net: &mut Net,
     socket_address: std::net::SocketAddr,
     name: String,
     texture_data: Vec<u8>,
     animation_data: String,
   ) {
-    let player_id = self
-      .net
-      .add_player(socket_address, name, texture_data, animation_data);
+    let player_id = net.add_player(socket_address, name, texture_data, animation_data);
 
     for plugin in &mut self.plugin_interfaces {
-      plugin.handle_player_connect(&mut self.net, &player_id);
+      plugin.handle_player_connect(net, &player_id);
     }
 
-    self.net.connect_client(&player_id);
+    net.connect_client(&player_id);
 
     if self.config.log_connections {
       println!("{} connected", player_id);
@@ -415,13 +401,13 @@ impl Server {
     self.player_id_map.insert(socket_address, player_id);
   }
 
-  fn disconnect_client(&mut self, socket_address: &std::net::SocketAddr) {
+  fn disconnect_client(&mut self, net: &mut Net, socket_address: &std::net::SocketAddr) {
     if let Some(player_id) = self.player_id_map.remove(&socket_address) {
       for plugin in &mut self.plugin_interfaces {
-        plugin.handle_player_disconnect(&mut self.net, &player_id);
+        plugin.handle_player_disconnect(net, &player_id);
       }
 
-      self.net.remove_player(&player_id);
+      net.remove_player(&player_id);
 
       if self.config.log_connections {
         println!("{} disconnected", player_id);
