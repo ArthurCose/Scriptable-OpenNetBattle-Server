@@ -33,9 +33,10 @@ impl Server {
     let addr = format!("0.0.0.0:{}", config.port);
     let socket = UdpSocket::bind(addr).expect("Couldn't bind to address");
 
+    // set write timeout to effectively act as non blocking
     socket
-      .set_nonblocking(true)
-      .expect("Couldn't make socket nonblocking");
+      .set_write_timeout(Some(std::time::Duration::from_nanos(1)))
+      .expect("Failed to set write timeout");
 
     match socket.take_error() {
       Ok(None) => println!("Server listening on: {}", config.port),
