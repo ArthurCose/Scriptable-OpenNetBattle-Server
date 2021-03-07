@@ -3,29 +3,16 @@ use crate::threads::ThreadMessage;
 use std::net::UdpSocket;
 use std::sync::mpsc;
 
-pub fn create_socket_thread(
+pub fn create_listening_thread(
   tx: mpsc::Sender<ThreadMessage>,
   socket: UdpSocket,
   max_payload_size: usize,
   log_packets: bool,
 ) {
-  let async_socket = async_std::net::UdpSocket::from(socket);
-
-  std::thread::spawn(move || {
-    async_std::task::block_on(listen_loop(tx, async_socket, max_payload_size, log_packets))
-  });
-}
-
-async fn listen_loop(
-  tx: mpsc::Sender<ThreadMessage>,
-  async_socket: async_std::net::UdpSocket,
-  max_payload_size: usize,
-  log_packets: bool,
-) {
-  loop {
+  std::thread::spawn(move || loop {
     let mut buf = vec![0; max_payload_size];
 
-    let wrapped_packet = async_socket.recv_from(&mut buf).await;
+    let wrapped_packet = socket.recv_from(&mut buf);
 
     match wrapped_packet {
       Ok((number_of_bytes, src_addr)) => {
@@ -47,7 +34,10 @@ async fn listen_loop(
           println!("{:?}", filled_buf);
         }
       }
-      Err(err) => panic!("{}", err),
+      Err(err) => match err.kind() {
+        std::io::ErrorKind::WouldBlock => (),
+        _ => panic!("{}", err),
+      },
     }
-  }
+  });
 }
