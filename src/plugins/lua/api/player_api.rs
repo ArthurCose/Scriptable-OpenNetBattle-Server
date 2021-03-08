@@ -198,6 +198,34 @@ pub fn add_player_api<'a, 'b>(
   )?;
 
   api_table.set(
+    "quiz_player",
+    scope.create_function(
+      move |_,
+            (id, option_a, option_b, option_c, mug_texture_path, mug_animation_path): (
+        String,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+      )| {
+        let mut net = net_ref.borrow_mut();
+
+        net.quiz_player(
+          &id,
+          &option_a.unwrap_or_default(),
+          &option_b.unwrap_or_default(),
+          &option_c.unwrap_or_default(),
+          &mug_texture_path.unwrap_or_default(),
+          &mug_animation_path.unwrap_or_default(),
+        );
+
+        Ok(())
+      },
+    )?,
+  )?;
+
+  api_table.set(
     "transfer_player",
     scope.create_function(
       move |_,

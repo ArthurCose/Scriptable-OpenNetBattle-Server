@@ -57,17 +57,26 @@ local function create_custom_bot(id, name, area_id, texture_path, animation_path
     Net.message_player(player_id, message, bot.mug_texture_path, bot.mug_animation_path)
   end
 
+  function bot.question_player(player_id, message)
+    Net.question_player(player_id, message, bot.mug_texture_path, bot.mug_animation_path)
+  end
+
+  function bot.quiz_player(player_id, option_a, option_b, option_c)
+    Net.quiz_player(player_id, option_a, option_b, option_c, bot.mug_texture_path, bot.mug_animation_path)
+  end
+
   function bot._handle_navi_interaction(player_id, other_id)
     if other_id ~= bot._id then
       return
     end
 
     if bot.talking_to then
-      bot.message_player(player_id, "Sorry I'm busy talking to someone right now.")
+      bot.message_player(player_id, "SORRY I'M BUSY TALKING TO SOMEONE RIGHT NOW.")
       return
     end
 
-    bot.message_player(player_id, "Hello!")
+    Net.lock_player_input(player_id)
+    bot.question_player(player_id, "HELLO! ARE YOU DOING WELL TODAY?")
 
     bot.talking_to = player_id
 
@@ -78,9 +87,19 @@ local function create_custom_bot(id, name, area_id, texture_path, animation_path
   end
 
   function bot._handle_player_response(player_id, response)
-    if bot.talking_to == player_id then
-      bot.talking_to = nil
+    if bot.talking_to ~= player_id then
+      return
     end
+
+    if response == 1 then
+      bot.message_player(player_id, "THAT'S GREAT!");
+    else
+      bot.message_player(player_id, "OH NO! I HOPE YOUR DAY GETS BETTER.");
+    end
+
+    Net.unlock_player_input(player_id)
+
+    bot.talking_to = nil
   end
 
   function bot._handle_player_disconnect(player_id)

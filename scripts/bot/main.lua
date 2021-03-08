@@ -2,6 +2,10 @@ local create_custom_bot = require('scripts/bot/create_custom_bot')
 
 local area_id = "default"
 local bot = create_custom_bot("test", "", area_id, "/server/assets/prog.png", "/server/assets/prog.animation", 1.5, 1.5, 0, true)
+
+bot.mug_texture_path = "resources/ow/prog/prog_mug.png"
+bot.mug_animation_path = "resources/ow/prog/prog_mug.animation"
+
 bot.path = {
   { x=0.5, y=0.5 },
   { x=0.5, y=2.5 },
