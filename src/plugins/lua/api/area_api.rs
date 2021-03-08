@@ -36,6 +36,133 @@ pub fn add_area_api<'a, 'b>(
   )?;
 
   api_table.set(
+    "get_area_name",
+    scope.create_function(move |_, area_id: String| {
+      let net = net_ref.borrow();
+
+      if let Some(area) = net.get_area(&area_id) {
+        Ok(area.get_map().get_name().clone())
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
+    "set_area_name",
+    scope.create_function(move |_, (area_id, name): (String, String)| {
+      let mut net = net_ref.borrow_mut();
+
+      if let Some(area) = net.get_area_mut(&area_id) {
+        let map = area.get_map_mut();
+
+        map.set_name(name);
+
+        Ok(())
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
+    "get_song",
+    scope.create_function(move |_, area_id: String| {
+      let net = net_ref.borrow();
+
+      if let Some(area) = net.get_area(&area_id) {
+        Ok(area.get_map().get_song_path().clone())
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
+    "set_song",
+    scope.create_function(move |_, (area_id, path): (String, String)| {
+      let mut net = net_ref.borrow_mut();
+
+      if let Some(area) = net.get_area_mut(&area_id) {
+        let map = area.get_map_mut();
+
+        map.set_song_path(path);
+
+        Ok(())
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
+    "get_background_name",
+    scope.create_function(move |_, area_id: String| {
+      let net = net_ref.borrow();
+
+      if let Some(area) = net.get_area(&area_id) {
+        Ok(area.get_map().get_background_name().clone())
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
+    "set_background",
+    scope.create_function(move |_, (area_id, name): (String, String)| {
+      let mut net = net_ref.borrow_mut();
+
+      if let Some(area) = net.get_area_mut(&area_id) {
+        let map = area.get_map_mut();
+
+        map.set_background_name(name);
+
+        Ok(())
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
+    "get_spawn_position",
+    scope.create_function(move |lua_ctx, area_id: String| {
+      let net = net_ref.borrow();
+
+      if let Some(area) = net.get_area(&area_id) {
+        let (x, y, z) = area.get_map().get_spawn();
+
+        let table = lua_ctx.create_table()?;
+        table.set("x", x)?;
+        table.set("y", y)?;
+        table.set("z", z)?;
+
+        Ok(table)
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
+    "set_spawn_position",
+    scope.create_function(move |_, (area_id, x, y, z): (String, f32, f32, f32)| {
+      let mut net = net_ref.borrow_mut();
+
+      if let Some(area) = net.get_area_mut(&area_id) {
+        let map = area.get_map_mut();
+
+        map.set_spawn(x, y, z);
+
+        Ok(())
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
     "get_tile_gid",
     scope.create_function(
       move |_, (area_id, x, y, z): (String, usize, usize, usize)| {

@@ -45,7 +45,6 @@ pub enum ServerPacket<'a> {
     mug_texture_path: String,
     mug_animation_path: String,
   },
-  #[allow(dead_code)]
   Quiz {
     option_a: String,
     option_b: String,

@@ -120,13 +120,16 @@ Interactions with the cyberworld are performed through functions attached to a g
 -- Net.create_area(area_id)
 Net.get_width(area_id)
 Net.get_height(area_id)
--- Net.get_area_name(area_id)
--- Net.get_song(area_id) -- song_path
--- Net.set_song(area_id, song_path)
--- Net.set_background(area_id,texture_path, animation_path, vel_x, vel_y)
+Net.get_area_name(area_id)
+Net.set_area_name(area_id)
+Net.get_song(area_id) -- song_path
+Net.set_song(area_id, song_path)
+Net.get_background_name(area_id) -- background_name
+Net.set_background(area_id, background_name)
+-- Net.set_custom_background(area_id, texture_path, animation_path, vel_x?, vel_y?)
 -- Net.set_background_vel(area_id, vel_x, vel_y)
--- Net.get_spawn_position(area_id) -- { x, y, z }
--- Net.set_spawn_position(area_id, x, y, z)
+Net.get_spawn_position(area_id) -- { x, y, z }
+Net.set_spawn_position(area_id, x, y, z)
 -- Net.get_tile_set(area_id, tile_gid) -- { name, firstGid, tileCount, tileWidth, tileHeight, properties }
 -- Net.get_tile_set(area_id, name) -- { name, firstGid, tileCount, tileWidth, tileHeight, properties }
 Net.get_tile_gid(area_id, x, y, z) -- tile_gid

@@ -121,7 +121,6 @@ impl Net {
     }
   }
 
-  #[allow(dead_code)]
   pub fn get_area(&self, area_id: &str) -> Option<&Area> {
     self.areas.get(area_id)
   }
@@ -549,7 +548,7 @@ impl Net {
 
     let area_id = String::from("default");
     let area = self.get_area_mut(&area_id).unwrap();
-    let (spawn_x, spawn_y) = area.get_map().get_spawn();
+    let (spawn_x, spawn_y, _) = area.get_map().get_spawn();
 
     let client = Client {
       socket_address,

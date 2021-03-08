@@ -141,9 +141,31 @@ impl Map {
     self.tilesets.iter().map(|tileset_info| &tileset_info.path)
   }
 
-  #[allow(dead_code)]
   pub fn get_name(&self) -> &String {
     &self.name
+  }
+
+  pub fn set_name(&mut self, name: String) {
+    self.name = name;
+    self.cached = false;
+  }
+
+  pub fn get_song_path(&self) -> &String {
+    &self.song_path
+  }
+
+  pub fn set_song_path(&mut self, path: String) {
+    self.song_path = path;
+    self.cached = false;
+  }
+
+  pub fn get_background_name(&self) -> &String {
+    &self.background_name
+  }
+
+  pub fn set_background_name(&mut self, name: String) {
+    self.background_name = name;
+    self.cached = false;
   }
 
   pub fn get_width(&self) -> usize {
@@ -154,8 +176,13 @@ impl Map {
     self.height
   }
 
-  pub fn get_spawn(&self) -> (f32, f32) {
-    (self.spawn_x, self.spawn_y)
+  pub fn get_spawn(&self) -> (f32, f32, f32) {
+    (self.spawn_x, self.spawn_y, 0.0)
+  }
+
+  pub fn set_spawn(&mut self, x: f32, y: f32, _z: f32) {
+    self.spawn_x = x;
+    self.spawn_y = y;
   }
 
   pub fn get_tile(&self, x: usize, y: usize, z: usize) -> Tile {
