@@ -159,7 +159,7 @@ Net.get_player_area(id)
 Net.get_player_name(id)
 Net.set_player_name(id)
 Net.get_player_position(id) -- { x, y, z }
--- Net.get_player_avatar(id)
+Net.get_player_avatar(id) -- { texturePath, animationPath }
 Net.set_player_avatar(id, texture_path, animation_path)
 Net.lock_player(id)
 Net.unlock_player(id)

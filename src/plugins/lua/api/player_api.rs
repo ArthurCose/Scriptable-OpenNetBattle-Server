@@ -89,14 +89,15 @@ pub fn add_player_api<'a, 'b>(
 
   api_table.set(
     "get_player_avatar",
-    scope.create_function(move |_, id: String| {
-      let net = net_ref.borrow_mut();
+    scope.create_function(move |lua_ctx, id: String| {
+      let net = net_ref.borrow();
 
       if let Some(player) = net.get_player(&id) {
-        Ok(vec![
-          player.texture_path.clone(),
-          player.animation_path.clone(),
-        ])
+        let table = lua_ctx.create_table()?;
+        table.set("texturePath", player.texture_path.clone())?;
+        table.set("animationPath", player.animation_path.clone())?;
+
+        Ok(table)
       } else {
         Err(create_player_error(&id))
       }
