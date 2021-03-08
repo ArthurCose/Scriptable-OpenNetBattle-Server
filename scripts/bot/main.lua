@@ -13,6 +13,42 @@ bot.path = {
   { x=2.5, y=0.5 }
 }
 
+function bot.on_interact(player_id)
+  if bot.talking_to then
+    bot.message_player(player_id, "SORRY I'M BUSY TALKING TO SOMEONE RIGHT NOW.")
+    return
+  end
+
+  Net.lock_player_input(player_id)
+  bot.question_player(player_id, "HELLO! ARE YOU DOING WELL TODAY?")
+
+  bot.talking_to = player_id
+
+  local player_pos = Net.get_player_position(player_id)
+  local angle = math.atan(player_pos.y - bot.y, player_pos.x - bot.x)
+  bot.x = bot.x + math.cos(angle) * .02
+  bot.y = bot.y + math.sin(angle) * .02
+  Net.move_bot(bot._id, bot.x, bot.y, bot.z)
+end
+
+function bot.on_response(player_id, response)
+  if bot.talking_to ~= player_id then
+    return
+  end
+
+  if response == 1 then
+    bot.message_player(player_id, "THAT'S GREAT!");
+  else
+    bot.message_player(player_id, "OH NO! I HOPE YOUR DAY GETS BETTER.");
+  end
+
+  Net.unlock_player_input(player_id)
+
+  bot.talking_to = nil
+end
+
+-- server events
+
 function tick(delta_time)
   bot._tick(delta_time)
 end

@@ -11,7 +11,9 @@ local function create_custom_bot(id, name, area_id, texture_path, animation_path
     size = .35,
     _solid = solid,
     mug_texture_path = nil,
-    mug_animation_path = nil
+    mug_animation_path = nil,
+    on_interact = nil,
+    on_response = nil
   }
 
   function bot._tick(delta_time)
@@ -70,36 +72,15 @@ local function create_custom_bot(id, name, area_id, texture_path, animation_path
       return
     end
 
-    if bot.talking_to then
-      bot.message_player(player_id, "SORRY I'M BUSY TALKING TO SOMEONE RIGHT NOW.")
-      return
+    if bot.on_interact then
+      bot.on_interact(player_id)
     end
-
-    Net.lock_player_input(player_id)
-    bot.question_player(player_id, "HELLO! ARE YOU DOING WELL TODAY?")
-
-    bot.talking_to = player_id
-
-    local player_pos = Net.get_player_position(player_id)
-    local angle = math.atan(player_pos.y - bot.y, player_pos.x - bot.x)
-    bot.x = bot.x + math.cos(angle) * .02
-    bot.y = bot.y + math.sin(angle) * .02
   end
 
   function bot._handle_player_response(player_id, response)
-    if bot.talking_to ~= player_id then
-      return
+    if bot.on_response then
+      bot.on_response(player_id, response)
     end
-
-    if response == 1 then
-      bot.message_player(player_id, "THAT'S GREAT!");
-    else
-      bot.message_player(player_id, "OH NO! I HOPE YOUR DAY GETS BETTER.");
-    end
-
-    Net.unlock_player_input(player_id)
-
-    bot.talking_to = nil
   end
 
   function bot._handle_player_disconnect(player_id)
