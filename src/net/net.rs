@@ -257,24 +257,6 @@ impl Net {
     mug_animation_path: &str,
   ) {
     if let Some(client) = self.clients.get_mut(id) {
-      assert_asset(
-        &self.socket,
-        self.max_payload_size,
-        &self.assets,
-        &mut self.clients,
-        vec![id],
-        &mug_texture_path,
-      );
-
-      assert_asset(
-        &self.socket,
-        self.max_payload_size,
-        &self.assets,
-        &mut self.clients,
-        vec![id],
-        &mug_animation_path,
-      );
-
       client.packet_shipper.send(
         &self.socket,
         &Reliability::ReliableOrdered,
@@ -284,7 +266,27 @@ impl Net {
           mug_animation_path: mug_animation_path.to_string(),
         },
       );
+    } else {
+      return;
     }
+
+    assert_asset(
+      &self.socket,
+      self.max_payload_size,
+      &self.assets,
+      &mut self.clients,
+      &[id.to_string()],
+      &mug_texture_path,
+    );
+
+    assert_asset(
+      &self.socket,
+      self.max_payload_size,
+      &self.assets,
+      &mut self.clients,
+      &[id.to_string()],
+      &mug_animation_path,
+    );
   }
 
   pub fn question_player(
@@ -295,24 +297,6 @@ impl Net {
     mug_animation_path: &str,
   ) {
     if let Some(client) = self.clients.get_mut(id) {
-      assert_asset(
-        &self.socket,
-        self.max_payload_size,
-        &self.assets,
-        &mut self.clients,
-        vec![id],
-        &mug_texture_path,
-      );
-
-      assert_asset(
-        &self.socket,
-        self.max_payload_size,
-        &self.assets,
-        &mut self.clients,
-        vec![id],
-        &mug_animation_path,
-      );
-
       client.packet_shipper.send(
         &self.socket,
         &Reliability::ReliableOrdered,
@@ -322,7 +306,27 @@ impl Net {
           mug_animation_path: mug_animation_path.to_string(),
         },
       );
+    } else {
+      return;
     }
+
+    assert_asset(
+      &self.socket,
+      self.max_payload_size,
+      &self.assets,
+      &mut self.clients,
+      &[id.to_string()],
+      &mug_texture_path,
+    );
+
+    assert_asset(
+      &self.socket,
+      self.max_payload_size,
+      &self.assets,
+      &mut self.clients,
+      &[id.to_string()],
+      &mug_animation_path,
+    );
   }
 
   pub fn quiz_player(
@@ -335,24 +339,6 @@ impl Net {
     mug_animation_path: &str,
   ) {
     if let Some(client) = self.clients.get_mut(id) {
-      assert_asset(
-        &self.socket,
-        self.max_payload_size,
-        &self.assets,
-        &mut self.clients,
-        vec![id],
-        &mug_texture_path,
-      );
-
-      assert_asset(
-        &self.socket,
-        self.max_payload_size,
-        &self.assets,
-        &mut self.clients,
-        vec![id],
-        &mug_animation_path,
-      );
-
       client.packet_shipper.send(
         &self.socket,
         &Reliability::ReliableOrdered,
@@ -364,7 +350,27 @@ impl Net {
           mug_animation_path: mug_animation_path.to_string(),
         },
       );
+    } else {
+      return;
     }
+
+    assert_asset(
+      &self.socket,
+      self.max_payload_size,
+      &self.assets,
+      &mut self.clients,
+      &[id.to_string()],
+      &mug_texture_path,
+    );
+
+    assert_asset(
+      &self.socket,
+      self.max_payload_size,
+      &self.assets,
+      &mut self.clients,
+      &[id.to_string()],
+      &mug_animation_path,
+    );
   }
 
   pub fn transfer_player(
