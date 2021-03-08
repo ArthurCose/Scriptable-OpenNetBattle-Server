@@ -187,11 +187,12 @@ Net.transfer_player(id, area_id, warp_in?, x?, y?, z?)
   - Slide camera (locks camera)
   - Unlock camera (focus back on player)
   - Virus battle
+    - Provide option to allow or block running
   - Transfer?
     - Send the player to a different server.
 - Serverbound
-  - Menu Response (for Message, MessageQuestion, etc)
-    - Allows scripting the next action (textbox, camera movement, etc).
+  - Battle Completion
+    - Ran/Win/Loss + Rank
 
 ### Map
 
