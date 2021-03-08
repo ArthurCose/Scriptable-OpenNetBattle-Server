@@ -121,13 +121,16 @@ Interactions with the cyberworld are performed through functions attached to a g
 Net.get_width(area_id)
 Net.get_height(area_id)
 -- Net.get_area_name(area_id)
--- Net.get_song()
--- Net.set_song(path)
+-- Net.get_song(area_id) -- song_path
+-- Net.set_song(area_id, song_path)
+-- Net.set_background(area_id,texture_path, animation_path, vel_x, vel_y)
+-- Net.set_background_vel(area_id, vel_x, vel_y)
 -- Net.get_spawn_position(area_id) -- { x, y, z }
+-- Net.set_spawn_position(area_id, x, y, z)
 -- Net.get_tile_set(area_id, tile_gid) -- { name, firstGid, tileCount, tileWidth, tileHeight, properties }
 -- Net.get_tile_set(area_id, name) -- { name, firstGid, tileCount, tileWidth, tileHeight, properties }
-Net.get_tile_gid(area_id, x, y, z)
-Net.set_tile(area_id, x, y, z, gid, flip_h?, flip_v?, rotate?)
+Net.get_tile_gid(area_id, x, y, z) -- tile_gid
+Net.set_tile(area_id, x, y, z, tile_gid, flip_h?, flip_v?, rotate?)
 Net.list_objects(area_id) -- object_id[]
 Net.get_object_by_id(area_id, object_id) -- { id, name, type, visible, x, y, z, width, height, data }?
 Net.get_object_by_name(area_id, name) -- { id, name, type, visible, x, y, z, width, height, data }?
@@ -136,44 +139,44 @@ Net.get_object_by_name(area_id, name) -- { id, name, type, visible, x, y, z, wid
 #### Bot API
 
 ```lua
-Net.list_bots(area_id) -- id[]
-Net.create_bot(id, name, area_id, texture_path, animation_path, x, y, z, solid?)
-Net.is_bot(id)
-Net.remove_bot(id)
-Net.get_bot_area(id)
-Net.get_bot_name(id)
-Net.set_bot_name(id)
-Net.get_bot_position(id) -- { x, y, z }
-Net.move_bot(id, x, y, z)
-Net.set_bot_avatar(id, texture_path, animation_path)
-Net.set_bot_emote(id, emote_id)
-Net.transfer_bot(id, area_id, warp_in?, x?, y?, z?)
+Net.list_bots(area_id) -- bot_id[]
+Net.create_bot(bot_id, name, area_id, texture_path, animation_path, x, y, z, solid?)
+Net.is_bot(bot_id)
+Net.remove_bot(bot_id)
+Net.get_bot_area(bot_id) -- area_id
+Net.get_bot_name(bot_id) -- name
+Net.set_bot_name(bot_id)
+Net.get_bot_position(bot_id) -- { x, y, z }
+Net.move_bot(bot_id, x, y, z)
+Net.set_bot_avatar(bot_id, texture_path, animation_path)
+Net.set_bot_emote(bot_id, emote_id)
+Net.transfer_bot(bot_id, area_id, warp_in?, x?, y?, z?)
 ```
 
 #### Player API
 
 ```lua
-Net.list_players(area_id) -- id[]
-Net.is_player(id)
-Net.get_player_area(id)
-Net.get_player_name(id)
-Net.set_player_name(id)
-Net.get_player_position(id) -- { x, y, z }
-Net.get_player_avatar(id) -- { texturePath, animationPath }
-Net.set_player_avatar(id, texture_path, animation_path)
-Net.lock_player(id)
-Net.unlock_player(id)
-Net.move_player(id, x, y, z)
-Net.message_player(id, message, mug_texture_path?, mug_animation_path?)
-Net.question_player(id, question, mug_texture_path?, mug_animation_path?)
-Net.quiz_player(id, option_a?, option_b?, option_c?, mug_texture_path?, mug_animation_path?)
--- Net.move_player_camera(id, x, y, z)
--- Net.slide_camera(id, x, y, z)
--- Net.unlock_player_camera(id)
--- Net.send_virus(id, data)
+Net.list_players(area_id) -- player_id[]
+Net.is_player(player_id)
+Net.get_player_area(player_id) -- area_id
+Net.get_player_name(player_id) -- name
+Net.set_player_name(player_id)
+Net.get_player_position(player_id) -- { x, y, z }
+Net.get_player_avatar(player_id) -- { texturePath, animationPath }
+Net.set_player_avatar(player_id, texture_path, animation_path)
+Net.lock_player(player_id)
+Net.unlock_player(player_id)
+Net.move_player(player_id, x, y, z)
+Net.message_player(player_id, message, mug_texture_path?, mug_animation_path?)
+Net.question_player(player_id, question, mug_texture_path?, mug_animation_path?)
+Net.quiz_player(player_id, option_a?, option_b?, option_c?, mug_texture_path?, mug_animation_path?)
+-- Net.move_player_camera(player_id, x, y, z)
+-- Net.slide_camera(player_id, x, y, z)
+-- Net.unlock_player_camera(player_id)
+-- Net.send_virus(player_id, data)
 -- Net.initiate_pvp(player_1_id, player_2_id, data)
-Net.transfer_player(id, area_id, warp_in?, x?, y?, z?)
--- Net.transfer_server(id, server)
+Net.transfer_player(player_id, area_id, warp_in?, x?, y?, z?)
+-- Net.transfer_server(player_id, server)
 ```
 
 ## Proposed Changes for OpenNetBattle Client
