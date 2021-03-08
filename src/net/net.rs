@@ -257,6 +257,24 @@ impl Net {
     mug_animation_path: &str,
   ) {
     if let Some(client) = self.clients.get_mut(id) {
+      assert_asset(
+        &self.socket,
+        self.max_payload_size,
+        &self.assets,
+        &mut self.clients,
+        vec![id],
+        &mug_texture_path,
+      );
+
+      assert_asset(
+        &self.socket,
+        self.max_payload_size,
+        &self.assets,
+        &mut self.clients,
+        vec![id],
+        &mug_animation_path,
+      );
+
       client.packet_shipper.send(
         &self.socket,
         &Reliability::ReliableOrdered,
@@ -277,6 +295,24 @@ impl Net {
     mug_animation_path: &str,
   ) {
     if let Some(client) = self.clients.get_mut(id) {
+      assert_asset(
+        &self.socket,
+        self.max_payload_size,
+        &self.assets,
+        &mut self.clients,
+        vec![id],
+        &mug_texture_path,
+      );
+
+      assert_asset(
+        &self.socket,
+        self.max_payload_size,
+        &self.assets,
+        &mut self.clients,
+        vec![id],
+        &mug_animation_path,
+      );
+
       client.packet_shipper.send(
         &self.socket,
         &Reliability::ReliableOrdered,
@@ -299,6 +335,24 @@ impl Net {
     mug_animation_path: &str,
   ) {
     if let Some(client) = self.clients.get_mut(id) {
+      assert_asset(
+        &self.socket,
+        self.max_payload_size,
+        &self.assets,
+        &mut self.clients,
+        vec![id],
+        &mug_texture_path,
+      );
+
+      assert_asset(
+        &self.socket,
+        self.max_payload_size,
+        &self.assets,
+        &mut self.clients,
+        vec![id],
+        &mug_animation_path,
+      );
+
       client.packet_shipper.send(
         &self.socket,
         &Reliability::ReliableOrdered,
