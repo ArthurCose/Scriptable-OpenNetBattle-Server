@@ -50,7 +50,7 @@ impl LuaPluginInterface {
       for script_path in &script_paths {
         if let Ok(script) = read_to_string(script_path) {
           if let Err(err) = self.load_script(&net_ref, dir_path.clone(), script) {
-            println!("Failed to load script \"{}\": {}", dir_path.display(), err)
+            println!("{}", err)
           }
 
           break;
@@ -317,7 +317,7 @@ fn handle_event<F>(
 
             if let Ok(func) = globals.get::<_, rlua::Function>(event_fn_name) {
               if let Err(err) = fn_caller(func) {
-                println!("Error in \"{}\", {}", script_dir.display(), err);
+                println!("{}", err);
               }
             }
             Ok(())
