@@ -2,6 +2,7 @@ use super::lua_errors::{create_area_error, create_player_error};
 use crate::net::Net;
 use std::cell::RefCell;
 
+#[allow(clippy::type_complexity)]
 pub fn add_player_api<'a, 'b>(
   api_table: &rlua::Table<'a>,
   scope: &rlua::Scope<'a, 'b>,
