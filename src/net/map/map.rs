@@ -284,13 +284,16 @@ impl Map {
   pub fn generate_asset(&mut self) -> Asset {
     use super::super::AssetData;
 
+    let dependencies = self
+      .get_tileset_paths()
+      .chain(std::iter::once(&self.song_path))
+      .filter(|path| path.starts_with("/server/")) // provided by server
+      .cloned()
+      .collect();
+
     Asset {
       data: AssetData::Text(self.render()),
-      dependencies: self
-        .get_tileset_paths()
-        .filter(|path| path.starts_with("/server/")) // tileset provided by server
-        .cloned()
-        .collect(),
+      dependencies,
     }
   }
 }
