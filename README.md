@@ -66,15 +66,32 @@ Tilesets:
 
 Map:
 
-- Background: string
-  - Path to Background
-- Background Animation: string
-  - Path to Background .animation file
-- Background Vel X: int
-- Background Vel Y: int
+- Name: string
+  - Area name to display in the PersonalMenu
 - Song: string
   - Path to ogg file
-- Name: string
+- Background: string
+  - Supported values:
+    - undernet
+    - robot
+    - misc
+    - grave
+    - weather
+    - medical
+    - acdc
+    - virus
+    - judge
+    - secret
+    - custom (todo)
+- BackgroundPath: string
+  - Requires "custom" Background
+- Background Animation: string
+  - Requires "custom" Background
+  - Path to Background .animation file
+- Background Vel X: int
+  - Requires "custom" Background
+- Background Vel Y: int
+  - Requires "custom" Background
 
 Tiles:
 
@@ -105,7 +122,7 @@ function handle_object_interaction(player_id, object)
 function handle_navi_interaction(player_id, navi_id) -- navi_id is a player or bot id
 function handle_tile_interaction(player_id, x, y, z)
 function handle_player_response(player_id, response) -- response is an index
--- function handle_battle_completion(player_id, results)
+-- function handle_battle_completion(player_id, results) -- results = { status: "won" | "loss" | "ran", rank? }
 ```
 
 ### Net API
@@ -183,32 +200,6 @@ Net.transfer_player(player_id, area_id, warp_in?, x?, y?, z?)
 -- Net.transfer_server(player_id, server)
 -- Net.kick_player(player_id, reason?)
 ```
-
-## Proposed Changes for OpenNetBattle Client
-
-### Packets
-
-- Clientbound
-  - Menu
-  - Move/Warp player (recycle existing packets?)
-  - Move camera (locks camera)
-  - Slide camera (locks camera)
-  - Unlock camera (focus back on player)
-  - Virus battle
-    - Provide option to allow or block running
-  - Transfer?
-    - Send the player to a different server.
-- Serverbound
-  - Battle Completion
-    - Ran/Win/Loss + Rank
-
-### Map
-
-- Lock player when interacting with tagged tiles + navis
-  - (When map format is adjusted to have this information)
-- Tagged warp tiles
-  - Link to other servers or locations on the same server.
-  - Should be optional so scripts can take full control.
 
 ## Building
 
