@@ -9,4 +9,6 @@ pub(super) struct Client {
   pub warp_in: bool,
   pub ready: bool,
   pub cached_assets: HashSet<String>,
+  pub texture_buffer: Vec<u8>,
+  pub animation_buffer: Vec<u8>,
 }

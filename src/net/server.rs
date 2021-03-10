@@ -18,8 +18,6 @@ pub struct ServerConfig {
 }
 
 pub struct Server {
-  player_texture_buffer: HashMap<std::net::SocketAddr, Vec<u8>>,
-  player_animation_buffer: HashMap<std::net::SocketAddr, Vec<u8>>,
   player_id_map: HashMap<std::net::SocketAddr, String>,
   packet_sorter_map: HashMap<std::net::SocketAddr, PacketSorter>,
   plugin_interfaces: Vec<Box<dyn PluginInterface>>,
@@ -29,8 +27,6 @@ pub struct Server {
 impl Server {
   pub fn new(config: ServerConfig) -> Server {
     Server {
-      player_texture_buffer: HashMap::new(),
-      player_animation_buffer: HashMap::new(),
       player_id_map: HashMap::new(),
       packet_sorter_map: HashMap::new(),
       plugin_interfaces: Vec::new(),
@@ -193,24 +189,22 @@ impl Server {
             println!("Received TextureStream packet from {}", socket_address);
           }
 
-          append_texture_data(
-            &mut self.player_texture_buffer,
-            socket_address,
-            data,
-            self.config.player_asset_limit,
-          );
+          let client = net.get_client_mut(player_id).unwrap();
+
+          if client.texture_buffer.len() < self.config.player_asset_limit {
+            client.texture_buffer.extend(data);
+          }
         }
         ClientPacket::AnimationStream { data } => {
           if self.config.log_packets {
             println!("Received AnimationStream packet from {}", socket_address);
           }
 
-          append_texture_data(
-            &mut self.player_animation_buffer,
-            socket_address,
-            data,
-            self.config.player_asset_limit,
-          );
+          let client = net.get_client_mut(player_id).unwrap();
+
+          if client.animation_buffer.len() < self.config.player_asset_limit {
+            client.animation_buffer.extend(data);
+          }
         }
         ClientPacket::Ack { reliability, id } => {
           if self.config.log_packets {
@@ -285,23 +279,13 @@ impl Server {
             println!("Received AvatarChange packet from {}", socket_address);
           }
 
-          let data_result = collect_streamed_client_data(
-            &mut self.player_texture_buffer,
-            &mut self.player_animation_buffer,
-            &socket_address,
-            self.config.player_asset_limit,
-          );
+          let (texture_path, animation_path) = net.store_player_avatar(player_id);
 
-          if let Some((texture_data, animation_data)) = data_result {
-            let (texture_path, animation_path) =
-              net.store_player_avatar(player_id, texture_data, animation_data);
-
-            for plugin in &mut self.plugin_interfaces {
-              plugin.handle_player_avatar_change(net, player_id, &texture_path, &animation_path);
-            }
-
-            net.set_player_avatar(player_id, texture_path, animation_path);
+          for plugin in &mut self.plugin_interfaces {
+            plugin.handle_player_avatar_change(net, player_id, &texture_path, &animation_path);
           }
+
+          net.set_player_avatar(player_id, texture_path, animation_path);
         }
         ClientPacket::Emote { emote_id } => {
           if self.config.log_packets {
@@ -401,48 +385,10 @@ impl Server {
       }
     }
 
-    self.player_texture_buffer.remove(socket_address);
-    self.player_animation_buffer.remove(socket_address);
-
     self.packet_sorter_map.remove(socket_address);
 
     if self.config.log_connections {
       println!("{} disconnected", socket_address);
     }
   }
-}
-
-fn append_texture_data(
-  asset_buffer_map: &mut HashMap<std::net::SocketAddr, Vec<u8>>,
-  socket_address: std::net::SocketAddr,
-  data: Vec<u8>,
-  player_asset_limit: usize,
-) {
-  if let Some(buffer) = asset_buffer_map.get_mut(&socket_address) {
-    if buffer.len() < player_asset_limit {
-      buffer.extend(data);
-    }
-  } else {
-    asset_buffer_map.insert(socket_address, data);
-  }
-}
-
-fn collect_streamed_client_data(
-  player_texture_buffer: &mut HashMap<std::net::SocketAddr, Vec<u8>>,
-  player_animation_buffer: &mut HashMap<std::net::SocketAddr, Vec<u8>>,
-  socket_address: &std::net::SocketAddr,
-  player_asset_limit: usize,
-) -> Option<(Vec<u8>, String)> {
-  let wrapped_texture_data = player_texture_buffer.remove(socket_address);
-  let wrapped_animation_data = player_animation_buffer.remove(socket_address);
-
-  let texture_data = wrapped_texture_data?;
-  let animation_data = wrapped_animation_data?;
-
-  if texture_data.len() > player_asset_limit || animation_data.len() > player_asset_limit {
-    println!("{} player assets too large", socket_address);
-    return None;
-  }
-
-  Some((texture_data, String::from_utf8(animation_data).ok()?))
 }

@@ -503,11 +503,10 @@ impl Net {
     socket_address: std::net::SocketAddr,
     name: String,
   ) -> String {
+    use super::asset::{get_player_animation_path, get_player_texture_path};
     use uuid::Uuid;
 
     let id = Uuid::new_v4().to_string();
-
-    let (texture_path, animation_path) = self.store_player_avatar(&id, vec![], String::from(""));
 
     let area_id = String::from("default");
     let area = self.get_area_mut(&area_id).unwrap();
@@ -520,8 +519,8 @@ impl Net {
         id: id.clone(),
         name,
         area_id,
-        texture_path,
-        animation_path,
+        texture_path: get_player_texture_path(&id),
+        animation_path: get_player_animation_path(&id),
         x: spawn_x,
         y: spawn_y,
         z: 0.0,
@@ -530,6 +529,8 @@ impl Net {
       warp_in: true,
       ready: false,
       cached_assets: HashSet::new(),
+      texture_buffer: Vec::new(),
+      animation_buffer: Vec::new(),
     };
 
     self.clients.insert(client.navi.id.clone(), client);
@@ -537,16 +538,20 @@ impl Net {
     id
   }
 
-  pub(super) fn store_player_avatar(
-    &mut self,
-    player_id: &str,
-    texture_data: Vec<u8>,
-    animation_data: String,
-  ) -> (String, String) {
+  pub(super) fn store_player_avatar(&mut self, player_id: &str) -> (String, String) {
     use super::asset;
+
+    let client = self.clients.get_mut(player_id).unwrap();
 
     let texture_path = asset::get_player_texture_path(player_id);
     let animation_path = asset::get_player_animation_path(player_id);
+
+    let texture_data = client.texture_buffer.clone();
+    let animation_data = String::from_utf8_lossy(&client.animation_buffer).into_owned();
+
+    // reset buffers to store new data later
+    client.animation_buffer.clear();
+    client.texture_buffer.clear();
 
     self.set_asset(
       texture_path.clone(),
