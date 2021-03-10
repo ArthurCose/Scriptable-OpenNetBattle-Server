@@ -1,3 +1,4 @@
+use super::Tile;
 use crate::helpers::unwrap_and_parse_or_default;
 
 pub struct MapObject {
@@ -18,7 +19,7 @@ pub enum MapObjectData {
   Ellipse,
   Rect,
   Polygon { points: Vec<(f32, f32)> },
-  TileObject { gid: u32 },
+  TileObject { tile: Tile },
 }
 
 impl MapObject {
@@ -34,7 +35,9 @@ impl MapObject {
     let height = unwrap_and_parse_or_default::<f32>(element.attr("height")) * scale_y;
 
     let data = if gid != 0 {
-      MapObjectData::TileObject { gid }
+      MapObjectData::TileObject {
+        tile: Tile::from(gid),
+      }
     } else if element.has_child("polygon", minidom::NSChoice::Any) {
       let points_element = element
         .get_child("polygon", minidom::NSChoice::Any)
@@ -113,8 +116,8 @@ impl MapObject {
 
         data_string = format!("<polygon points=\"{}\"/>", points_string);
       }
-      MapObjectData::TileObject { gid } => {
-        gid_string = format!(" gid=\"{}\"", gid);
+      MapObjectData::TileObject { tile } => {
+        gid_string = format!(" gid=\"{}\"", tile.compress());
       }
     }
 

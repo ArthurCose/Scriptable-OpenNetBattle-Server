@@ -26,21 +26,13 @@ impl MapLayer {
   pub fn get_tile(&self, x: usize, y: usize) -> Tile {
     let raw = self.data[y * self.width + x];
 
-    Tile {
-      gid: raw << 3 >> 3, // shift off tile properties
-      flipped_horizontally: (raw >> 31 & 1) == 1,
-      flipped_vertically: (raw >> 30 & 1) == 1,
-      flipped_anti_diagonally: (raw >> 29 & 1) == 1,
-    }
+    Tile::from(raw)
   }
 
   pub fn set_tile(&mut self, x: usize, y: usize, tile: Tile) {
     let idx = y * self.width + x;
 
-    let compact_tile_data = tile.gid
-      | (tile.flipped_horizontally as u32) << 31
-      | (tile.flipped_vertically as u32) << 30
-      | (tile.flipped_anti_diagonally as u32) << 29;
+    let compact_tile_data = tile.compress();
 
     if self.data[idx] != compact_tile_data {
       self.data[idx] = compact_tile_data;
