@@ -163,6 +163,79 @@ pub fn add_area_api<'a, 'b>(
   )?;
 
   api_table.set(
+    "list_tilesets",
+    scope.create_function(move |_, area_id: String| {
+      let net = net_ref.borrow();
+
+      if let Some(area) = net.get_area(&area_id) {
+        let map = area.get_map();
+        let tilesets = map.get_tilesets();
+        let tileset_paths: Vec<String> = tilesets
+          .iter()
+          .map(|tileset| tileset.path.clone())
+          .collect();
+
+        Ok(tileset_paths)
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
+    "get_tileset",
+    scope.create_function(move |lua_ctx, (area_id, path): (String, String)| {
+      let net = net_ref.borrow();
+
+      if let Some(area) = net.get_area(&area_id) {
+        let map = area.get_map();
+        let tilesets = map.get_tilesets();
+        let optional_tileset = tilesets.iter().find(|tileset| tileset.path == path);
+
+        if let Some(tileset) = optional_tileset {
+          let table = lua_ctx.create_table()?;
+          table.set("path", tileset.path.clone())?;
+          table.set("firstGid", tileset.first_gid)?;
+
+          return Ok(Some(table));
+        }
+
+        Ok(None)
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
+    "get_tileset_for_tile",
+    scope.create_function(move |lua_ctx, (area_id, tile_gid): (String, u32)| {
+      let net = net_ref.borrow();
+
+      if let Some(area) = net.get_area(&area_id) {
+        let map = area.get_map();
+        let tilesets = map.get_tilesets();
+        let optional_tileset = tilesets
+          .iter()
+          .take_while(|tileset| tileset.first_gid <= tile_gid)
+          .last();
+
+        if let Some(tileset) = optional_tileset {
+          let table = lua_ctx.create_table()?;
+          table.set("path", tileset.path.clone())?;
+          table.set("firstGid", tileset.first_gid)?;
+
+          return Ok(Some(table));
+        }
+
+        Ok(None)
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
     "get_tile_gid",
     scope.create_function(
       move |_, (area_id, x, y, z): (String, usize, usize, usize)| {
@@ -302,8 +375,14 @@ fn map_optional_object_to_table<'a>(
       data_table.set("points", points_table).ok()?;
       Some(())
     }
-    MapObjectData::TileObject { gid } => {
-      data_table.set("gid", *gid).ok()?;
+    MapObjectData::TileObject { tile } => {
+      data_table.set("gid", tile.gid).ok()?;
+      data_table
+        .set("flipped_horizontally", tile.flipped_horizontally)
+        .ok()?;
+      data_table
+        .set("flipped_vertically", tile.flipped_vertically)
+        .ok()?;
       Some(())
     }
     _ => Some(()),

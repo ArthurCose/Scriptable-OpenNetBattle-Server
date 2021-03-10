@@ -147,8 +147,9 @@ Net.set_background(area_id, background_name)
 -- Net.set_custom_background(area_id, texture_path, animation_path, vel_x?, vel_y?)
 Net.get_spawn_position(area_id) -- { x, y, z }
 Net.set_spawn_position(area_id, x, y, z)
--- Net.get_tile_set(area_id, tile_gid) -- { name, firstGid, tileCount, tileWidth, tileHeight, properties }
--- Net.get_tile_set(area_id, name) -- { name, firstGid, tileCount, tileWidth, tileHeight, properties }
+Net.list_tilesets(area_id) -- tileset_path[]
+Net.get_tileset(area_id, tileset_path) -- { path, firstGid }?
+Net.get_tileset_for_tile(area_id, tile_gid) -- { path, firstGid }?
 Net.get_tile_gid(area_id, x, y, z) -- tile_gid
 Net.set_tile(area_id, x, y, z, tile_gid, flip_h?, flip_v?, rotate?)
 Net.list_objects(area_id) -- object_id[]

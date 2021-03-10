@@ -5,8 +5,8 @@ use super::Tile;
 use crate::helpers::unwrap_and_parse_or_default;
 
 pub struct TilesetInfo {
-  first_gid: u32,
-  path: String,
+  pub first_gid: u32,
+  pub path: String,
 }
 
 pub struct Map {
@@ -137,8 +137,8 @@ impl Map {
     map
   }
 
-  pub fn get_tileset_paths(&self) -> impl std::iter::Iterator<Item = &String> {
-    self.tilesets.iter().map(|tileset_info| &tileset_info.path)
+  pub fn get_tilesets(&self) -> &Vec<TilesetInfo> {
+    &self.tilesets
   }
 
   pub fn get_name(&self) -> &String {
@@ -284,8 +284,9 @@ impl Map {
   pub fn generate_asset(&mut self) -> Asset {
     use super::super::AssetData;
 
-    let dependencies = self
-      .get_tileset_paths()
+    let tileset_paths = self.tilesets.iter().map(|tileset| &tileset.path);
+
+    let dependencies = tileset_paths
       .chain(std::iter::once(&self.song_path))
       .filter(|path| path.starts_with("/server/")) // provided by server
       .cloned()
