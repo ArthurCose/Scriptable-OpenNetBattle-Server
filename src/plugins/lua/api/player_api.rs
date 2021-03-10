@@ -119,6 +119,43 @@ pub fn add_player_api<'a, 'b>(
   )?;
 
   api_table.set(
+    "move_player_camera",
+    scope.create_function(
+      move |_, (id, x, y, z, duration): (String, f32, f32, f32, Option<f32>)| {
+        let mut net = net_ref.borrow_mut();
+
+        net.move_player_camera(&id, x, y, z, duration.unwrap_or_default());
+
+        Ok(())
+      },
+    )?,
+  )?;
+
+  api_table.set(
+    "slide_player_camera",
+    scope.create_function(
+      move |_, (id, x, y, z, duration): (String, f32, f32, f32, f32)| {
+        let mut net = net_ref.borrow_mut();
+
+        net.slide_player_camera(&id, x, y, z, duration);
+
+        Ok(())
+      },
+    )?,
+  )?;
+
+  api_table.set(
+    "unlock_player_camera",
+    scope.create_function(move |_, id: String| {
+      let mut net = net_ref.borrow_mut();
+
+      net.unlock_player_camera(&id);
+
+      Ok(())
+    })?,
+  )?;
+
+  api_table.set(
     "lock_player_input",
     scope.create_function(move |_, id: String| {
       let mut net = net_ref.borrow_mut();

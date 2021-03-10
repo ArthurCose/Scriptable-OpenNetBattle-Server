@@ -31,6 +31,19 @@ pub enum ServerPacket<'a> {
   },
   TransferStart,
   TransferComplete,
+  MoveCamera {
+    x: f32,
+    y: f32,
+    z: f32,
+    hold_time: f32,
+  },
+  SlideCamera {
+    x: f32,
+    y: f32,
+    z: f32,
+    duration: f32,
+  },
+  UnlockCamera,
   LockInput,
   UnlockInput,
   Move {
@@ -156,14 +169,31 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     ServerPacket::TransferComplete => {
       write_u16(&mut buf, 8);
     }
-    ServerPacket::LockInput => {
+    ServerPacket::MoveCamera { x, y, z, hold_time } => {
       write_u16(&mut buf, 9);
+      write_f32(&mut buf, *x);
+      write_f32(&mut buf, *y);
+      write_f32(&mut buf, *z);
+      write_f32(&mut buf, *hold_time);
+    }
+    ServerPacket::SlideCamera { x, y, z, duration } => {
+      write_u16(&mut buf, 10);
+      write_f32(&mut buf, *x);
+      write_f32(&mut buf, *y);
+      write_f32(&mut buf, *z);
+      write_f32(&mut buf, *duration);
+    }
+    ServerPacket::UnlockCamera => {
+      write_u16(&mut buf, 11);
+    }
+    ServerPacket::LockInput => {
+      write_u16(&mut buf, 12);
     }
     ServerPacket::UnlockInput => {
-      write_u16(&mut buf, 10);
+      write_u16(&mut buf, 13);
     }
     ServerPacket::Move { x, y, z } => {
-      write_u16(&mut buf, 11);
+      write_u16(&mut buf, 14);
       write_f32(&mut buf, *x);
       write_f32(&mut buf, *y);
       write_f32(&mut buf, *z);
@@ -173,7 +203,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       mug_texture_path,
       mug_animation_path,
     } => {
-      write_u16(&mut buf, 12);
+      write_u16(&mut buf, 15);
       write_string(&mut buf, message);
       write_string(&mut buf, mug_texture_path);
       write_string(&mut buf, mug_animation_path);
@@ -183,7 +213,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       mug_texture_path,
       mug_animation_path,
     } => {
-      write_u16(&mut buf, 13);
+      write_u16(&mut buf, 16);
       write_string(&mut buf, message);
       write_string(&mut buf, mug_texture_path);
       write_string(&mut buf, mug_animation_path);
@@ -195,7 +225,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       mug_texture_path,
       mug_animation_path,
     } => {
-      write_u16(&mut buf, 14);
+      write_u16(&mut buf, 17);
       write_string(&mut buf, option_a);
       write_string(&mut buf, option_b);
       write_string(&mut buf, option_c);
@@ -213,7 +243,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       solid,
       warp_in,
     } => {
-      write_u16(&mut buf, 15);
+      write_u16(&mut buf, 18);
       write_string(&mut buf, ticket);
       write_string(&mut buf, name);
       write_string(&mut buf, texture_path);
@@ -225,17 +255,17 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_bool(&mut buf, *warp_in);
     }
     ServerPacket::NaviDisconnected { ticket, warp_out } => {
-      write_u16(&mut buf, 16);
+      write_u16(&mut buf, 19);
       write_string(&mut buf, ticket);
       write_bool(&mut buf, *warp_out);
     }
     ServerPacket::NaviSetName { ticket, name } => {
-      write_u16(&mut buf, 17);
+      write_u16(&mut buf, 20);
       write_string(&mut buf, ticket);
       write_string(&mut buf, name);
     }
     ServerPacket::NaviMove { ticket, x, y, z } => {
-      write_u16(&mut buf, 18);
+      write_u16(&mut buf, 21);
       write_string(&mut buf, ticket);
       write_f32(&mut buf, *x);
       write_f32(&mut buf, *y);
@@ -246,13 +276,13 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       texture_path,
       animation_path,
     } => {
-      write_u16(&mut buf, 19);
+      write_u16(&mut buf, 22);
       write_string(&mut buf, ticket);
       write_string(&mut buf, texture_path);
       write_string(&mut buf, animation_path);
     }
     ServerPacket::NaviEmote { ticket, emote_id } => {
-      write_u16(&mut buf, 20);
+      write_u16(&mut buf, 23);
       buf.push(*emote_id);
       write_string(&mut buf, ticket);
     }

@@ -153,6 +153,36 @@ impl Net {
     }
   }
 
+  pub fn move_player_camera(&mut self, id: &str, x: f32, y: f32, z: f32, hold_time: f32) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::MoveCamera { x, y, z, hold_time },
+      );
+    }
+  }
+
+  pub fn slide_player_camera(&mut self, id: &str, x: f32, y: f32, z: f32, duration: f32) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::SlideCamera { x, y, z, duration },
+      );
+    }
+  }
+
+  pub fn unlock_player_camera(&mut self, id: &str) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::UnlockCamera,
+      );
+    }
+  }
+
   pub fn lock_player_input(&mut self, id: &str) {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
