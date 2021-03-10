@@ -294,6 +294,8 @@ impl Map {
     Asset {
       data: AssetData::Text(self.render()),
       dependencies,
+      last_modified: 0,
+      cachable: false,
     }
   }
 }

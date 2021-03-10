@@ -2,6 +2,8 @@
 pub struct Asset {
   pub data: AssetData,
   pub dependencies: Vec<String>,
+  pub last_modified: u64,
+  pub cachable: bool, // allows the client to know if they can cache this asset or if it's dynamic
 }
 
 #[derive(Clone, Debug)]
@@ -24,7 +26,7 @@ pub fn get_map_path(map_id: &str) -> String {
   String::from("/server/maps/") + map_id + ".tmx"
 }
 
-pub fn get_flattened_dependency_chain<'a>(
+pub(super) fn get_flattened_dependency_chain<'a>(
   assets: &'a std::collections::HashMap<String, Asset>,
   asset_path: &'a str,
 ) -> Vec<&'a str> {
@@ -48,6 +50,58 @@ fn build_flattened_dependency_chain_with_recursion<'a>(
     }
 
     chain.push(asset_path);
+  }
+}
+
+pub(super) fn load_asset(path: std::path::PathBuf) -> Asset {
+  use std::fs::{metadata, read, read_to_string};
+
+  let path_string = path.to_str().unwrap_or_default();
+  let extension_index = path_string.rfind('.').unwrap_or_else(|| path_string.len());
+  let extension = path_string.to_lowercase().split_off(extension_index);
+
+  let asset_data = if extension == ".ogg" {
+    AssetData::Audio(read(&path).unwrap_or_default())
+  } else if extension == ".png" || extension == ".bmp" {
+    AssetData::Texture(read(&path).unwrap_or_default())
+  } else if extension == ".tsx" {
+    let original_data = read_to_string(&path).unwrap_or_default();
+    let translated_data = translate_tsx(&path, &original_data);
+
+    if translated_data == None {
+      println!("Invalid .tsx file: {:?}", path);
+    }
+
+    AssetData::Text(translated_data.unwrap_or(original_data))
+  } else {
+    AssetData::Text(read_to_string(&path).unwrap_or_default())
+  };
+
+  let mut dependencies = Vec::new();
+
+  if extension == ".tsx" {
+    // can't chain yet: https://github.com/rust-lang/rust/issues/53667
+    if let AssetData::Text(data) = &asset_data {
+      dependencies = resolve_tsx_dependencies(data);
+    }
+  }
+
+  let mut last_modified = 0;
+
+  if let Some(file_meta) = metadata(path).ok() {
+    if let Some(time) = file_meta.modified().ok() {
+      last_modified = time
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("File written before epoch?")
+        .as_secs();
+    }
+  }
+
+  Asset {
+    data: asset_data,
+    dependencies,
+    last_modified,
+    cachable: true,
   }
 }
 

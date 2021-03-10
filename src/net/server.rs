@@ -162,6 +162,32 @@ impl Server {
           });
           socket.send_to(&buf, socket_address)?;
         }
+        ClientPacket::AssetFound {
+          path,
+          last_modified,
+        } => {
+          if self.config.log_packets {
+            println!("Received AssetFound packet from {}", socket_address);
+          }
+
+          let mut is_valid = false;
+
+          if let Some(asset) = net.get_asset(&path) {
+            is_valid = asset.last_modified == last_modified;
+          }
+
+          if let Some(client) = net.get_client_mut(player_id) {
+            if is_valid {
+              client.cached_assets.insert(path);
+            } else {
+              client.packet_shipper.send(
+                socket,
+                &Reliability::ReliableOrdered,
+                &ServerPacket::RemoveAsset { path },
+              );
+            }
+          }
+        }
         ClientPacket::TextureStream { data } => {
           if self.config.log_packets {
             println!("Received TextureStream packet from {}", socket_address);
@@ -203,6 +229,21 @@ impl Server {
         } => {
           if self.config.log_packets {
             println!("Received bad Login packet from {}", socket_address);
+          }
+        }
+        ClientPacket::RequestJoin => {
+          if self.config.log_packets {
+            println!("Received RequestJoin packet from {}", socket_address);
+          }
+
+          for plugin in &mut self.plugin_interfaces {
+            plugin.handle_player_connect(net, &player_id);
+          }
+
+          net.connect_client(&player_id);
+
+          if self.config.log_connections {
+            println!("{} connected", player_id);
           }
         }
         ClientPacket::Logout => {
@@ -322,30 +363,6 @@ impl Server {
           });
           socket.send_to(&buf, socket_address)?;
         }
-        ClientPacket::TextureStream { data } => {
-          if self.config.log_packets {
-            println!("Received TextureStream packet from {}", socket_address);
-          }
-
-          append_texture_data(
-            &mut self.player_texture_buffer,
-            socket_address,
-            data,
-            self.config.player_asset_limit,
-          );
-        }
-        ClientPacket::AnimationStream { data } => {
-          if self.config.log_packets {
-            println!("Received AnimationStream packet from {}", socket_address);
-          }
-
-          append_texture_data(
-            &mut self.player_animation_buffer,
-            socket_address,
-            data,
-            self.config.player_asset_limit,
-          );
-        }
         ClientPacket::Login {
           username,
           password: _,
@@ -354,16 +371,9 @@ impl Server {
             println!("Received Login packet from {}", socket_address);
           }
 
-          let data_result = collect_streamed_client_data(
-            &mut self.player_texture_buffer,
-            &mut self.player_animation_buffer,
-            &socket_address,
-            self.config.player_asset_limit,
-          );
+          let player_id = net.add_client(socket_address, username);
 
-          if let Some((texture_data, animation_data)) = data_result {
-            self.connect_client(net, socket_address, username, texture_data, animation_data);
-          }
+          self.player_id_map.insert(socket_address, player_id);
         }
         _ => {
           if self.config.log_packets {
@@ -376,29 +386,6 @@ impl Server {
     }
 
     Ok(())
-  }
-
-  fn connect_client(
-    &mut self,
-    net: &mut Net,
-    socket_address: std::net::SocketAddr,
-    name: String,
-    texture_data: Vec<u8>,
-    animation_data: String,
-  ) {
-    let player_id = net.add_player(socket_address, name, texture_data, animation_data);
-
-    for plugin in &mut self.plugin_interfaces {
-      plugin.handle_player_connect(net, &player_id);
-    }
-
-    net.connect_client(&player_id);
-
-    if self.config.log_connections {
-      println!("{} connected", player_id);
-    }
-
-    self.player_id_map.insert(socket_address, player_id);
   }
 
   fn disconnect_client(&mut self, net: &mut Net, socket_address: &std::net::SocketAddr) {

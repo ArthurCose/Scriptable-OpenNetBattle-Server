@@ -68,8 +68,8 @@ impl Net {
   }
 
   fn load_assets_from_dir(assets: &mut HashMap<String, Asset>, dir: &std::path::Path) {
-    use super::{resolve_tsx_dependencies, translate_tsx};
-    use std::fs::{read, read_dir, read_to_string};
+    use super::load_asset;
+    use std::fs::read_dir;
 
     if let Ok(entries) = read_dir(dir) {
       for wrapped_entry in entries {
@@ -80,41 +80,7 @@ impl Net {
             Net::load_assets_from_dir(assets, &path);
           } else {
             let path_string = String::from("/server/") + path.to_str().unwrap_or_default();
-            let extension_index = path_string.rfind('.').unwrap_or_else(|| path_string.len());
-            let extension = path_string.to_lowercase().split_off(extension_index);
-
-            let asset_data = if extension == ".ogg" {
-              AssetData::Audio(read(&path).unwrap_or_default())
-            } else if extension == ".png" || extension == ".bmp" {
-              AssetData::Texture(read(&path).unwrap_or_default())
-            } else if extension == ".tsx" {
-              let original_data = read_to_string(&path).unwrap_or_default();
-              let translated_data = translate_tsx(&path, &original_data);
-
-              if translated_data == None {
-                println!("Invalid .tsx file: {:?}", path);
-              }
-
-              AssetData::Text(translated_data.unwrap_or(original_data))
-            } else {
-              AssetData::Text(read_to_string(&path).unwrap_or_default())
-            };
-
-            let mut dependencies = Vec::new();
-
-            if extension == ".tsx" {
-              // can't chain yet: https://github.com/rust-lang/rust/issues/53667
-              if let AssetData::Text(data) = &asset_data {
-                dependencies = resolve_tsx_dependencies(data);
-              }
-            }
-
-            let asset = Asset {
-              data: asset_data,
-              dependencies,
-            };
-
-            assets.insert(path_string, asset);
+            assets.insert(path_string, load_asset(path));
           }
         }
       }
@@ -532,19 +498,16 @@ impl Net {
     }
   }
 
-  pub(super) fn add_player(
+  pub(super) fn add_client(
     &mut self,
     socket_address: std::net::SocketAddr,
     name: String,
-    texture_data: Vec<u8>,
-    animation_data: String,
   ) -> String {
     use uuid::Uuid;
 
     let id = Uuid::new_v4().to_string();
 
-    let (texture_path, animation_path) =
-      self.store_player_avatar(&id, texture_data, animation_data);
+    let (texture_path, animation_path) = self.store_player_avatar(&id, vec![], String::from(""));
 
     let area_id = String::from("default");
     let area = self.get_area_mut(&area_id).unwrap();
@@ -590,6 +553,8 @@ impl Net {
       Asset {
         data: AssetData::SFMLImage(texture_data),
         dependencies: Vec::new(),
+        last_modified: 0,
+        cachable: false,
       },
     );
 
@@ -598,6 +563,8 @@ impl Net {
       Asset {
         data: AssetData::Text(animation_data),
         dependencies: Vec::new(),
+        last_modified: 0,
+        cachable: false,
       },
     );
 

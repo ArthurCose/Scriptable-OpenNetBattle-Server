@@ -75,13 +75,15 @@ pub fn read_f32(buf: &mut &[u8]) -> Option<f32> {
 pub fn read_string(buf: &mut &[u8]) -> Option<String> {
   let terminator_pos = buf.iter().position(|&b| b == 0);
 
-  terminator_pos.map(|index| {
-    let string_slice = std::str::from_utf8(&buf[0..index]).unwrap();
+  if let Some(index) = terminator_pos {
+    let string_slice = std::str::from_utf8(&buf[0..index]).ok()?;
 
     *buf = &buf[index + 1..];
 
-    String::from(string_slice)
-  })
+    return Some(String::from(string_slice));
+  }
+
+  None
 }
 
 pub fn read_data(buf: &mut &[u8], size: usize) -> Option<Vec<u8>> {

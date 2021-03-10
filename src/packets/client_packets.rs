@@ -8,10 +8,12 @@ use super::PacketHeaders;
 pub enum ClientPacket {
   Ping,
   Ack { reliability: Reliability, id: u64 },
+  AssetFound { path: String, last_modified: u64 },
   TextureStream { data: Vec<u8> },
   AnimationStream { data: Vec<u8> },
   Login { username: String, password: String },
   Logout,
+  RequestJoin,
   Ready,
   Position { x: f32, y: f32, z: f32 },
   AvatarChange,
@@ -49,45 +51,50 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
       reliability: get_reliability(read_byte(work_buf)?),
       id: read_u64(work_buf)?,
     }),
-    2 => {
+    2 => Some(ClientPacket::AssetFound {
+      path: read_string(work_buf)?,
+      last_modified: read_u64(work_buf)?,
+    }),
+    3 => {
       let size = read_u16(work_buf)? as usize;
       let data = read_data(work_buf, size)?;
 
       Some(ClientPacket::TextureStream { data })
     }
-    3 => {
+    4 => {
       let size = read_u16(work_buf)? as usize;
       let data = read_data(work_buf, size)?;
 
       Some(ClientPacket::AnimationStream { data })
     }
-    4 => Some(ClientPacket::Login {
+    5 => Some(ClientPacket::Login {
       username: read_string(work_buf)?,
       password: read_string(work_buf)?,
     }),
-    5 => Some(ClientPacket::Logout),
-    6 => Some(ClientPacket::Ready),
-    7 => Some(ClientPacket::Position {
+    6 => Some(ClientPacket::Logout),
+    7 => Some(ClientPacket::RequestJoin),
+    8 => Some(ClientPacket::Ready),
+    9 => Some(ClientPacket::Position {
       x: read_f32(work_buf)?,
       y: read_f32(work_buf)?,
       z: read_f32(work_buf)?,
     }),
-    8 => Some(ClientPacket::AvatarChange),
-    9 => Some(ClientPacket::Emote {
+    10 => Some(ClientPacket::AvatarChange),
+    11 => Some(ClientPacket::Emote {
       emote_id: read_byte(work_buf)?,
     }),
-    10 => Some(ClientPacket::ObjectInteraction {
+    12 => Some(ClientPacket::ObjectInteraction {
       tile_object_id: read_u32(work_buf)?,
     }),
-    11 => Some(ClientPacket::NaviInteraction {
+    13 => Some(ClientPacket::NaviInteraction {
       navi_id: read_string(work_buf)?,
     }),
-    12 => Some(ClientPacket::TileInteraction {
+    14 => Some(ClientPacket::TileInteraction {
       x: read_f32(work_buf)?,
       y: read_f32(work_buf)?,
       z: read_f32(work_buf)?,
     }),
-    13 => Some(ClientPacket::DialogResponse {
+    15 => Some(ClientPacket::DialogResponse {
       response: read_byte(work_buf)?,
     }),
     _ => None,
