@@ -31,7 +31,7 @@ Paths
 
 ## Areas
 
-Maps for areas are stored in `./areas`. The first area a players will see is `default.tmx` (required).
+Maps for areas are stored in `./areas`. The first area players will see is `default.tmx` (required).
 
 ### Suggested Settings
 
