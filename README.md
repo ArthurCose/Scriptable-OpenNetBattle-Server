@@ -90,8 +90,9 @@ Commented functions are in development and require changes to the client (specif
 
 ```Lua
 function tick(delta_time)
-function handle_player_connect(player_id)
-function handle_player_transfer(player_id)
+function handle_player_connect(player_id) -- player connects to the server (transfers will change initial area)
+function handle_player_join(player_id) -- player enters their first area after connecting
+function handle_player_transfer(player_id) -- player changes area
 
 -- For the following functions: internal values are not set until after execution
 -- this means Players.get_player_position(id) will provide the old position of the player, etc

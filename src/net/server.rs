@@ -270,6 +270,10 @@ impl Server {
             for plugin in &mut self.plugin_interfaces {
               plugin.handle_player_transfer(net, &player_id);
             }
+          } else {
+            for plugin in &mut self.plugin_interfaces {
+              plugin.handle_player_join(net, &player_id);
+            }
           }
 
           net.mark_client_ready(player_id);

@@ -9,6 +9,7 @@ pub struct LuaPluginInterface {
   scripts: HashMap<std::path::PathBuf, Lua>,
   tick_listeners: Vec<std::path::PathBuf>,
   player_connect_listeners: Vec<std::path::PathBuf>,
+  player_join_listeners: Vec<std::path::PathBuf>,
   player_transfer_listeners: Vec<std::path::PathBuf>,
   player_disconnect_listeners: Vec<std::path::PathBuf>,
   player_move_listeners: Vec<std::path::PathBuf>,
@@ -26,6 +27,7 @@ impl LuaPluginInterface {
       scripts: HashMap::new(),
       tick_listeners: Vec::new(),
       player_connect_listeners: Vec::new(),
+      player_join_listeners: Vec::new(),
       player_transfer_listeners: Vec::new(),
       player_disconnect_listeners: Vec::new(),
       player_move_listeners: Vec::new(),
@@ -91,6 +93,13 @@ impl LuaPluginInterface {
         .is_ok()
       {
         self.player_connect_listeners.push(script_dir.clone());
+      }
+
+      if globals
+        .get::<_, rlua::Function>("handle_player_join")
+        .is_ok()
+      {
+        self.player_join_listeners.push(script_dir.clone());
       }
 
       if globals
@@ -188,6 +197,16 @@ impl PluginInterface for LuaPluginInterface {
       &self.player_connect_listeners,
       net,
       "handle_player_connect",
+      |callback| callback.call(player_id),
+    );
+  }
+
+  fn handle_player_join(&mut self, net: &mut Net, player_id: &str) {
+    handle_event(
+      &mut self.scripts,
+      &self.player_join_listeners,
+      net,
+      "handle_player_join",
       |callback| callback.call(player_id),
     );
   }
