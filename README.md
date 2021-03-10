@@ -145,7 +145,6 @@ Net.set_song(area_id, song_path)
 Net.get_background_name(area_id) -- background_name
 Net.set_background(area_id, background_name)
 -- Net.set_custom_background(area_id, texture_path, animation_path, vel_x?, vel_y?)
--- Net.set_background_vel(area_id, vel_x, vel_y)
 Net.get_spawn_position(area_id) -- { x, y, z }
 Net.set_spawn_position(area_id, x, y, z)
 -- Net.get_tile_set(area_id, tile_gid) -- { name, firstGid, tileCount, tileWidth, tileHeight, properties }
