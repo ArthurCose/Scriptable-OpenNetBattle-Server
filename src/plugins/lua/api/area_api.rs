@@ -369,6 +369,7 @@ fn map_optional_object_to_table<'a>(
   table.set("z", object.z).ok()?;
   table.set("width", object.width).ok()?;
   table.set("height", object.height).ok()?;
+  table.set("rotation", object.rotation).ok()?;
 
   let data_table = lua_ctx.create_table().ok()?;
 

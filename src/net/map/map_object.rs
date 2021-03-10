@@ -11,6 +11,7 @@ pub struct MapObject {
   pub z: f32,
   pub width: f32,
   pub height: f32,
+  pub rotation: f32,
   pub data: MapObjectData,
 }
 
@@ -33,6 +34,7 @@ impl MapObject {
     let y = unwrap_and_parse_or_default::<f32>(element.attr("y")) * scale_y;
     let width = unwrap_and_parse_or_default::<f32>(element.attr("width")) * scale_x;
     let height = unwrap_and_parse_or_default::<f32>(element.attr("height")) * scale_y;
+    let rotation: f32 = unwrap_and_parse_or_default(element.attr("rotation"));
 
     let data = if gid != 0 {
       MapObjectData::TileObject {
@@ -76,6 +78,7 @@ impl MapObject {
       z: 0.0,
       width,
       height,
+      rotation,
       data,
     }
   }
@@ -121,9 +124,15 @@ impl MapObject {
       }
     }
 
+    let rotation_string = if self.rotation != 0.0 {
+      format!(" rotation=\"{}\"", self.rotation)
+    } else {
+      String::default()
+    };
+
     format!(
       "\
-      <object id=\"{}\"{}{} x=\"{}\" y=\"{}\"{}{}>\
+      <object id=\"{}\"{}{} x=\"{}\" y=\"{}\"{}{}{}>\
         {}\
       </object>\
       ",
@@ -133,6 +142,7 @@ impl MapObject {
       self.x / scale_x,
       self.y / scale_y,
       dimensions_string,
+      rotation_string,
       visible_str,
       data_string,
     )

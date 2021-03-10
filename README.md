@@ -153,8 +153,8 @@ Net.get_tileset_for_tile(area_id, tile_gid) -- { path, firstGid }?
 Net.get_tile(area_id, x, y, z) -- { gid, flippedHorizontally, flippedVertically, rotated }
 Net.set_tile(area_id, x, y, z, tile_gid, flip_h?, flip_v?, rotate?)
 Net.list_objects(area_id) -- object_id[]
-Net.get_object_by_id(area_id, object_id) -- { id, name, type, visible, x, y, z, width, height, data }?
-Net.get_object_by_name(area_id, name) -- { id, name, type, visible, x, y, z, width, height, data }?
+Net.get_object_by_id(area_id, object_id) -- { id, name, type, visible, x, y, z, width, height, rotation, data }?
+Net.get_object_by_name(area_id, name) -- { id, name, type, visible, x, y, z, width, height, rotation, data }?
 ```
 
 #### Bot API
