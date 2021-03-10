@@ -236,13 +236,29 @@ pub fn add_area_api<'a, 'b>(
   )?;
 
   api_table.set(
-    "get_tile_gid",
+    "get_tile",
     scope.create_function(
-      move |_, (area_id, x, y, z): (String, usize, usize, usize)| {
-        let mut net = net_ref.borrow_mut();
+      move |lua_ctx, (area_id, x, y, z): (String, usize, usize, usize)| {
+        let net = net_ref.borrow();
 
-        if let Some(area) = net.get_area_mut(&area_id) {
-          Ok(area.get_map_mut().get_tile(x, y, z).gid)
+        if let Some(area) = net.get_area(&area_id) {
+          let tile = area.get_map().get_tile(x, y, z);
+
+          let table = lua_ctx.create_table()?;
+
+          table.set("gid", tile.gid)?;
+
+          if tile.flipped_anti_diagonally {
+            table.set("flippedHorizontal", tile.flipped_vertically)?;
+            table.set("flippedVertical", !tile.flipped_horizontally)?;
+          } else {
+            table.set("flippedHorizontal", tile.flipped_horizontally)?;
+            table.set("flippedVertical", tile.flipped_vertically)?;
+          }
+
+          table.set("rotated", tile.flipped_anti_diagonally)?;
+
+          Ok(table)
         } else {
           Err(create_area_error(&area_id))
         }
@@ -378,11 +394,12 @@ fn map_optional_object_to_table<'a>(
     MapObjectData::TileObject { tile } => {
       data_table.set("gid", tile.gid).ok()?;
       data_table
-        .set("flipped_horizontally", tile.flipped_horizontally)
+        .set("flippedHorizontally", tile.flipped_horizontally)
         .ok()?;
       data_table
-        .set("flipped_vertically", tile.flipped_vertically)
+        .set("flippedVertically", tile.flipped_vertically)
         .ok()?;
+      data_table.set("rotated", false).ok()?;
       Some(())
     }
     _ => Some(()),
