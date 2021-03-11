@@ -6,7 +6,7 @@ function handle_tile_interaction(player_id, x, y, z)
   z = math.floor(z)
 
   local area_id = Net.get_player_area(player_id)
-  local tile_gid = Net.get_tile_gid(area_id, x, y, z)
+  local tile_gid = Net.get_tile(area_id, x, y, z).gid
 
   if tile_gid == 0 then
     Net.set_tile(area_id, x, y, z, 1)
