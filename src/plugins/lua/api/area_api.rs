@@ -10,6 +10,20 @@ pub fn add_area_api<'a, 'b>(
   net_ref: &'b RefCell<&mut Net>,
 ) -> rlua::Result<()> {
   api_table.set(
+    "list_areas",
+    scope.create_function(move |_, _: ()| {
+      let net = net_ref.borrow();
+
+      let area_ids: Vec<String> = net
+        .get_areas()
+        .map(|area| area.get_id().to_string())
+        .collect();
+
+      Ok(area_ids)
+    })?,
+  )?;
+
+  api_table.set(
     "get_width",
     scope.create_function(move |_, area_id: String| {
       let mut net = net_ref.borrow_mut();

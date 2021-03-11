@@ -135,6 +135,7 @@ Interactions with the cyberworld are performed through functions attached to a g
 -- area_id is the filename without extension
 -- ./assets/my_area.tmx would be my_area
 
+Net.list_areas() -- area_id[]
 -- Net.create_area(area_id)
 Net.get_width(area_id)
 Net.get_height(area_id)

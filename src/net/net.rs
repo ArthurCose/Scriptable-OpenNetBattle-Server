@@ -87,6 +87,10 @@ impl Net {
     }
   }
 
+  pub fn get_areas(&self) -> impl std::iter::Iterator<Item = &Area> {
+    self.areas.values()
+  }
+
   pub fn get_area(&self, area_id: &str) -> Option<&Area> {
     self.areas.get(area_id)
   }
