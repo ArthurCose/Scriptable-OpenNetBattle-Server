@@ -319,11 +319,11 @@ pub fn add_area_api<'a, 'b>(
       let net = net_ref.borrow();
 
       if let Some(area) = net.get_area(&area_id) {
-        let result: Vec<String> = area
+        let result: Vec<u32> = area
           .get_map()
           .get_objects()
           .iter()
-          .map(|object| object.name.clone())
+          .map(|object| object.id)
           .collect();
 
         Ok(result)
