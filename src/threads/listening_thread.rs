@@ -3,7 +3,7 @@ use crate::threads::ThreadMessage;
 use std::net::UdpSocket;
 use std::sync::mpsc;
 
-pub fn create_socket_thread(
+pub fn create_listening_thread(
   tx: mpsc::Sender<ThreadMessage>,
   socket: UdpSocket,
   max_payload_size: usize,

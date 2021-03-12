@@ -4,7 +4,7 @@ use crate::packets::{
   build_unreliable_packet, ClientPacket, PacketSorter, Reliability, ServerPacket,
 };
 use crate::plugins::PluginInterface;
-use crate::threads::{create_clock_thread, create_socket_thread, ThreadMessage};
+use crate::threads::{create_clock_thread, create_listening_thread, ThreadMessage};
 use std::collections::HashMap;
 use std::net::UdpSocket;
 use std::rc::Rc;
@@ -57,7 +57,7 @@ impl Server {
 
     let (tx, rx) = mpsc::channel();
     create_clock_thread(tx.clone());
-    create_socket_thread(
+    create_listening_thread(
       tx,
       socket.try_clone()?,
       self.config.max_payload_size,
