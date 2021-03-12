@@ -6,6 +6,7 @@ pub mod asset;
 mod client;
 pub mod map;
 mod navi;
+mod plugin_wrapper;
 mod server;
 
 pub use area::Area;

@@ -1,3 +1,4 @@
+use super::super::super::MessageTracker;
 use super::lua_errors::{create_area_error, create_player_error};
 use crate::net::Net;
 use std::cell::RefCell;
@@ -6,6 +7,8 @@ use std::cell::RefCell;
 pub fn add_player_api<'a, 'b>(
   api_table: &rlua::Table<'a>,
   scope: &rlua::Scope<'a, 'b>,
+  script_dir: &'b std::path::PathBuf,
+  message_tracker: &'b RefCell<&mut MessageTracker<std::path::PathBuf>>,
   net_ref: &'b RefCell<&mut Net>,
 ) -> rlua::Result<()> {
   api_table.set(
@@ -200,6 +203,10 @@ pub fn add_player_api<'a, 'b>(
       )| {
         let mut net = net_ref.borrow_mut();
 
+        message_tracker
+          .borrow_mut()
+          .track_message(&id, script_dir.clone());
+
         net.message_player(
           &id,
           &message,
@@ -223,6 +230,10 @@ pub fn add_player_api<'a, 'b>(
         Option<String>,
       )| {
         let mut net = net_ref.borrow_mut();
+
+        message_tracker
+          .borrow_mut()
+          .track_message(&id, script_dir.clone());
 
         net.question_player(
           &id,
@@ -249,6 +260,10 @@ pub fn add_player_api<'a, 'b>(
         Option<String>,
       )| {
         let mut net = net_ref.borrow_mut();
+
+        message_tracker
+          .borrow_mut()
+          .track_message(&id, script_dir.clone());
 
         net.quiz_player(
           &id,

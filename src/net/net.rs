@@ -15,6 +15,7 @@ pub struct Net {
   clients: HashMap<String, Client>,
   bots: HashMap<String, Navi>,
   assets: HashMap<String, Asset>,
+  active_script: usize,
 }
 
 impl Net {
@@ -64,6 +65,7 @@ impl Net {
       clients: HashMap::new(),
       bots: HashMap::new(),
       assets,
+      active_script: 0,
     }
   }
 
@@ -256,6 +258,8 @@ impl Net {
     mug_animation_path: &str,
   ) {
     if let Some(client) = self.clients.get_mut(id) {
+      client.track_message(self.active_script);
+
       client.packet_shipper.send(
         &self.socket,
         &Reliability::ReliableOrdered,
@@ -296,6 +300,8 @@ impl Net {
     mug_animation_path: &str,
   ) {
     if let Some(client) = self.clients.get_mut(id) {
+      client.track_message(self.active_script);
+
       client.packet_shipper.send(
         &self.socket,
         &Reliability::ReliableOrdered,
@@ -338,6 +344,8 @@ impl Net {
     mug_animation_path: &str,
   ) {
     if let Some(client) = self.clients.get_mut(id) {
+      client.track_message(self.active_script);
+
       client.packet_shipper.send(
         &self.socket,
         &Reliability::ReliableOrdered,
@@ -1000,6 +1008,13 @@ impl Net {
         packet,
       );
     }
+  }
+
+  // ugly opengl like context storing
+  // needed to correctly track message owners send without adding extra parameters
+  // luckily not visible to plugin authors
+  pub(super) fn set_active_script(&mut self, active_script: usize) {
+    self.active_script = active_script;
   }
 
   pub(super) fn tick(&mut self) {

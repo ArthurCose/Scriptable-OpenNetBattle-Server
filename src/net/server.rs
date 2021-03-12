@@ -1,3 +1,4 @@
+use super::plugin_wrapper::PluginWrapper;
 use super::Net;
 use crate::packets::{
   build_unreliable_packet, ClientPacket, PacketSorter, Reliability, ServerPacket,
@@ -20,7 +21,7 @@ pub struct ServerConfig {
 pub struct Server {
   player_id_map: HashMap<std::net::SocketAddr, String>,
   packet_sorter_map: HashMap<std::net::SocketAddr, PacketSorter>,
-  plugin_interfaces: Vec<Box<dyn PluginInterface>>,
+  plugin_wrapper: PluginWrapper,
   config: ServerConfig,
 }
 
@@ -29,13 +30,13 @@ impl Server {
     Server {
       player_id_map: HashMap::new(),
       packet_sorter_map: HashMap::new(),
-      plugin_interfaces: Vec::new(),
+      plugin_wrapper: PluginWrapper::new(),
       config,
     }
   }
 
   pub fn add_plugin_interface(&mut self, plugin_interface: Box<dyn PluginInterface>) {
-    self.plugin_interfaces.push(plugin_interface);
+    self.plugin_wrapper.add_plugin_interface(plugin_interface);
   }
 
   pub fn start(&mut self) -> Result<(), Box<dyn std::error::Error>> {
@@ -52,9 +53,7 @@ impl Server {
     let socket = Rc::new(socket);
     let mut net = Net::new(socket.clone(), &self.config);
 
-    for plugin_interface in &mut self.plugin_interfaces {
-      plugin_interface.init(&mut net);
-    }
+    self.plugin_wrapper.init(&mut net);
 
     let (tx, rx) = mpsc::channel();
     create_clock_thread(tx.clone());
@@ -77,9 +76,9 @@ impl Server {
           let elapsed_time = time.elapsed();
           time = Instant::now();
 
-          for plugin in &mut self.plugin_interfaces {
-            plugin.tick(&mut net, elapsed_time.as_secs_f32());
-          }
+          self
+            .plugin_wrapper
+            .tick(&mut net, elapsed_time.as_secs_f32());
 
           // kick afk clients
           let mut kick_list = Vec::new();
@@ -230,9 +229,7 @@ impl Server {
             println!("Received RequestJoin packet from {}", socket_address);
           }
 
-          for plugin in &mut self.plugin_interfaces {
-            plugin.handle_player_connect(net, &player_id);
-          }
+          self.plugin_wrapper.handle_player_connect(net, &player_id);
 
           net.connect_client(&player_id);
 
@@ -252,9 +249,9 @@ impl Server {
             println!("Received Position packet from {}", socket_address);
           }
 
-          for plugin in &mut self.plugin_interfaces {
-            plugin.handle_player_move(net, player_id, x, y, z);
-          }
+          self
+            .plugin_wrapper
+            .handle_player_move(net, player_id, x, y, z);
 
           net.update_player_position(player_id, x, y, z);
         }
@@ -267,13 +264,9 @@ impl Server {
 
           // if the client is ready, this is a transfer
           if client.ready {
-            for plugin in &mut self.plugin_interfaces {
-              plugin.handle_player_transfer(net, &player_id);
-            }
+            self.plugin_wrapper.handle_player_transfer(net, &player_id);
           } else {
-            for plugin in &mut self.plugin_interfaces {
-              plugin.handle_player_join(net, &player_id);
-            }
+            self.plugin_wrapper.handle_player_join(net, &player_id);
           }
 
           net.mark_client_ready(player_id);
@@ -285,9 +278,12 @@ impl Server {
 
           let (texture_path, animation_path) = net.store_player_avatar(player_id);
 
-          for plugin in &mut self.plugin_interfaces {
-            plugin.handle_player_avatar_change(net, player_id, &texture_path, &animation_path);
-          }
+          self.plugin_wrapper.handle_player_avatar_change(
+            net,
+            player_id,
+            &texture_path,
+            &animation_path,
+          );
 
           net.set_player_avatar(player_id, texture_path, animation_path);
         }
@@ -296,9 +292,9 @@ impl Server {
             println!("Received Emote packet from {}", socket_address);
           }
 
-          for plugin in &mut self.plugin_interfaces {
-            plugin.handle_player_emote(net, player_id, emote_id);
-          }
+          self
+            .plugin_wrapper
+            .handle_player_emote(net, player_id, emote_id);
 
           net.player_emote(player_id, emote_id);
         }
@@ -307,36 +303,36 @@ impl Server {
             println!("Received ObjectInteraction packet from {}", socket_address);
           }
 
-          for plugin in &mut self.plugin_interfaces {
-            plugin.handle_object_interaction(net, player_id, tile_object_id);
-          }
+          self
+            .plugin_wrapper
+            .handle_object_interaction(net, player_id, tile_object_id);
         }
         ClientPacket::NaviInteraction { navi_id } => {
           if self.config.log_packets {
             println!("Received NaviInteraction packet from {}", socket_address);
           }
 
-          for plugin in &mut self.plugin_interfaces {
-            plugin.handle_navi_interaction(net, player_id, &navi_id);
-          }
+          self
+            .plugin_wrapper
+            .handle_navi_interaction(net, player_id, &navi_id);
         }
         ClientPacket::TileInteraction { x, y, z } => {
           if self.config.log_packets {
             println!("Received TileInteraction packet from {}", socket_address);
           }
 
-          for plugin in &mut self.plugin_interfaces {
-            plugin.handle_tile_interaction(net, player_id, x, y, z);
-          }
+          self
+            .plugin_wrapper
+            .handle_tile_interaction(net, player_id, x, y, z);
         }
         ClientPacket::DialogResponse { response } => {
           if self.config.log_packets {
             println!("Received DialogResponse packet from {}", socket_address);
           }
 
-          for plugin in &mut self.plugin_interfaces {
-            plugin.handle_dialog_response(net, player_id, response);
-          }
+          self
+            .plugin_wrapper
+            .handle_dialog_response(net, player_id, response);
         }
       }
     } else {
@@ -378,9 +374,9 @@ impl Server {
 
   fn disconnect_client(&mut self, net: &mut Net, socket_address: &std::net::SocketAddr) {
     if let Some(player_id) = self.player_id_map.remove(&socket_address) {
-      for plugin in &mut self.plugin_interfaces {
-        plugin.handle_player_disconnect(net, &player_id);
-      }
+      self
+        .plugin_wrapper
+        .handle_player_disconnect(net, &player_id);
 
       net.remove_player(&player_id);
 

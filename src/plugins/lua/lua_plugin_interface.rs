@@ -1,3 +1,4 @@
+use super::super::MessageTracker;
 use super::api::add_net_api;
 use crate::net::Net;
 use crate::plugins::PluginInterface;
@@ -19,6 +20,7 @@ pub struct LuaPluginInterface {
   navi_interaction_listeners: Vec<std::path::PathBuf>,
   tile_interaction_listeners: Vec<std::path::PathBuf>,
   dialog_response_listeners: Vec<std::path::PathBuf>,
+  message_tracker: MessageTracker<std::path::PathBuf>,
 }
 
 impl LuaPluginInterface {
@@ -37,6 +39,7 @@ impl LuaPluginInterface {
       navi_interaction_listeners: Vec::new(),
       tile_interaction_listeners: Vec::new(),
       dialog_response_listeners: Vec::new(),
+      message_tracker: MessageTracker::new(),
     }
   }
 
@@ -74,9 +77,17 @@ impl LuaPluginInterface {
     lua_env.context(|lua_ctx| {
       let globals = lua_ctx.globals();
 
+      let message_tracker_ref = RefCell::new(&mut self.message_tracker);
+
       lua_ctx.scope(|scope| -> rlua::Result<()> {
         let api_table = lua_ctx.create_table()?;
-        add_net_api(&api_table, &scope, &net_ref)?;
+        add_net_api(
+          &api_table,
+          &scope,
+          &script_dir,
+          &message_tracker_ref,
+          &net_ref,
+        )?;
         globals.set("Net", api_table)?;
 
         lua_ctx.load(&script).exec()?;
@@ -185,6 +196,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.tick_listeners,
+      &mut self.message_tracker,
       net,
       "tick",
       |callback| callback.call(delta_time),
@@ -195,6 +207,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.player_connect_listeners,
+      &mut self.message_tracker,
       net,
       "handle_player_connect",
       |callback| callback.call(player_id),
@@ -205,6 +218,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.player_join_listeners,
+      &mut self.message_tracker,
       net,
       "handle_player_join",
       |callback| callback.call(player_id),
@@ -215,6 +229,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.player_transfer_listeners,
+      &mut self.message_tracker,
       net,
       "handle_player_transfer",
       |callback| callback.call(player_id),
@@ -225,16 +240,20 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.player_disconnect_listeners,
+      &mut self.message_tracker,
       net,
       "handle_player_disconnect",
       |callback| callback.call(player_id),
     );
+
+    self.message_tracker.remove_tracking(player_id);
   }
 
   fn handle_player_move(&mut self, net: &mut Net, player_id: &str, x: f32, y: f32, z: f32) {
     handle_event(
       &mut self.scripts,
       &self.player_move_listeners,
+      &mut self.message_tracker,
       net,
       "handle_player_move",
       |callback| callback.call((player_id, x, y, z)),
@@ -251,6 +270,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.player_avatar_change_listeners,
+      &mut self.message_tracker,
       net,
       "handle_player_avatar_change",
       |callback| callback.call((player_id, texture_path, animation_path)),
@@ -261,6 +281,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.player_emote_listeners,
+      &mut self.message_tracker,
       net,
       "handle_player_emote",
       |callback| callback.call((player_id, emote_id)),
@@ -271,6 +292,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.object_interaction_listeners,
+      &mut self.message_tracker,
       net,
       "handle_object_interaction",
       |callback| callback.call((player_id, tile_object_id)),
@@ -281,6 +303,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.navi_interaction_listeners,
+      &mut self.message_tracker,
       net,
       "handle_navi_interaction",
       |callback| callback.call((player_id, navi_id)),
@@ -291,6 +314,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.tile_interaction_listeners,
+      &mut self.message_tracker,
       net,
       "handle_tile_interaction",
       |callback| callback.call((player_id, x, y, z)),
@@ -298,9 +322,12 @@ impl PluginInterface for LuaPluginInterface {
   }
 
   fn handle_dialog_response(&mut self, net: &mut Net, player_id: &str, response: u8) {
+    let script_dir = self.message_tracker.pop_message(player_id).unwrap();
+
     handle_event(
       &mut self.scripts,
-      &self.dialog_response_listeners,
+      &[script_dir],
+      &mut self.message_tracker,
       net,
       "handle_player_response",
       |callback| callback.call((player_id, response)),
@@ -311,6 +338,7 @@ impl PluginInterface for LuaPluginInterface {
 fn handle_event<F>(
   scripts: &mut HashMap<std::path::PathBuf, Lua>,
   event_listeners: &[std::path::PathBuf],
+  message_tracker: &mut MessageTracker<std::path::PathBuf>,
   net: &mut Net,
   event_fn_name: &str,
   fn_caller: F,
@@ -319,6 +347,7 @@ fn handle_event<F>(
 {
   let call_lua = || -> rlua::Result<()> {
     let net_ref = RefCell::new(net);
+    let message_tracker_ref = RefCell::new(message_tracker);
 
     // loop over scripts
     for script_dir in event_listeners {
@@ -331,7 +360,13 @@ fn handle_event<F>(
             let globals = lua_ctx.globals();
 
             let api_table = lua_ctx.create_table()?;
-            add_net_api(&api_table, &scope, &net_ref)?;
+            add_net_api(
+              &api_table,
+              &scope,
+              script_dir,
+              &message_tracker_ref,
+              &net_ref,
+            )?;
             globals.set("Net", api_table)?;
 
             if let Ok(func) = globals.get::<_, rlua::Function>(event_fn_name) {
