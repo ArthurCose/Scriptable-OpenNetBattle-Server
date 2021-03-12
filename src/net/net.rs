@@ -2,8 +2,8 @@ use super::client::Client;
 use super::map::Map;
 use super::server::ServerConfig;
 use super::{Area, Asset, AssetData, Navi};
-use crate::packets::{create_asset_stream, PacketShipper, Reliability, ServerPacket};
-use std::collections::{HashMap, HashSet};
+use crate::packets::{create_asset_stream, Reliability, ServerPacket};
+use std::collections::HashMap;
 use std::net::UdpSocket;
 use std::rc::Rc;
 
@@ -537,37 +537,18 @@ impl Net {
     socket_address: std::net::SocketAddr,
     name: String,
   ) -> String {
-    use super::asset::{get_player_animation_path, get_player_texture_path};
-    use uuid::Uuid;
-
-    let id = Uuid::new_v4().to_string();
-
     let area_id = String::from("default");
     let area = self.get_area_mut(&area_id).unwrap();
     let (spawn_x, spawn_y, _) = area.get_map().get_spawn();
 
-    let client = Client {
-      socket_address,
-      packet_shipper: PacketShipper::new(socket_address, self.resend_budget),
-      navi: Navi {
-        id: id.clone(),
-        name,
-        area_id,
-        texture_path: get_player_texture_path(&id),
-        animation_path: get_player_animation_path(&id),
-        x: spawn_x,
-        y: spawn_y,
-        z: 0.0,
-        solid: false,
-      },
-      warp_in: true,
-      ready: false,
-      cached_assets: HashSet::new(),
-      texture_buffer: Vec::new(),
-      animation_buffer: Vec::new(),
-    };
+    let mut client = Client::new(socket_address, name, area_id, self.resend_budget);
+    client.navi.x = spawn_x;
+    client.navi.y = spawn_y;
+    client.navi.z = 0.0;
 
-    self.clients.insert(client.navi.id.clone(), client);
+    let id = client.navi.id.clone();
+
+    self.clients.insert(id.clone(), client);
 
     id
   }
