@@ -156,6 +156,13 @@ Net.set_tile(area_id, x, y, z, tile_gid, flip_h?, flip_v?, rotate?)
 Net.list_objects(area_id) -- object_id[]
 Net.get_object_by_id(area_id, object_id) -- { id, name, type, visible, x, y, z, width, height, rotation, data }?
 Net.get_object_by_name(area_id, name) -- { id, name, type, visible, x, y, z, width, height, rotation, data }?
+-- Net.create_object(area_id, name, x, y, z, width, height, rotation, data) -- object_id
+-- Net.remove_object(area_id, object_id)
+-- Net.set_object_name(area_id, object_id, name)
+-- Net.resize_object(area_id, object_id, width, height)
+-- Net.set_object_rotation(area_id, object_id, rotation)
+-- Net.set_object_visibility(area_id, object_id, visibility)
+-- Net.move_object(area_id, object_id, x, y, z)
 ```
 
 #### Bot API
@@ -205,3 +212,5 @@ Net.transfer_player(player_id, area_id, warp_in?, x?, y?, z?)
 ## Building
 
 This project is built with Rust, so after installing Cargo, you can compile and run the project with `cargo run`.
+
+If you are interested in understanding the source before making changes, check out the [achitecture document](./ARCHITECTURE.md).
