@@ -80,7 +80,7 @@ impl Server {
             .plugin_wrapper
             .tick(&mut net, elapsed_time.as_secs_f32());
 
-          // kick afk clients
+          // kick silent clients
           let mut kick_list = Vec::new();
           let max_silence = std::time::Duration::from_secs(5);
 
@@ -94,7 +94,7 @@ impl Server {
 
           // actually kick clients
           for socket_address in kick_list {
-            self.disconnect_client(&mut net, &socket_address);
+            self.disconnect_client(&mut net, &socket_address, "packet silence");
           }
 
           net.tick();
@@ -116,18 +116,10 @@ impl Server {
           }
 
           if let Some(packet_sorter) = self.packet_sorter_map.get_mut(&socket_address) {
-            if let Ok(packets) = packet_sorter.sort_packet(&socket, headers, packet) {
-              for packet in packets {
-                if self
-                  .handle_packet(&mut net, &socket, socket_address, packet)
-                  .is_err()
-                {
-                  self.disconnect_client(&mut net, &socket_address);
-                  break;
-                }
-              }
-            } else {
-              self.disconnect_client(&mut net, &socket_address);
+            let packets = packet_sorter.sort_packet(&socket, headers, packet);
+
+            for packet in packets {
+              self.handle_packet(&mut net, &socket, socket_address, packet);
             }
           } else {
             // ignoring errors, no packet sorter = never connected
@@ -144,7 +136,7 @@ impl Server {
     socket: &std::net::UdpSocket,
     socket_address: std::net::SocketAddr,
     client_packet: ClientPacket,
-  ) -> std::io::Result<()> {
+  ) {
     if let Some(player_id) = self.player_id_map.get(&socket_address) {
       match client_packet {
         ClientPacket::Ping => {
@@ -155,7 +147,7 @@ impl Server {
           let buf = build_unreliable_packet(&ServerPacket::Pong {
             max_payload_size: self.config.max_payload_size,
           });
-          socket.send_to(&buf, socket_address)?;
+          let _ = socket.send_to(&buf, socket_address);
         }
         ClientPacket::AssetFound {
           path,
@@ -242,7 +234,7 @@ impl Server {
             println!("Received Logout packet from {}", socket_address);
           }
 
-          self.disconnect_client(net, &socket_address);
+          self.disconnect_client(net, &socket_address, "leaving");
         }
         ClientPacket::Position { x, y, z } => {
           if self.config.log_packets {
@@ -345,7 +337,7 @@ impl Server {
           let buf = build_unreliable_packet(&ServerPacket::Pong {
             max_payload_size: self.config.max_payload_size,
           });
-          socket.send_to(&buf, socket_address)?;
+          let _ = socket.send_to(&buf, socket_address);
         }
         ClientPacket::Login {
           username,
@@ -368,11 +360,14 @@ impl Server {
         }
       }
     }
-
-    Ok(())
   }
 
-  fn disconnect_client(&mut self, net: &mut Net, socket_address: &std::net::SocketAddr) {
+  fn disconnect_client(
+    &mut self,
+    net: &mut Net,
+    socket_address: &std::net::SocketAddr,
+    reason: &str,
+  ) {
     if let Some(player_id) = self.player_id_map.remove(&socket_address) {
       self
         .plugin_wrapper
@@ -381,14 +376,14 @@ impl Server {
       net.remove_player(&player_id);
 
       if self.config.log_connections {
-        println!("{} disconnected", player_id);
+        println!("{} disconnected for {}", player_id, reason);
       }
     }
 
     self.packet_sorter_map.remove(socket_address);
 
     if self.config.log_connections {
-      println!("{} disconnected", socket_address);
+      println!("{} disconnected for {}", socket_address, reason);
     }
   }
 }

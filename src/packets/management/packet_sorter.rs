@@ -40,7 +40,7 @@ impl PacketSorter {
     socket: &UdpSocket,
     headers: PacketHeaders,
     packet: ClientPacket,
-  ) -> std::io::Result<Vec<ClientPacket>> {
+  ) -> Vec<ClientPacket> {
     self.last_message_time = std::time::Instant::now();
 
     let packets = match headers.reliability {
@@ -55,7 +55,7 @@ impl PacketSorter {
         }
       }
       Reliability::Reliable => {
-        self.send_ack(socket, &headers)?;
+        self.send_ack(socket, &headers);
 
         if headers.id == self.next_reliable {
           // expected
@@ -82,7 +82,7 @@ impl PacketSorter {
         }
       }
       Reliability::ReliableOrdered => {
-        self.send_ack(socket, &headers)?;
+        self.send_ack(socket, &headers);
 
         if headers.id == self.next_reliable_ordered {
           let mut i = 0;
@@ -140,10 +140,10 @@ impl PacketSorter {
       }
     };
 
-    Ok(packets)
+    packets
   }
 
-  fn send_ack(&self, socket: &UdpSocket, headers: &PacketHeaders) -> std::io::Result<()> {
+  fn send_ack(&self, socket: &UdpSocket, headers: &PacketHeaders) {
     let mut buf = vec![0];
 
     buf.extend(build_packet(&ServerPacket::Ack {
@@ -151,8 +151,6 @@ impl PacketSorter {
       id: headers.id,
     }));
 
-    socket.send_to(&buf, self.socket_address)?;
-
-    Ok(())
+    let _ = socket.send_to(&buf, self.socket_address);
   }
 }
