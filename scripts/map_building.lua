@@ -1,11 +1,13 @@
 function handle_tile_interaction(player_id, x, y, z)
   if x < 0 or y < 0 then return end
 
+  local area_id = Net.get_player_area(player_id)
+  if area_id ~= "test" then return end
+
   x = math.floor(x)
   y = math.floor(y)
   z = math.floor(z)
 
-  local area_id = Net.get_player_area(player_id)
   local tile_gid = Net.get_tile(area_id, x, y, z).gid
 
   if tile_gid == 0 then
