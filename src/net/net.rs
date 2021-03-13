@@ -465,6 +465,9 @@ impl Net {
 
     client.navi.area_id = area_id.to_string();
     client.warp_in = warp_in;
+    client.warp_x = x;
+    client.warp_y = y;
+    client.warp_z = z;
 
     client.packet_shipper.send(
       &self.socket,
@@ -549,10 +552,15 @@ impl Net {
     let area = self.get_area_mut(&area_id).unwrap();
     let (spawn_x, spawn_y, _) = area.get_map().get_spawn();
 
-    let mut client = Client::new(socket_address, name, area_id, self.resend_budget);
-    client.navi.x = spawn_x;
-    client.navi.y = spawn_y;
-    client.navi.z = 0.0;
+    let client = Client::new(
+      socket_address,
+      name,
+      area_id,
+      spawn_x,
+      spawn_y,
+      0.0,
+      self.resend_budget,
+    );
 
     let id = client.navi.id.clone();
 
@@ -736,9 +744,9 @@ impl Net {
         name: client.navi.name.clone(),
         texture_path,
         animation_path,
-        x: client.navi.x,
-        y: client.navi.y,
-        z: client.navi.z,
+        x: client.warp_x,
+        y: client.warp_y,
+        z: client.warp_z,
         solid: client.navi.solid,
         warp_in: client.warp_in,
       };
