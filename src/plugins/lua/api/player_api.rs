@@ -312,5 +312,16 @@ pub fn add_player_api<'a, 'b>(
     )?,
   )?;
 
+  api_table.set(
+    "kick_player",
+    scope.create_function(move |_, (id, reason): (String, String)| {
+      let mut net = net_ref.borrow_mut();
+
+      net.kick_player(&id, &reason);
+
+      Ok(())
+    })?,
+  )?;
+
   Ok(())
 }

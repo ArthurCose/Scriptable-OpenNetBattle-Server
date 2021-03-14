@@ -1,3 +1,4 @@
+use super::boot::Boot;
 use super::client::Client;
 use super::map::Map;
 use super::server::ServerConfig;
@@ -16,6 +17,7 @@ pub struct Net {
   bots: HashMap<String, Navi>,
   assets: HashMap<String, Asset>,
   active_script: usize,
+  kick_list: Vec<Boot>,
 }
 
 impl Net {
@@ -66,6 +68,7 @@ impl Net {
       bots: HashMap::new(),
       assets,
       active_script: 0,
+      kick_list: Vec::new(),
     }
   }
 
@@ -543,6 +546,23 @@ impl Net {
     }
   }
 
+  pub fn kick_player(&mut self, id: &str, reason: &str) {
+    if let Some(client) = self.clients.get(id) {
+      self.kick_list.push(Boot {
+        socket_address: client.socket_address,
+        reason: reason.to_string(),
+      });
+    }
+  }
+
+  pub(super) fn get_kick_list(&self) -> &Vec<Boot> {
+    &self.kick_list
+  }
+
+  pub(super) fn clear_kick_list(&mut self) {
+    &self.kick_list.clear();
+  }
+
   pub(super) fn add_client(
     &mut self,
     socket_address: std::net::SocketAddr,
@@ -761,7 +781,7 @@ impl Net {
     }
   }
 
-  pub fn remove_player(&mut self, id: &str) {
+  pub(super) fn remove_player(&mut self, id: &str) {
     use super::asset;
 
     self.assets.remove(&asset::get_player_texture_path(id));

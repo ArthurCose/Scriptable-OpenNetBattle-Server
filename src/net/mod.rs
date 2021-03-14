@@ -3,6 +3,7 @@ mod net;
 
 mod area;
 pub mod asset;
+mod boot;
 mod client;
 pub mod map;
 mod navi;

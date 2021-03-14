@@ -1,3 +1,4 @@
+use super::boot::Boot;
 use super::plugin_wrapper::PluginWrapper;
 use super::Net;
 use crate::packets::{
@@ -88,13 +89,26 @@ impl Server {
             let last_message = packet_sorter.get_last_message_time();
 
             if last_message.elapsed() > max_silence {
-              kick_list.push(*socket_address)
+              kick_list.push(Boot {
+                socket_address: *socket_address,
+                reason: String::from("packet silence"),
+              });
             }
           }
 
+          kick_list.extend(net.get_kick_list().iter().cloned());
+          net.clear_kick_list();
+
           // actually kick clients
-          for socket_address in kick_list {
-            self.disconnect_client(&mut net, &socket_address, "packet silence");
+          for boot in kick_list {
+            self.disconnect_client(&mut net, &boot.socket_address, &boot.reason);
+
+            // send reason
+            let buf = build_unreliable_packet(&ServerPacket::Kick {
+              reason: boot.reason.clone(),
+            });
+
+            let _ = socket.send_to(&buf, boot.socket_address);
           }
 
           net.tick();

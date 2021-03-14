@@ -206,7 +206,7 @@ Net.quiz_player(player_id, option_a?, option_b?, option_c?, mug_texture_path?, m
 -- Net.initiate_pvp(player_1_id, player_2_id, data)
 Net.transfer_player(player_id, area_id, warp_in?, x?, y?, z?)
 -- Net.transfer_server(player_id, server)
--- Net.kick_player(player_id, reason?)
+Net.kick_player(player_id, reason)
 ```
 
 ## Building
