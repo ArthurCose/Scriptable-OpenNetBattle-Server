@@ -85,7 +85,7 @@ fn main() {
                 .long("player-asset-limit")
                 .help("Sets the file size limit for avatar files (in KiB)")
                 .value_name("SIZE_IN_KiB")
-                .default_value("5120") // 5 MiB - todo: reduce to 1 MiB?
+                .default_value("50")
                 .takes_value(true)
                 .validator(|value| match value.parse::<usize>() {
                     Ok(_) => Ok(()),
