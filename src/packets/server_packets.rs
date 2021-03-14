@@ -154,9 +154,6 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
         AssetData::Audio(_) => {
           buf.push(2);
         }
-        AssetData::SFMLImage(_) => {
-          buf.push(3);
-        }
       }
     }
     ServerPacket::MapUpdate { map_path } => {
@@ -305,7 +302,6 @@ pub fn create_asset_stream<'a>(
     AssetData::Text(data) => data.as_bytes(),
     AssetData::Texture(data) => &data,
     AssetData::Audio(data) => &data,
-    AssetData::SFMLImage(data) => &data,
   };
 
   let mut remaining_bytes = bytes.len();

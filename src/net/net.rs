@@ -587,7 +587,7 @@ impl Net {
     self.set_asset(
       texture_path.clone(),
       Asset {
-        data: AssetData::SFMLImage(texture_data),
+        data: AssetData::Texture(texture_data),
         dependencies: Vec::new(),
         last_modified: 0,
         cachable: false,

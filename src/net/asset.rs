@@ -11,7 +11,6 @@ pub enum AssetData {
   Text(String),
   Texture(Vec<u8>),
   Audio(Vec<u8>),
-  SFMLImage(Vec<u8>),
 }
 
 pub fn get_player_texture_path(player_id: &str) -> String {
