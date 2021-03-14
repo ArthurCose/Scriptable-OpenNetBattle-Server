@@ -92,6 +92,18 @@ fn main() {
                     Err(_) => Err(String::from("Invalid file size")),
                 }),
         )
+        .arg(
+            clap::Arg::with_name("avatar_dimensions_limit")
+                .long("avatar-dimensions-limit")
+                .help("Sets the limit for dimensions of a single avatar frame")
+                .value_name("SIDE_LENGTH")
+                .default_value("80")
+                .takes_value(true)
+                .validator(|value| match value.parse::<u32>() {
+                    Ok(_) => Ok(()),
+                    Err(_) => Err(String::from("Invalid length")),
+                }),
+        )
         .get_matches();
 
     let config = net::ServerConfig {
@@ -104,6 +116,9 @@ fn main() {
         player_asset_limit: unwrap_and_parse_or_default::<usize>(
             matches.value_of("player_asset_limit"),
         ) * 1024,
+        avatar_dimensions_limit: unwrap_and_parse_or_default(
+            matches.value_of("avatar_dimensions_limit"),
+        ),
     };
 
     let mut server = net::Server::new(config);

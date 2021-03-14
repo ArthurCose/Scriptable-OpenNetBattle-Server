@@ -12,6 +12,7 @@ pub struct Net {
   socket: Rc<UdpSocket>,
   max_payload_size: usize,
   resend_budget: usize,
+  avatar_dimensions_limit: u32,
   areas: HashMap<String, Area>,
   clients: HashMap<String, Client>,
   bots: HashMap<String, Navi>,
@@ -63,6 +64,7 @@ impl Net {
       socket,
       max_payload_size: server_config.max_payload_size,
       resend_budget: server_config.resend_budget,
+      avatar_dimensions_limit: server_config.avatar_dimensions_limit,
       areas,
       clients: HashMap::new(),
       bots: HashMap::new(),
@@ -589,13 +591,11 @@ impl Net {
     id
   }
 
-  pub(super) fn store_player_avatar(&mut self, player_id: &str) -> (String, String) {
+  pub(super) fn store_player_avatar(&mut self, player_id: &str) -> Option<(String, String)> {
     use super::asset;
+    use super::client::find_longest_frame_length;
 
     let client = self.clients.get_mut(player_id).unwrap();
-
-    let texture_path = asset::get_player_texture_path(player_id);
-    let animation_path = asset::get_player_animation_path(player_id);
 
     let texture_data = client.texture_buffer.clone();
     let animation_data = String::from_utf8_lossy(&client.animation_buffer).into_owned();
@@ -603,6 +603,20 @@ impl Net {
     // reset buffers to store new data later
     client.animation_buffer.clear();
     client.texture_buffer.clear();
+
+    if find_longest_frame_length(&animation_data) > self.avatar_dimensions_limit {
+      let reason = format!(
+        "Avatar has frames larger than limit {}x{}",
+        self.avatar_dimensions_limit, self.avatar_dimensions_limit
+      );
+
+      self.kick_player(player_id, &reason);
+
+      return None;
+    }
+
+    let texture_path = asset::get_player_texture_path(player_id);
+    let animation_path = asset::get_player_animation_path(player_id);
 
     self.set_asset(
       texture_path.clone(),
@@ -624,7 +638,7 @@ impl Net {
       },
     );
 
-    (texture_path, animation_path)
+    Some((texture_path, animation_path))
   }
 
   pub(super) fn connect_client(&mut self, player_id: &str) {

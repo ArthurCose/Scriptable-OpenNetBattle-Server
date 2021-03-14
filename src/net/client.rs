@@ -68,3 +68,49 @@ impl Client {
     self.message_queue.pop_back()
   }
 }
+
+pub(super) fn find_longest_frame_length(animation_data: &str) -> u32 {
+  animation_data
+    .lines()
+    .map(|line| line.trim())
+    .filter(|line| line.starts_with("frame"))
+    .fold(0, |longest_length, line| {
+      let width: i32 = value_of(line, "w").unwrap_or_default();
+      let width = width.wrapping_abs() as u32;
+
+      if width > longest_length {
+        return width;
+      }
+
+      let height: i32 = value_of(line, "h").unwrap_or_default();
+      let height = height.wrapping_abs() as u32;
+
+      if height > longest_length {
+        return height;
+      }
+
+      longest_length
+    })
+}
+
+fn value_of<T>(line: &str, key: &str) -> Option<T>
+where
+  T: std::str::FromStr,
+{
+  let key_index = line.find(key)?;
+
+  // based on ValueOf in bnAnimation.cpp
+  // skips the = and ", but technically could be any two values here
+  let value_start_index = key_index + key.len() + 2;
+
+  if value_start_index >= line.len() {
+    return None;
+  }
+
+  let value_slice = &line[value_start_index..];
+
+  let value_end_index = value_slice.find('"')?;
+  let value_slice = &value_slice[..value_end_index];
+
+  value_slice.parse().ok()
+}

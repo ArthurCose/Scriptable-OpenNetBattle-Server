@@ -17,6 +17,7 @@ pub struct ServerConfig {
   pub max_payload_size: usize,
   pub resend_budget: usize,
   pub player_asset_limit: usize,
+  pub avatar_dimensions_limit: u32,
 }
 
 pub struct Server {
@@ -282,16 +283,16 @@ impl Server {
             println!("Received AvatarChange packet from {}", socket_address);
           }
 
-          let (texture_path, animation_path) = net.store_player_avatar(player_id);
+          if let Some((texture_path, animation_path)) = net.store_player_avatar(player_id) {
+            self.plugin_wrapper.handle_player_avatar_change(
+              net,
+              player_id,
+              &texture_path,
+              &animation_path,
+            );
 
-          self.plugin_wrapper.handle_player_avatar_change(
-            net,
-            player_id,
-            &texture_path,
-            &animation_path,
-          );
-
-          net.set_player_avatar(player_id, texture_path, animation_path);
+            net.set_player_avatar(player_id, texture_path, animation_path);
+          }
         }
         ClientPacket::Emote { emote_id } => {
           if self.config.log_packets {
