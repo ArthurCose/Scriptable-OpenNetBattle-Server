@@ -86,7 +86,11 @@ impl Net {
           if path.is_dir() {
             Net::load_assets_from_dir(assets, &path);
           } else {
-            let path_string = String::from("/server/") + path.to_str().unwrap_or_default();
+            let mut path_string = String::from("/server/") + path.to_str().unwrap_or_default();
+
+            // adjust windows paths
+            path_string = path_string.replace('\\', "/");
+
             assets.insert(path_string, load_asset(path));
           }
         }
