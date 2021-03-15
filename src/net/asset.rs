@@ -138,17 +138,15 @@ pub(super) fn translate_tsx(path: &std::path::PathBuf, data: &str) -> Option<Str
 }
 
 pub(super) fn resolve_tsx_dependencies(data: &str) -> Vec<String> {
-  let mut dependencies = Vec::new();
-
   if let Ok(tileset_element) = data.parse::<minidom::Element>() {
-    for child in tileset_element.children() {
-      if child.name() == "image" {
-        if let Some(source) = child.attr("source") {
-          dependencies.push(source.to_string());
-        }
-      }
-    }
+    return tileset_element
+      .children()
+      .filter(|child| child.name() == "image")
+      .map(|child| child.attr("source").unwrap_or_default())
+      .filter(|source| source.starts_with("/server"))
+      .map(|source| source.to_string())
+      .collect();
   }
 
-  dependencies
+  vec![]
 }
