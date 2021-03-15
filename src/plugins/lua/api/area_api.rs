@@ -140,6 +140,83 @@ pub fn add_area_api<'a, 'b>(
   )?;
 
   api_table.set(
+    "get_custom_background",
+    scope.create_function(move |lua_ctx, area_id: String| {
+      let net = net_ref.borrow();
+
+      if let Some(area) = net.get_area(&area_id) {
+        let map = area.get_map();
+
+        let table = lua_ctx.create_table()?;
+
+        table.set(
+          "texturePath",
+          map.get_custom_background_texture_path().clone(),
+        )?;
+
+        table.set(
+          "animationPath",
+          map.get_custom_background_animation_path().clone(),
+        )?;
+
+        Ok(table)
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
+    "get_custom_background_velocity",
+    scope.create_function(move |lua_ctx, area_id: String| {
+      let net = net_ref.borrow();
+
+      if let Some(area) = net.get_area(&area_id) {
+        let map = area.get_map();
+
+        let (vel_x, vel_y) = map.get_custom_background_velocity();
+
+        let table = lua_ctx.create_table()?;
+        table.set("x", vel_x)?;
+        table.set("y", vel_y)?;
+
+        Ok(table)
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
+    "set_custom_background",
+    scope.create_function(
+      move |_,
+            (area_id, texture_path, animation_path, vel_x, vel_y): (
+        String,
+        String,
+        Option<String>,
+        Option<f32>,
+        Option<f32>,
+      )| {
+        let mut net = net_ref.borrow_mut();
+
+        if let Some(area) = net.get_area_mut(&area_id) {
+          let map = area.get_map_mut();
+
+          map.set_background_name(String::from("custom"));
+          map.set_custom_background_texture_path(texture_path);
+          map.set_custom_background_animation_path(animation_path.unwrap_or_default());
+          map.set_custom_background_velocity(vel_x.unwrap_or_default(), vel_y.unwrap_or_default());
+
+          Ok(())
+        } else {
+          Err(create_area_error(&area_id))
+        }
+      },
+    )?,
+  )?;
+
+  api_table.set(
     "get_spawn_position",
     scope.create_function(move |lua_ctx, area_id: String| {
       let net = net_ref.borrow();

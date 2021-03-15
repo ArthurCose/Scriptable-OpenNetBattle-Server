@@ -28,6 +28,7 @@ Paths
     - Generated from areas and updated every tick.
     - Stored as `[area id].txt`
 - Paths not starting with `/server` are treated as paths to client files. Files of interest are available in `resources/`
+- PATHS ARE CASE SENSITIVE OUT OF WINDOWS, also avoid `\` as that's Windows specific
 
 ## Areas
 
@@ -82,12 +83,16 @@ Map:
     - virus
     - judge
     - secret
-    - custom (todo)
-- BackgroundPath: string
+    - custom
+  - Case insensitive
+- Background Texture: string
   - Requires "custom" Background
 - Background Animation: string
   - Requires "custom" Background
   - Path to Background .animation file
+  - One animation state "BG"
+    - First frame of this animation determines background repetition
+  - Excluding this will use texture size for background repetition
 - Background Vel X: int
   - Requires "custom" Background
 - Background Vel Y: int
@@ -145,7 +150,9 @@ Net.get_song(area_id) -- song_path
 Net.set_song(area_id, song_path)
 Net.get_background_name(area_id) -- background_name
 Net.set_background(area_id, background_name)
--- Net.set_custom_background(area_id, texture_path, animation_path, vel_x?, vel_y?)
+Net.get_custom_background(area_id) -- { texturePath, animationPath }
+Net.get_custom_background_velocity(area_id) -- { x, y }
+Net.set_custom_background(area_id, texture_path, animation_path?, vel_x?, vel_y?)
 Net.get_spawn_position(area_id) -- { x, y, z }
 Net.set_spawn_position(area_id, x, y, z)
 Net.list_tilesets(area_id) -- tileset_path[]
@@ -163,6 +170,7 @@ Net.get_object_by_name(area_id, name) -- { id, name, type, visible, x, y, z, wid
 -- Net.set_object_rotation(area_id, object_id, rotation)
 -- Net.set_object_visibility(area_id, object_id, visibility)
 -- Net.move_object(area_id, object_id, x, y, z)
+-- Net.save_area(area_id)
 ```
 
 #### Bot API

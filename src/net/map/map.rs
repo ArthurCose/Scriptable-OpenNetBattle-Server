@@ -12,6 +12,10 @@ pub struct TilesetInfo {
 pub struct Map {
   name: String,
   background_name: String,
+  background_texture_path: String,
+  background_animation_path: String,
+  background_vel_x: f32,
+  background_vel_y: f32,
   song_path: String,
   width: usize,
   height: usize,
@@ -33,6 +37,10 @@ impl Map {
     let mut map = Map {
       name: String::new(),
       background_name: String::new(),
+      background_texture_path: String::new(),
+      background_animation_path: String::new(),
+      background_vel_x: 0.0,
+      background_vel_y: 0.0,
       song_path: String::new(),
       width: 0,
       height: 0,
@@ -77,6 +85,18 @@ impl Map {
               }
               "Background" => {
                 map.background_name = value;
+              }
+              "Background Texture" => {
+                map.background_texture_path = value;
+              }
+              "Background Animation" => {
+                map.background_animation_path = value;
+              }
+              "Background Vel X" => {
+                map.background_vel_x = value.parse().unwrap_or_default();
+              }
+              "Background Vel Y" => {
+                map.background_vel_y = value.parse().unwrap_or_default();
               }
               "Song" => {
                 map.song_path = value;
@@ -168,6 +188,34 @@ impl Map {
     self.cached = false;
   }
 
+  pub fn get_custom_background_texture_path(&self) -> &String {
+    &self.background_texture_path
+  }
+
+  pub fn set_custom_background_texture_path(&mut self, path: String) {
+    self.background_texture_path = path;
+    self.cached = false;
+  }
+
+  pub fn get_custom_background_animation_path(&self) -> &String {
+    &self.background_animation_path
+  }
+
+  pub fn set_custom_background_animation_path(&mut self, path: String) {
+    self.background_animation_path = path;
+    self.cached = false;
+  }
+
+  pub fn get_custom_background_velocity(&self) -> (f32, f32) {
+    (self.background_vel_x, self.background_vel_y)
+  }
+
+  pub fn set_custom_background_velocity(&mut self, x: f32, y: f32) {
+    self.background_vel_x = x;
+    self.background_vel_y = y;
+    self.cached = false;
+  }
+
   pub fn get_width(&self) -> usize {
     self.width
   }
@@ -234,6 +282,10 @@ impl Map {
             <properties>\
               <property name=\"Name\" value=\"{}\"/>\
               <property name=\"Background\" value=\"{}\"/>\
+              <property name=\"Background Texture\" value=\"{}\"/>\
+              <property name=\"Background Animation\" value=\"{}\"/>\
+              <property name=\"Background Vel X\" value=\"{}\"/>\
+              <property name=\"Background Vel Y\" value=\"{}\"/>\
               <property name=\"Song\" value=\"{}\"/>\
             </properties>\
         ",
@@ -245,6 +297,10 @@ impl Map {
         self.next_object_id,
         self.name,
         self.background_name,
+        self.background_texture_path,
+        self.background_animation_path,
+        self.background_vel_x,
+        self.background_vel_y,
         self.song_path
       )];
 
@@ -287,6 +343,8 @@ impl Map {
     let tileset_paths = self.tilesets.iter().map(|tileset| &tileset.path);
 
     let dependencies = tileset_paths
+      .chain(std::iter::once(&self.background_texture_path))
+      .chain(std::iter::once(&self.background_animation_path))
       .chain(std::iter::once(&self.song_path))
       .filter(|path| path.starts_with("/server/")) // provided by server
       .cloned()
