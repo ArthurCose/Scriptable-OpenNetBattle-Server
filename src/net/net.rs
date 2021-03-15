@@ -562,7 +562,7 @@ impl Net {
   }
 
   pub(super) fn clear_kick_list(&mut self) {
-    &self.kick_list.clear();
+    self.kick_list.clear();
   }
 
   pub(super) fn add_client(
