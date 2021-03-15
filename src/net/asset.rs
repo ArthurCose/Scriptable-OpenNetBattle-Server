@@ -112,21 +112,22 @@ pub(super) fn translate_tsx(path: &std::path::PathBuf, data: &str) -> Option<Str
   let mut tileset_element = data.parse::<minidom::Element>().ok()?;
 
   for child in tileset_element.children_mut() {
-    if child.name() == "image" {
-      let source = path_base.join(child.attr("source")?);
-      let normalized_source = normalize_path(&source);
-
-      if normalized_source.starts_with("assets") {
-        // path did not escape server folders
-        child.set_attr(
-          "source",
-          root_path
-            .join(normalized_source)
-            .to_string_lossy()
-            .into_owned(),
-        );
-      }
+    if child.name() != "image" {
+      continue;
     }
+
+    let source = path_base.join(child.attr("source")?);
+    let mut normalized_source = normalize_path(&source);
+
+    if normalized_source.starts_with("assets") {
+      // path did not escape server folders
+      normalized_source = root_path.join(normalized_source);
+    }
+
+    // adjust windows paths
+    let corrected_source = normalized_source.to_string_lossy().replace('\\', "/");
+
+    child.set_attr("source", corrected_source);
   }
 
   let mut output: Vec<u8> = Vec::new();
