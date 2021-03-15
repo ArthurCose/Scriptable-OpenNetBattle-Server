@@ -670,12 +670,14 @@ impl Net {
 
     self.send_area(player_id, &area_id);
 
-    // todo: send position
+    let client = self.clients.get_mut(player_id).unwrap();
+
     let packet = ServerPacket::Login {
       ticket: player_id.to_string(),
+      spawn_x: client.warp_x,
+      spawn_y: client.warp_y,
+      spawn_z: client.warp_z,
     };
-
-    let client = self.clients.get_mut(player_id).unwrap();
 
     client
       .packet_shipper

@@ -15,6 +15,9 @@ pub enum ServerPacket<'a> {
   },
   Login {
     ticket: String,
+    spawn_x: f32,
+    spawn_y: f32,
+    spawn_z: f32,
   },
   Kick {
     reason: String,
@@ -128,9 +131,17 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       buf.push(*reliability);
       write_u64(&mut buf, *id);
     }
-    ServerPacket::Login { ticket } => {
+    ServerPacket::Login {
+      ticket,
+      spawn_x,
+      spawn_y,
+      spawn_z,
+    } => {
       write_u16(&mut buf, 2);
       write_string(&mut buf, ticket);
+      write_f32(&mut buf, *spawn_x);
+      write_f32(&mut buf, *spawn_y);
+      write_f32(&mut buf, *spawn_z);
     }
     ServerPacket::Kick { reason } => {
       write_u16(&mut buf, 3);
