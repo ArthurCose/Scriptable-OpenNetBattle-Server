@@ -27,27 +27,28 @@ async fn listen_loop(
 
     let wrapped_packet = async_socket.recv_from(&mut buf).await;
 
-    match wrapped_packet {
-      Ok((number_of_bytes, src_addr)) => {
-        let filled_buf = &buf[..number_of_bytes];
+    if wrapped_packet.is_err() {
+      // don't bring down the whole server over one "connection"
+      continue;
+    }
 
-        if log_packets {
-          println!("Received packet from {}", src_addr);
-        }
+    let (number_of_bytes, src_addr) = wrapped_packet.unwrap();
+    let filled_buf = &buf[..number_of_bytes];
 
-        if let Some((headers, packet)) = parse_client_packet(&filled_buf) {
-          tx.send(ThreadMessage::ClientPacket {
-            socket_address: src_addr,
-            headers,
-            packet,
-          })
-          .unwrap();
-        } else {
-          println!("Received unknown packet from {}", src_addr);
-          println!("{:?}", filled_buf);
-        }
-      }
-      Err(err) => panic!("{}", err),
+    if log_packets {
+      println!("Received packet from {}", src_addr);
+    }
+
+    if let Some((headers, packet)) = parse_client_packet(&filled_buf) {
+      tx.send(ThreadMessage::ClientPacket {
+        socket_address: src_addr,
+        headers,
+        packet,
+      })
+      .unwrap();
+    } else {
+      println!("Received unknown packet from {}", src_addr);
+      println!("{:?}", filled_buf);
     }
   }
 }
