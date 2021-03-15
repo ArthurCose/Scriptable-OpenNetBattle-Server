@@ -110,6 +110,11 @@ function tick(delta_time)
 function handle_player_connect(player_id) -- player connects to the server (transfers will change initial area)
 function handle_player_join(player_id) -- player enters their first area after connecting
 function handle_player_transfer(player_id) -- player changes area
+function handle_player_emote(player_id, emote)
+function handle_object_interaction(player_id, object)
+function handle_navi_interaction(player_id, navi_id) -- navi_id is a player or bot id
+function handle_tile_interaction(player_id, x, y, z)
+function handle_player_response(player_id, response) -- response is an index
 
 -- For the following functions: internal values are not set until after execution
 -- this means Players.get_player_position(id) will provide the old position of the player, etc
@@ -117,11 +122,6 @@ function handle_player_transfer(player_id) -- player changes area
 function handle_player_disconnect(player_id)
 function handle_player_move(player_id, x, y, z)
 function handle_player_avatar_change(player_id, texture_path, animation_path)
-function handle_player_emote(player_id, emote)
-function handle_object_interaction(player_id, object)
-function handle_navi_interaction(player_id, navi_id) -- navi_id is a player or bot id
-function handle_tile_interaction(player_id, x, y, z)
-function handle_player_response(player_id, response) -- response is an index
 -- function handle_battle_completion(player_id, results) -- results = { status: "won" | "loss" | "ran", rank? }
 ```
 
