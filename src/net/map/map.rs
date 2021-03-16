@@ -129,9 +129,12 @@ impl Map {
             .map(|value| value.trim().parse().unwrap_or_default())
             .collect();
 
-          map
-            .layers
-            .push(MapLayer::new(id, name, map.width, map.height, data));
+          let mut layer = MapLayer::new(id, name, map.width, map.height, data);
+
+          let visible = child.attr("visible").unwrap_or_default() != "0";
+          layer.set_visible(visible);
+
+          map.layers.push(layer);
         }
         "objectgroup" => {
           for object_element in child.children() {

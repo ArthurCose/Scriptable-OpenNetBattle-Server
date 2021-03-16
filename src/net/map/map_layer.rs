@@ -6,6 +6,7 @@ pub struct MapLayer {
   data: Vec<u32>, // row * width + col
   width: usize,
   height: usize,
+  visible: bool,
   cached: bool,
   cached_string: String,
 }
@@ -18,9 +19,19 @@ impl MapLayer {
       data,
       width,
       height,
+      visible: true,
       cached: false,
       cached_string: String::new(),
     }
+  }
+
+  #[allow(dead_code)]
+  pub fn is_visible(&self) -> bool {
+    self.visible
+  }
+
+  pub fn set_visible(&mut self, visible: bool) {
+    self.visible = visible;
   }
 
   pub fn get_tile(&self, x: usize, y: usize) -> Tile {
@@ -42,6 +53,8 @@ impl MapLayer {
 
   pub fn render(&mut self) -> String {
     if !self.cached {
+      let visible_str = if !self.visible { " visible=\"0\"" } else { "" };
+
       let csv = self
         .data
         .chunks(self.width)
@@ -57,11 +70,11 @@ impl MapLayer {
 
       self.cached_string = format!(
         "\
-          <layer id=\"{}\" name=\"{}\" width=\"{}\" height=\"{}\">\
+          <layer id=\"{}\" name=\"{}\" width=\"{}\" height=\"{}\"{}>\
             <data encoding=\"csv\">{}</data>\
           </layer>\
         ",
-        self.id, self.name, self.width, self.height, csv
+        self.id, self.name, self.width, self.height, visible_str, csv
       );
       self.cached = true;
     }
