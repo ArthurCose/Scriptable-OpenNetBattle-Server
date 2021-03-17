@@ -1,6 +1,6 @@
 use super::super::Asset;
 use super::map_layer::MapLayer;
-use super::map_object::MapObject;
+use super::map_object::{MapObject, MapObjectData};
 use super::Tile;
 use crate::helpers::unwrap_and_parse_or_default;
 
@@ -138,8 +138,7 @@ impl Map {
         }
         "objectgroup" => {
           for object_element in child.children() {
-            let mut map_object = MapObject::from(object_element, scale_x, scale_y);
-            map_object.z = object_layers as f32;
+            let map_object = MapObject::from(object_element, object_layers, scale_x, scale_y);
 
             if map_object.name == "Home Warp" {
               map.spawn_x = map_object.x + map_object.height / 2.0;
@@ -269,6 +268,92 @@ impl Map {
     self.objects.iter().find(|&o| o.name == name)
   }
 
+  pub fn create_object(
+    &mut self,
+    name: String,
+    object_type: String,
+    x: f32,
+    y: f32,
+    layer: usize,
+    width: f32,
+    height: f32,
+    rotation: f32,
+    data: MapObjectData,
+  ) -> u32 {
+    let id = self.next_object_id;
+    let map_object = MapObject {
+      id,
+      name,
+      object_type,
+      x,
+      y,
+      visible: true,
+      layer,
+      width,
+      height,
+      rotation,
+      data,
+    };
+
+    self.objects.push(map_object);
+
+    self.next_object_id += 1;
+    self.cached = false;
+
+    id
+  }
+
+  pub fn remove_object(&mut self, id: u32) {
+    if let Some(index) = self.objects.iter().position(|object| object.id == id) {
+      self.objects.remove(index);
+
+      self.cached = false;
+    }
+  }
+
+  pub fn set_object_name(&mut self, id: u32, name: String) {
+    if let Some(object) = self.objects.iter_mut().find(|object| object.id == id) {
+      object.name = name;
+
+      self.cached = false;
+    }
+  }
+
+  pub fn resize_object(&mut self, id: u32, width: f32, height: f32) {
+    if let Some(object) = self.objects.iter_mut().find(|object| object.id == id) {
+      object.width = width;
+      object.height = height;
+
+      self.cached = false;
+    }
+  }
+
+  pub fn set_object_rotation(&mut self, id: u32, rotation: f32) {
+    if let Some(object) = self.objects.iter_mut().find(|object| object.id == id) {
+      object.rotation = rotation;
+
+      self.cached = false;
+    }
+  }
+
+  pub fn set_object_visibility(&mut self, id: u32, visibility: bool) {
+    if let Some(object) = self.objects.iter_mut().find(|object| object.id == id) {
+      object.visible = visibility;
+
+      self.cached = false;
+    }
+  }
+
+  pub fn move_object(&mut self, id: u32, x: f32, y: f32, layer: usize) {
+    if let Some(object) = self.objects.iter_mut().find(|object| object.id == id) {
+      object.x = x;
+      object.y = y;
+      object.layer = layer;
+
+      self.cached = false;
+    }
+  }
+
   pub fn is_dirty(&self) -> bool {
     !self.cached
   }
@@ -320,11 +405,9 @@ impl Map {
       for layer_index in 0..self.layers.len() {
         text.push(self.layers[layer_index].render());
 
-        let layer_float = layer_index as f32;
-
         text.push(String::from("<objectgroup>"));
         for object in &mut self.objects {
-          if object.z >= layer_float && object.z < layer_float + 1.0 {
+          if object.layer >= layer_index && object.layer < layer_index + 1 {
             text.push(object.render(scale_x, scale_y));
           }
         }

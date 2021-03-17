@@ -160,17 +160,22 @@ Net.get_tileset(area_id, tileset_path) -- { path, firstGid }?
 Net.get_tileset_for_tile(area_id, tile_gid) -- { path, firstGid }?
 Net.get_tile(area_id, x, y, z) -- { gid, flippedHorizontally, flippedVertically, rotated }
 Net.set_tile(area_id, x, y, z, tile_gid, flip_h?, flip_v?, rotate?)
+-- Net.save_area(area_id)
+```
+
+#### Object API
+
+```lua
 Net.list_objects(area_id) -- object_id[]
 Net.get_object_by_id(area_id, object_id) -- { id, name, type, visible, x, y, z, width, height, rotation, data }?
 Net.get_object_by_name(area_id, name) -- { id, name, type, visible, x, y, z, width, height, rotation, data }?
--- Net.create_object(area_id, name, x, y, z, width, height, rotation, data) -- object_id
--- Net.remove_object(area_id, object_id)
--- Net.set_object_name(area_id, object_id, name)
--- Net.resize_object(area_id, object_id, width, height)
--- Net.set_object_rotation(area_id, object_id, rotation)
--- Net.set_object_visibility(area_id, object_id, visibility)
--- Net.move_object(area_id, object_id, x, y, z)
--- Net.save_area(area_id)
+Net.create_object(area_id, name, x, y, layer, width, height, rotation, data) -- object_id
+Net.remove_object(area_id, object_id)
+Net.set_object_name(area_id, object_id, name)
+Net.resize_object(area_id, object_id, width, height)
+Net.set_object_rotation(area_id, object_id, rotation)
+Net.set_object_visibility(area_id, object_id, visibility)
+Net.move_object(area_id, object_id, x, y, layer)
 ```
 
 #### Bot API

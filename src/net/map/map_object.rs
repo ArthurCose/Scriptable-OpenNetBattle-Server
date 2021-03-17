@@ -8,7 +8,7 @@ pub struct MapObject {
   pub visible: bool,
   pub x: f32,
   pub y: f32,
-  pub z: f32,
+  pub layer: usize,
   pub width: f32,
   pub height: f32,
   pub rotation: f32,
@@ -24,7 +24,7 @@ pub enum MapObjectData {
 }
 
 impl MapObject {
-  pub fn from(element: &minidom::Element, scale_x: f32, scale_y: f32) -> MapObject {
+  pub fn from(element: &minidom::Element, layer: usize, scale_x: f32, scale_y: f32) -> MapObject {
     let name = element.attr("name").unwrap_or_default().to_string();
     let object_type = element.attr("type").unwrap_or_default().to_string();
     let visible: bool = element.attr("visible").unwrap_or_default() != "0";
@@ -75,7 +75,7 @@ impl MapObject {
       visible,
       x,
       y,
-      z: 0.0,
+      layer,
       width,
       height,
       rotation,
