@@ -4,11 +4,13 @@ use super::map_object::{MapObject, MapObjectData};
 use super::Tile;
 use crate::helpers::unwrap_and_parse_or_default;
 
+#[derive(Clone)]
 pub struct TilesetInfo {
   pub first_gid: u32,
   pub path: String,
 }
 
+#[derive(Clone)]
 pub struct Map {
   name: String,
   background_name: String,

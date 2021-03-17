@@ -24,6 +24,34 @@ pub fn add_area_api<'a, 'b>(
   )?;
 
   api_table.set(
+    "clone_area",
+    scope.create_function(move |_, (area_id, new_id): (String, String)| {
+      let mut net = net_ref.borrow_mut();
+
+      if let Some(area) = net.get_area(&area_id) {
+        let map = area.get_map().clone();
+
+        net.add_area(new_id, map);
+
+        Ok(())
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
+    "remove_area",
+    scope.create_function(move |_, area_id: String| {
+      let mut net = net_ref.borrow_mut();
+
+      net.remove_area(&area_id);
+
+      Ok(())
+    })?,
+  )?;
+
+  api_table.set(
     "get_width",
     scope.create_function(move |_, area_id: String| {
       let mut net = net_ref.borrow_mut();

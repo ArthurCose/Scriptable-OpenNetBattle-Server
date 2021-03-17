@@ -98,18 +98,6 @@ impl Net {
     }
   }
 
-  pub fn get_areas(&self) -> impl std::iter::Iterator<Item = &Area> {
-    self.areas.values()
-  }
-
-  pub fn get_area(&self, area_id: &str) -> Option<&Area> {
-    self.areas.get(area_id)
-  }
-
-  pub fn get_area_mut(&mut self, area_id: &str) -> Option<&mut Area> {
-    self.areas.get_mut(area_id)
-  }
-
   #[allow(dead_code)]
   pub fn get_asset(&self, path: &str) -> Option<&Asset> {
     self.assets.get(path)
@@ -125,6 +113,34 @@ impl Net {
       &mut self.clients,
       &path,
     );
+  }
+
+  pub fn get_areas(&self) -> impl std::iter::Iterator<Item = &Area> {
+    self.areas.values()
+  }
+
+  pub fn get_area(&self, area_id: &str) -> Option<&Area> {
+    self.areas.get(area_id)
+  }
+
+  pub fn get_area_mut(&mut self, area_id: &str) -> Option<&mut Area> {
+    self.areas.get_mut(area_id)
+  }
+
+  pub fn add_area(&mut self, id: String, map: Map) {
+    self.areas.insert(id.clone(), Area::new(id, map));
+  }
+
+  pub fn remove_area(&mut self, id: &str) {
+    let area_optional = self.areas.remove(id);
+
+    if let Some(area) = area_optional {
+      let player_ids = area.get_connected_players();
+
+      for player_id in player_ids {
+        self.kick_player(player_id, "area destroyed");
+      }
+    }
   }
 
   #[allow(dead_code)]

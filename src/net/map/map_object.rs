@@ -1,6 +1,7 @@
 use super::Tile;
 use crate::helpers::unwrap_and_parse_or_default;
 
+#[derive(Clone)]
 pub struct MapObject {
   pub id: u32,
   pub name: String,
@@ -15,6 +16,7 @@ pub struct MapObject {
   pub data: MapObjectData,
 }
 
+#[derive(Clone)]
 pub enum MapObjectData {
   Point,
   Ellipse,

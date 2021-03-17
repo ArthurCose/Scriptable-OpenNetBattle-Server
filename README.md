@@ -147,6 +147,8 @@ Interactions with the cyberworld are performed through functions attached to a g
 
 Net.list_areas() -- area_id[]
 -- Net.create_area(area_id)
+Net.clone_area(area_id, new_area_id)
+Net.remove_area(area_id)
 Net.get_width(area_id)
 Net.get_height(area_id)
 Net.get_area_name(area_id)

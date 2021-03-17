@@ -1,5 +1,6 @@
 use super::Tile;
 
+#[derive(Clone)]
 pub struct MapLayer {
   id: u32,
   name: String,

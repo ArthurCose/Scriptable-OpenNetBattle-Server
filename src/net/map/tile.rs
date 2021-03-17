@@ -1,4 +1,4 @@
-#[derive(PartialEq, Eq, Default)]
+#[derive(PartialEq, Eq, Clone, Default)]
 pub struct Tile {
   pub gid: u32,
   pub flipped_horizontally: bool,
