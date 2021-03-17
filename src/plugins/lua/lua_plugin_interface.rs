@@ -266,26 +266,47 @@ impl PluginInterface for LuaPluginInterface {
     player_id: &str,
     texture_path: &str,
     animation_path: &str,
-  ) {
+  ) -> bool {
+    let mut prevent_default = false;
+
     handle_event(
       &mut self.scripts,
       &self.player_avatar_change_listeners,
       &mut self.message_tracker,
       net,
       "handle_player_avatar_change",
-      |callback| callback.call((player_id, texture_path, animation_path)),
+      |callback| {
+        let return_value: Option<bool> =
+          callback.call((player_id, texture_path, animation_path))?;
+
+        prevent_default |= return_value.unwrap_or_default();
+
+        Ok(())
+      },
     );
+
+    prevent_default
   }
 
-  fn handle_player_emote(&mut self, net: &mut Net, player_id: &str, emote_id: u8) {
+  fn handle_player_emote(&mut self, net: &mut Net, player_id: &str, emote_id: u8) -> bool {
+    let mut prevent_default = false;
+
     handle_event(
       &mut self.scripts,
       &self.player_emote_listeners,
       &mut self.message_tracker,
       net,
       "handle_player_emote",
-      |callback| callback.call((player_id, emote_id)),
+      |callback| {
+        let return_value: Option<bool> = callback.call((player_id, emote_id))?;
+
+        prevent_default |= return_value.unwrap_or_default();
+
+        Ok(())
+      },
     );
+
+    prevent_default
   }
 
   fn handle_object_interaction(&mut self, net: &mut Net, player_id: &str, tile_object_id: u32) {
@@ -343,8 +364,10 @@ fn handle_event<F>(
   event_fn_name: &str,
   fn_caller: F,
 ) where
-  F: for<'lua> Fn(rlua::Function<'lua>) -> rlua::Result<()>,
+  F: for<'lua> FnMut(rlua::Function<'lua>) -> rlua::Result<()>,
 {
+  let mut fn_caller = fn_caller;
+
   let call_lua = || -> rlua::Result<()> {
     let net_ref = RefCell::new(net);
     let message_tracker_ref = RefCell::new(message_tracker);

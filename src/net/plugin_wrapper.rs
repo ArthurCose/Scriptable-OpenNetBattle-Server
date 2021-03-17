@@ -18,16 +18,20 @@ impl PluginWrapper {
 
   fn wrap_call<C>(&mut self, i: usize, net: &mut Net, call: C)
   where
-    C: Fn(&mut Box<dyn PluginInterface>, &mut Net),
+    C: FnMut(&mut Box<dyn PluginInterface>, &mut Net),
   {
+    let mut call = call;
+
     net.set_active_script(i);
     call(&mut self.plugin_interfaces[i], net);
   }
 
   fn wrap_calls<C>(&mut self, net: &mut Net, call: C)
   where
-    C: Fn(&mut Box<dyn PluginInterface>, &mut Net),
+    C: FnMut(&mut Box<dyn PluginInterface>, &mut Net),
   {
+    let mut call = call;
+
     for (i, plugin_interface) in self.plugin_interfaces.iter_mut().enumerate() {
       net.set_active_script(i);
       call(plugin_interface, net);
@@ -82,16 +86,25 @@ impl PluginInterface for PluginWrapper {
     player_id: &str,
     texture_path: &str,
     animation_path: &str,
-  ) {
+  ) -> bool {
+    let mut prevent_default = false;
+
     self.wrap_calls(net, |plugin_interface, net| {
-      plugin_interface.handle_player_avatar_change(net, player_id, texture_path, animation_path)
+      prevent_default |=
+        plugin_interface.handle_player_avatar_change(net, player_id, texture_path, animation_path)
     });
+
+    prevent_default
   }
 
-  fn handle_player_emote(&mut self, net: &mut Net, player_id: &str, emote_id: u8) {
+  fn handle_player_emote(&mut self, net: &mut Net, player_id: &str, emote_id: u8) -> bool {
+    let mut prevent_default = false;
+
     self.wrap_calls(net, |plugin_interface, net| {
-      plugin_interface.handle_player_emote(net, player_id, emote_id)
+      prevent_default |= plugin_interface.handle_player_emote(net, player_id, emote_id)
     });
+
+    prevent_default
   }
 
   fn handle_object_interaction(&mut self, net: &mut Net, player_id: &str, tile_object_id: u32) {

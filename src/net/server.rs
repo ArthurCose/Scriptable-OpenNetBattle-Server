@@ -284,14 +284,16 @@ impl Server {
           }
 
           if let Some((texture_path, animation_path)) = net.store_player_avatar(player_id) {
-            self.plugin_wrapper.handle_player_avatar_change(
+            let prevent_default = self.plugin_wrapper.handle_player_avatar_change(
               net,
               player_id,
               &texture_path,
               &animation_path,
             );
 
-            net.set_player_avatar(player_id, texture_path, animation_path);
+            if !prevent_default {
+              net.set_player_avatar(player_id, texture_path, animation_path);
+            }
           }
         }
         ClientPacket::Emote { emote_id } => {
@@ -299,11 +301,13 @@ impl Server {
             println!("Received Emote packet from {}", socket_address);
           }
 
-          self
+          let prevent_default = self
             .plugin_wrapper
             .handle_player_emote(net, player_id, emote_id);
 
-          net.player_emote(player_id, emote_id);
+          if !prevent_default {
+            net.player_emote(player_id, emote_id);
+          }
         }
         ClientPacket::ObjectInteraction { tile_object_id } => {
           if self.config.log_packets {
