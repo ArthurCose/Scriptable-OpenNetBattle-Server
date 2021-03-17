@@ -168,6 +168,67 @@ impl Net {
     }
   }
 
+  pub fn set_player_avatar(&mut self, id: &str, texture_path: String, animation_path: String) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.navi.texture_path = texture_path.clone();
+      client.navi.animation_path = animation_path.clone();
+
+      let area = self.areas.get(&client.navi.area_id).unwrap();
+
+      // skip if client has not even been sent to anyone yet
+      if client.ready {
+        update_cached_clients(
+          &self.socket,
+          self.max_payload_size,
+          &self.assets,
+          &mut self.clients,
+          &texture_path,
+        );
+
+        update_cached_clients(
+          &self.socket,
+          self.max_payload_size,
+          &self.assets,
+          &mut self.clients,
+          &animation_path,
+        );
+
+        let packet = ServerPacket::NaviSetAvatar {
+          ticket: id.to_string(),
+          texture_path,
+          animation_path,
+        };
+
+        broadcast_to_area(
+          &self.socket,
+          &mut self.clients,
+          area,
+          Reliability::ReliableOrdered,
+          packet,
+        );
+      }
+    }
+  }
+
+  pub fn player_emote(&mut self, id: &str, emote_id: u8) {
+    if let Some(client) = self.clients.get(id) {
+      let packet = ServerPacket::NaviEmote {
+        ticket: id.to_string(),
+        emote_id,
+      };
+
+      let area = self.areas.get(&client.navi.area_id).unwrap();
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.clients,
+        area,
+        Reliability::Reliable,
+        packet,
+      );
+    }
+  }
+
   pub fn move_player_camera(&mut self, id: &str, x: f32, y: f32, z: f32, hold_time: f32) {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
@@ -491,67 +552,6 @@ impl Net {
     );
   }
 
-  pub fn set_player_avatar(&mut self, id: &str, texture_path: String, animation_path: String) {
-    if let Some(client) = self.clients.get_mut(id) {
-      client.navi.texture_path = texture_path.clone();
-      client.navi.animation_path = animation_path.clone();
-
-      let area = self.areas.get(&client.navi.area_id).unwrap();
-
-      // skip if client has not even been sent to anyone yet
-      if client.ready {
-        update_cached_clients(
-          &self.socket,
-          self.max_payload_size,
-          &self.assets,
-          &mut self.clients,
-          &texture_path,
-        );
-
-        update_cached_clients(
-          &self.socket,
-          self.max_payload_size,
-          &self.assets,
-          &mut self.clients,
-          &animation_path,
-        );
-
-        let packet = ServerPacket::NaviSetAvatar {
-          ticket: id.to_string(),
-          texture_path,
-          animation_path,
-        };
-
-        broadcast_to_area(
-          &self.socket,
-          &mut self.clients,
-          area,
-          Reliability::ReliableOrdered,
-          packet,
-        );
-      }
-    }
-  }
-
-  pub fn player_emote(&mut self, id: &str, emote_id: u8) {
-    if let Some(client) = self.clients.get(id) {
-      let packet = ServerPacket::NaviEmote {
-        ticket: id.to_string(),
-        emote_id,
-      };
-
-      let area = self.areas.get(&client.navi.area_id).unwrap();
-
-      broadcast_to_area(
-        &self.socket,
-        &mut self.clients,
-        area,
-        Reliability::Reliable,
-        packet,
-      );
-    }
-  }
-
   pub fn kick_player(&mut self, id: &str, reason: &str) {
     if let Some(client) = self.clients.get(id) {
       self.kick_list.push(Boot {
@@ -830,6 +830,10 @@ impl Net {
     }
   }
 
+  pub fn get_bot(&self, id: &str) -> Option<&Navi> {
+    self.bots.get(id)
+  }
+
   pub fn add_bot(&mut self, bot: Navi) {
     if let Some(area) = self.areas.get_mut(&bot.area_id) {
       area.add_bot(bot.id.clone());
@@ -876,8 +880,28 @@ impl Net {
     }
   }
 
-  pub fn get_bot(&self, id: &str) -> Option<&Navi> {
-    self.bots.get(id)
+  pub fn remove_bot(&mut self, id: &str) {
+    if let Some(bot) = self.bots.remove(id) {
+      let area = self
+        .areas
+        .get_mut(&bot.area_id)
+        .expect("Missing area for removed bot");
+
+      area.remove_bot(&bot.id);
+
+      let packet = ServerPacket::NaviDisconnected {
+        ticket: id.to_string(),
+        warp_out: true,
+      };
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.clients,
+        area,
+        Reliability::Reliable,
+        packet,
+      );
+    }
   }
 
   pub fn set_bot_name(&mut self, id: &str, name: String) {
@@ -906,6 +930,64 @@ impl Net {
       bot.x = x;
       bot.y = y;
       bot.z = z;
+    }
+  }
+
+  pub fn set_bot_avatar(&mut self, id: &str, texture_path: String, animation_path: String) {
+    if let Some(bot) = self.bots.get_mut(id) {
+      bot.texture_path = texture_path.clone();
+      bot.animation_path = animation_path.clone();
+
+      let area = self.areas.get(&bot.area_id).unwrap();
+
+      update_cached_clients(
+        &self.socket,
+        self.max_payload_size,
+        &self.assets,
+        &mut self.clients,
+        &texture_path,
+      );
+
+      update_cached_clients(
+        &self.socket,
+        self.max_payload_size,
+        &self.assets,
+        &mut self.clients,
+        &animation_path,
+      );
+
+      let packet = ServerPacket::NaviSetAvatar {
+        ticket: id.to_string(),
+        texture_path,
+        animation_path,
+      };
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.clients,
+        area,
+        Reliability::ReliableOrdered,
+        packet,
+      );
+    }
+  }
+
+  pub fn set_bot_emote(&mut self, id: &str, emote_id: u8) {
+    if let Some(bot) = self.bots.get(id) {
+      let packet = ServerPacket::NaviEmote {
+        ticket: id.to_string(),
+        emote_id,
+      };
+
+      let area = self.areas.get(&bot.area_id).unwrap();
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.clients,
+        area,
+        Reliability::Reliable,
+        packet,
+      );
     }
   }
 
@@ -972,88 +1054,6 @@ impl Net {
           solid: bot.solid,
           warp_in,
         },
-      );
-    }
-  }
-
-  pub fn set_bot_avatar(&mut self, id: &str, texture_path: String, animation_path: String) {
-    if let Some(bot) = self.bots.get_mut(id) {
-      bot.texture_path = texture_path.clone();
-      bot.animation_path = animation_path.clone();
-
-      let area = self.areas.get(&bot.area_id).unwrap();
-
-      update_cached_clients(
-        &self.socket,
-        self.max_payload_size,
-        &self.assets,
-        &mut self.clients,
-        &texture_path,
-      );
-
-      update_cached_clients(
-        &self.socket,
-        self.max_payload_size,
-        &self.assets,
-        &mut self.clients,
-        &animation_path,
-      );
-
-      let packet = ServerPacket::NaviSetAvatar {
-        ticket: id.to_string(),
-        texture_path,
-        animation_path,
-      };
-
-      broadcast_to_area(
-        &self.socket,
-        &mut self.clients,
-        area,
-        Reliability::ReliableOrdered,
-        packet,
-      );
-    }
-  }
-
-  pub fn set_bot_emote(&mut self, id: &str, emote_id: u8) {
-    if let Some(bot) = self.bots.get(id) {
-      let packet = ServerPacket::NaviEmote {
-        ticket: id.to_string(),
-        emote_id,
-      };
-
-      let area = self.areas.get(&bot.area_id).unwrap();
-
-      broadcast_to_area(
-        &self.socket,
-        &mut self.clients,
-        area,
-        Reliability::Reliable,
-        packet,
-      );
-    }
-  }
-
-  pub fn remove_bot(&mut self, id: &str) {
-    if let Some(bot) = self.bots.remove(id) {
-      let area = self
-        .areas
-        .get_mut(&bot.area_id)
-        .expect("Missing area for removed bot");
-
-      area.remove_bot(&bot.id);
-
-      let packet = ServerPacket::NaviDisconnected {
-        ticket: id.to_string(),
-        warp_out: true,
-      };
-
-      broadcast_to_area(
-        &self.socket,
-        &mut self.clients,
-        area,
-        Reliability::Reliable,
-        packet,
       );
     }
   }
