@@ -105,10 +105,9 @@ pub fn add_object_api<'a, 'b>(
             }
 
             MapObjectData::Polygon { points }
-          } else if width != 0.0 || height != 0.0 {
-            MapObjectData::Rect
           } else {
-            MapObjectData::Point
+            // no ellipse or point support
+            MapObjectData::Rect
           };
 
           let id = map.create_object(
