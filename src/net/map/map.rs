@@ -321,6 +321,11 @@ impl Map {
 
   pub fn resize_object(&mut self, id: u32, width: f32, height: f32) {
     if let Some(object) = self.objects.iter_mut().find(|object| object.id == id) {
+      if matches!(object.data, MapObjectData::Point) {
+        // cant resize a point
+        return;
+      }
+
       object.width = width;
       object.height = height;
 
