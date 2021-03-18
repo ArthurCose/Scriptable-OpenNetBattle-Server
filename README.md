@@ -213,6 +213,8 @@ Net.set_player_name(player_id)
 Net.get_player_position(player_id) -- { x, y, z }
 Net.get_player_avatar(player_id) -- { texturePath, animationPath }
 Net.set_player_avatar(player_id, texture_path, animation_path)
+Net.exclude_object_for_player(player_id, object_id)
+Net.include_object_for_player(player_id, object_id)
 Net.move_player_camera(player_id, x, y, z, holdTimeInSeconds?)
 Net.slide_player_camera(player_id, x, y, z, durationInSeconds)
 Net.unlock_player_camera(player_id)

@@ -122,6 +122,28 @@ pub fn add_player_api<'a, 'b>(
   )?;
 
   api_table.set(
+    "exclude_object_for_player",
+    scope.create_function(move |_, (id, object_id): (String, u32)| {
+      let mut net = net_ref.borrow_mut();
+
+      net.exclude_object_for_player(&id, object_id);
+
+      Ok(())
+    })?,
+  )?;
+
+  api_table.set(
+    "include_object_for_player",
+    scope.create_function(move |_, (id, object_id): (String, u32)| {
+      let mut net = net_ref.borrow_mut();
+
+      net.include_object_for_player(&id, object_id);
+
+      Ok(())
+    })?,
+  )?;
+
+  api_table.set(
     "move_player_camera",
     scope.create_function(
       move |_, (id, x, y, z, duration): (String, f32, f32, f32, Option<f32>)| {

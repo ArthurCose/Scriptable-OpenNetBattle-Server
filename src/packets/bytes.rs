@@ -112,6 +112,14 @@ pub fn write_u16(buf: &mut Vec<u8>, data: u16) {
   buf.extend(&buf_64);
 }
 
+pub fn write_u32(buf: &mut Vec<u8>, data: u32) {
+  use byteorder::{ByteOrder, LittleEndian};
+
+  let mut buf_32 = [0u8; 4];
+  LittleEndian::write_u32(&mut buf_32, data);
+  buf.extend(&buf_32);
+}
+
 pub fn write_u64(buf: &mut Vec<u8>, data: u64) {
   use byteorder::{ByteOrder, LittleEndian};
 
