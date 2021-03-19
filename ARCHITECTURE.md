@@ -2,7 +2,7 @@
 
 The goal of this document is to provide a quick overview of the project for contributors get started. This concept is taken from [here](https://matklad.github.io//2021/02/06/ARCHITECTURE.md.html).
 
-## The Heart of the Server
+## The Event Loop
 
 The heart of the server is the event loop. When calling Server.start(), the server waits for events to dispatch to plugins.
 
