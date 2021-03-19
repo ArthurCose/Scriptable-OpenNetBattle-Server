@@ -256,9 +256,14 @@ impl Server {
             println!("Received Position packet from {}", socket_address);
           }
 
-          self
-            .plugin_wrapper
-            .handle_player_move(net, player_id, x, y, z);
+          let client = net.get_client(player_id).unwrap();
+          let position_changed = client.navi.x != x || client.navi.y != y || client.navi.z != z;
+
+          if position_changed {
+            self
+              .plugin_wrapper
+              .handle_player_move(net, player_id, x, y, z);
+          }
 
           net.update_player_position(player_id, x, y, z);
         }
