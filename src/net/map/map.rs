@@ -156,8 +156,6 @@ impl Map {
       }
     }
 
-    map.layers.reverse();
-
     map
   }
 
