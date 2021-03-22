@@ -87,9 +87,10 @@ Map:
   - Case insensitive
 - Background Texture: string
   - Requires "custom" Background
+  - Path to background image file
 - Background Animation: string
   - Requires "custom" Background
-  - Path to Background .animation file
+  - Path to background .animation file
   - One animation state "BG"
     - First frame of this animation determines background repetition
   - Excluding this will use texture size for background repetition
@@ -213,6 +214,9 @@ Net.set_player_name(player_id)
 Net.get_player_position(player_id) -- { x, y, z }
 Net.get_player_avatar(player_id) -- { texturePath, animationPath }
 Net.set_player_avatar(player_id, texture_path, animation_path)
+-- Net.is_talking(player_id)
+-- Net.is_battling(player_id)
+-- Net.is_busy(player_id)
 Net.exclude_object_for_player(player_id, object_id)
 Net.include_object_for_player(player_id, object_id)
 Net.move_player_camera(player_id, x, y, z, holdTimeInSeconds?)
