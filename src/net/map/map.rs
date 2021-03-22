@@ -25,6 +25,7 @@ pub struct Map {
   tile_height: f32,
   spawn_x: f32,
   spawn_y: f32,
+  spawn_z: f32,
   tilesets: Vec<TilesetInfo>,
   layers: Vec<MapLayer>,
   next_layer_id: u32,
@@ -50,6 +51,7 @@ impl Map {
       tile_height: 0.0,
       spawn_x: 0.0,
       spawn_y: 0.0,
+      spawn_z: 0.0,
       tilesets: Vec::new(),
       layers: Vec::new(),
       next_layer_id: 0,
@@ -145,6 +147,7 @@ impl Map {
             if map_object.name == "Home Warp" {
               map.spawn_x = map_object.x + map_object.height / 2.0;
               map.spawn_y = map_object.y + map_object.height / 2.0;
+              map.spawn_z = object_layers as f32;
             }
 
             map.objects.push(map_object);
@@ -227,12 +230,13 @@ impl Map {
   }
 
   pub fn get_spawn(&self) -> (f32, f32, f32) {
-    (self.spawn_x, self.spawn_y, 0.0)
+    (self.spawn_x, self.spawn_y, self.spawn_z)
   }
 
-  pub fn set_spawn(&mut self, x: f32, y: f32, _z: f32) {
+  pub fn set_spawn(&mut self, x: f32, y: f32, z: f32) {
     self.spawn_x = x;
     self.spawn_y = y;
+    self.spawn_z = z;
   }
 
   pub fn get_tile(&self, x: usize, y: usize, z: usize) -> Tile {

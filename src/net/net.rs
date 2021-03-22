@@ -612,7 +612,7 @@ impl Net {
   ) -> String {
     let area_id = String::from("default");
     let area = self.get_area_mut(&area_id).unwrap();
-    let (spawn_x, spawn_y, _) = area.get_map().get_spawn();
+    let (spawn_x, spawn_y, spawn_z) = area.get_map().get_spawn();
 
     let client = Client::new(
       socket_address,
@@ -620,7 +620,7 @@ impl Net {
       area_id,
       spawn_x,
       spawn_y,
-      0.0,
+      spawn_z,
       self.resend_budget,
     );
 
