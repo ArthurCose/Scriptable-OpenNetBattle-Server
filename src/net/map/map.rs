@@ -384,10 +384,6 @@ impl Map {
     }
   }
 
-  pub fn is_dirty(&self) -> bool {
-    !self.cached
-  }
-
   pub fn render(&mut self) -> String {
     if !self.cached {
       let mut text = vec![format!(
