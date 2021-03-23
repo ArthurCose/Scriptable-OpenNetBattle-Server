@@ -22,6 +22,10 @@ impl Area {
     &self.id
   }
 
+  pub fn set_map(&mut self, map: Map) {
+    self.map = map;
+  }
+
   pub fn get_map(&self) -> &Map {
     &self.map
   }

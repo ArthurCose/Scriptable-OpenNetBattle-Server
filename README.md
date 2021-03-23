@@ -206,9 +206,9 @@ Interactions with the cyberworld are performed through functions attached to a g
 
 Net.list_areas() -- area_id[]
 -- Net.create_area(new_area_id)
--- Net.load_area(new_area_id, path)
--- Net.reload_area(area_id)
+Net.reload_area(area_id) -- may throw
 Net.clone_area(area_id, new_area_id)
+Net.save_area(area_id) -- may throw
 Net.remove_area(area_id)
 Net.get_width(area_id)
 Net.get_height(area_id)
@@ -228,7 +228,6 @@ Net.get_tileset(area_id, tileset_path) -- { path, firstGid }?
 Net.get_tileset_for_tile(area_id, tile_gid) -- { path, firstGid }?
 Net.get_tile(area_id, x, y, z) -- { gid, flippedHorizontally, flippedVertically, rotated }
 Net.set_tile(area_id, x, y, z, tile_gid, flip_h?, flip_v?, rotate?)
--- Net.save_area(area_id)
 ```
 
 #### Object API

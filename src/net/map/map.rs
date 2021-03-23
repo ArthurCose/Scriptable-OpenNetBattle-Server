@@ -31,6 +31,7 @@ pub struct Map {
   next_layer_id: u32,
   objects: Vec<MapObject>,
   next_object_id: u32,
+  asset_stale: bool,
   cached: bool,
   cached_string: String,
 }
@@ -57,6 +58,7 @@ impl Map {
       next_layer_id: 0,
       objects: Vec::new(),
       next_object_id: 0,
+      asset_stale: true,
       cached: false,
       cached_string: String::from(""),
     };
@@ -451,8 +453,14 @@ impl Map {
     self.cached_string.clone()
   }
 
+  pub(in super::super) fn asset_is_stale(&self) -> bool {
+    self.asset_stale
+  }
+
   pub fn generate_asset(&mut self) -> Asset {
     use super::super::AssetData;
+
+    self.asset_stale = false;
 
     let tileset_paths = self.tilesets.iter().map(|tileset| &tileset.path);
 

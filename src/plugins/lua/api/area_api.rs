@@ -1,5 +1,5 @@
 use super::lua_errors::create_area_error;
-use crate::net::map::Tile;
+use crate::net::map::{Map, Tile};
 use crate::net::Net;
 use std::cell::RefCell;
 
@@ -24,6 +24,34 @@ pub fn add_area_api<'a, 'b>(
   )?;
 
   api_table.set(
+    "reload_area",
+    scope.create_function(move |_, area_id: String| {
+      use std::fs::read_to_string;
+      use std::path::PathBuf;
+
+      let mut net = net_ref.borrow_mut();
+
+      let path = PathBuf::from("areas").join(&area_id);
+
+      // todo: make non blocking?
+      let map = match read_to_string(path) {
+        Ok(text) => Map::from(text),
+        Err(err) => {
+          return Err(rlua::Error::RuntimeError(err.to_string()));
+        }
+      };
+
+      if let Some(area) = net.get_area_mut(&area_id) {
+        area.set_map(map);
+      } else {
+        net.add_area(area_id, map);
+      }
+
+      Ok(())
+    })?,
+  )?;
+
+  api_table.set(
     "clone_area",
     scope.create_function(move |_, (area_id, new_id): (String, String)| {
       let mut net = net_ref.borrow_mut();
@@ -37,6 +65,29 @@ pub fn add_area_api<'a, 'b>(
       } else {
         Err(create_area_error(&area_id))
       }
+    })?,
+  )?;
+
+  api_table.set(
+    "save_area",
+    scope.create_function(move |_, area_id: String| {
+      use std::fs::write;
+      use std::path::PathBuf;
+
+      let mut net = net_ref.borrow_mut();
+
+      // todo: make non blocking?
+      if let Some(area) = net.get_area_mut(&area_id) {
+        let map = area.get_map_mut();
+
+        let path = PathBuf::from("areas").join(&area_id);
+
+        if let Err(err) = write(path, map.render()) {
+          return Err(rlua::Error::RuntimeError(err.to_string()));
+        }
+      }
+
+      Ok(())
     })?,
   )?;
 

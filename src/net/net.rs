@@ -128,7 +128,11 @@ impl Net {
   }
 
   pub fn add_area(&mut self, id: String, map: Map) {
-    self.areas.insert(id.clone(), Area::new(id, map));
+    if let Some(area) = self.areas.get_mut(&id) {
+      area.set_map(map);
+    } else {
+      self.areas.insert(id.clone(), Area::new(id, map));
+    }
   }
 
   pub fn remove_area(&mut self, id: &str) {
@@ -1135,7 +1139,7 @@ impl Net {
       let map_path = get_map_path(area.get_id());
       let map = area.get_map_mut();
 
-      if map.is_dirty() {
+      if map.asset_is_stale() {
         let map_asset = map.generate_asset();
 
         self.assets.insert(map_path.clone(), map_asset);
