@@ -5,13 +5,13 @@
   <property name="Name" value="Net Area 1"/>
   <property name="Song" value="resources/loops/loop_overworld.ogg"/>
  </properties>
- <tileset firstgid="1" source="../tiles/floor.tsx"/>
- <tileset firstgid="4" source="../tiles/warp.tsx"/>
- <tileset firstgid="10" source="../tiles/hp_warp.tsx"/>
- <tileset firstgid="15" source="../tiles/home_warp.tsx"/>
- <tileset firstgid="20" source="../tiles/tree.tsx"/>
- <tileset firstgid="24" source="../tiles/coffee.tsx"/>
- <tileset firstgid="28" source="../tiles/gate.tsx"/>
+ <tileset firstgid="1" source="../assets/tiles/floor.tsx"/>
+ <tileset firstgid="4" source="../assets/tiles/warp.tsx"/>
+ <tileset firstgid="10" source="../assets/tiles/hp_warp.tsx"/>
+ <tileset firstgid="15" source="../assets/tiles/home_warp.tsx"/>
+ <tileset firstgid="20" source="../assets/tiles/tree.tsx"/>
+ <tileset firstgid="24" source="../assets/tiles/coffee.tsx"/>
+ <tileset firstgid="28" source="../assets/tiles/gate.tsx"/>
  <tileset firstgid="33" source="../assets/tiles/cloud.tsx"/>
  <layer id="1" name="Floor" width="10" height="11">
   <data encoding="csv">
