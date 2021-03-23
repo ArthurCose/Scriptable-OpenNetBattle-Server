@@ -257,16 +257,19 @@ impl Server {
           }
 
           let client = net.get_client(player_id).unwrap();
-          #[allow(clippy::float_cmp)]
-          let position_changed = client.navi.x != x || client.navi.y != y || client.navi.z != z;
 
-          if position_changed {
-            self
-              .plugin_wrapper
-              .handle_player_move(net, player_id, x, y, z);
+          if client.ready {
+            #[allow(clippy::float_cmp)]
+            let position_changed = client.navi.x != x || client.navi.y != y || client.navi.z != z;
+
+            if position_changed {
+              self
+                .plugin_wrapper
+                .handle_player_move(net, player_id, x, y, z);
+            }
+
+            net.update_player_position(player_id, x, y, z);
           }
-
-          net.update_player_position(player_id, x, y, z);
         }
         ClientPacket::Ready => {
           if self.config.log_packets {
@@ -275,8 +278,7 @@ impl Server {
 
           let client = net.get_client(player_id).unwrap();
 
-          // if the client is ready, this is a transfer
-          if client.ready {
+          if client.transferring {
             self.plugin_wrapper.handle_player_transfer(net, &player_id);
           } else {
             self.plugin_wrapper.handle_player_join(net, &player_id);

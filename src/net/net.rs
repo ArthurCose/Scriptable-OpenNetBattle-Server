@@ -593,6 +593,8 @@ impl Net {
     client.warp_x = x;
     client.warp_y = y;
     client.warp_z = z;
+    client.transferring = true;
+    client.ready = false;
 
     client.packet_shipper.send(
       &self.socket,
@@ -827,6 +829,7 @@ impl Net {
   pub(super) fn mark_client_ready(&mut self, id: &str) {
     if let Some(client) = self.clients.get_mut(id) {
       client.ready = true;
+      client.transferring = false;
 
       // clone id to end mutable client lifetime
       let player_id = client.navi.id.clone();
