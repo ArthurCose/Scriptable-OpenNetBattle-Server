@@ -1,4 +1,3 @@
-use super::lua_errors::create_asset_error;
 use crate::net::{AssetData, Net};
 use std::cell::RefCell;
 
@@ -36,12 +35,12 @@ pub fn add_asset_api<'a, 'b>(
 
       if let Some(asset) = net.get_asset(&path) {
         match asset.data {
-          AssetData::Text(_) => Ok("text"),
-          AssetData::Texture(_) => Ok("texture"),
-          AssetData::Audio(_) => Ok("audio"),
+          AssetData::Text(_) => Ok(Some("text")),
+          AssetData::Texture(_) => Ok(Some("texture")),
+          AssetData::Audio(_) => Ok(Some("audio")),
         }
       } else {
-        Err(create_asset_error(&path))
+        Ok(None)
       }
     })?,
   )?;
