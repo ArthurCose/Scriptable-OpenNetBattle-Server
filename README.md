@@ -206,9 +206,9 @@ Interactions with the cyberworld are performed through functions attached to a g
 
 Net.list_areas() -- area_id[]
 -- Net.create_area(new_area_id)
-Net.reload_area(area_id) -- may throw
+Net.reload_area(area_id) -- unstable, blocking, may throw
 Net.clone_area(area_id, new_area_id)
-Net.save_area(area_id) -- may throw
+Net.save_area(area_id) -- unstable, blocking, may throw
 Net.remove_area(area_id)
 Net.get_width(area_id)
 Net.get_height(area_id)
@@ -299,7 +299,7 @@ Net.kick_player(player_id, reason)
 #### Asset API
 
 ```Lua
-Net.load_asset(server_path) -- can silently fail (stores as a 0 byte asset)
+Net.load_asset(server_path) -- unstable, blocking, can silently fail (stores as a 0 byte asset)
 Net.has_asset(server_path)
 Net.get_asset_type(server_path)
 Net.get_asset_size(server_path)
