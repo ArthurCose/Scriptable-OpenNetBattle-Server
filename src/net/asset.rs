@@ -13,6 +13,16 @@ pub enum AssetData {
   Audio(Vec<u8>),
 }
 
+impl Asset {
+  pub fn len(&self) -> usize {
+    match &self.data {
+      AssetData::Text(data) => data.len(),
+      AssetData::Texture(data) => data.len(),
+      AssetData::Audio(data) => data.len(),
+    }
+  }
+}
+
 pub fn get_player_texture_path(player_id: &str) -> String {
   String::from("/server/navis/") + player_id + ".texture"
 }

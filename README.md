@@ -296,10 +296,13 @@ Net.transfer_player(player_id, area_id, warp_in?, x?, y?, z?)
 Net.kick_player(player_id, reason)
 ```
 
-#### Assets API
+#### Asset API
 
 ```Lua
--- Net.load_asset(server_path, path)
+Net.load_asset(server_path) -- can silently fail (stores as a 0 byte asset)
+Net.has_asset(server_path)
+Net.get_asset_type(server_path)
+Net.get_asset_size(server_path)
 ```
 
 ## Building

@@ -98,7 +98,6 @@ impl Net {
     }
   }
 
-  #[allow(dead_code)]
   pub fn get_asset(&self, path: &str) -> Option<&Asset> {
     self.assets.get(path)
   }
@@ -113,6 +112,22 @@ impl Net {
       &mut self.clients,
       &path,
     );
+  }
+
+  pub fn load_asset(&mut self, path: String) {
+    use super::load_asset;
+    use std::path::PathBuf;
+
+    let prefix = "/server/assets/";
+    let prefix_index = path.find(prefix).unwrap_or(1);
+
+    if prefix_index != 0 {
+      return;
+    }
+
+    let real_path = PathBuf::from("../assets/").join(&path[prefix.len()..]);
+
+    self.set_asset(path, load_asset(real_path));
   }
 
   pub fn get_areas(&self) -> impl std::iter::Iterator<Item = &Area> {
