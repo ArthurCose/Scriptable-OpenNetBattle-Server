@@ -1,5 +1,6 @@
 use super::Tile;
 use crate::helpers::unwrap_and_parse_or_default;
+use std::collections::HashMap;
 
 #[derive(Clone)]
 pub struct MapObject {
@@ -13,6 +14,7 @@ pub struct MapObject {
   pub width: f32,
   pub height: f32,
   pub rotation: f32,
+  pub custom_properties: HashMap<String, String>,
   pub data: MapObjectData,
 }
 
@@ -37,6 +39,21 @@ impl MapObject {
     let width = unwrap_and_parse_or_default::<f32>(element.attr("width")) * scale_x;
     let height = unwrap_and_parse_or_default::<f32>(element.attr("height")) * scale_y;
     let rotation: f32 = unwrap_and_parse_or_default(element.attr("rotation"));
+
+    let mut custom_properties = HashMap::new();
+
+    if let Some(properties_element) = element.get_child("properties", minidom::NSChoice::Any) {
+      for child in properties_element.children() {
+        if child.name() != "property" {
+          continue;
+        }
+
+        let name = child.attr("name").unwrap_or_default();
+        let value = child.attr("value").unwrap_or_default();
+
+        custom_properties.insert(name.to_string(), value.to_string());
+      }
+    }
 
     let data = if gid != 0 {
       MapObjectData::TileObject {
@@ -81,6 +98,7 @@ impl MapObject {
       width,
       height,
       rotation,
+      custom_properties,
       data,
     }
   }
@@ -88,6 +106,12 @@ impl MapObject {
   pub fn render(&mut self, scale_x: f32, scale_y: f32) -> String {
     let name_string = if !self.name.is_empty() {
       format!(" name=\"{}\"", self.name)
+    } else {
+      String::default()
+    };
+
+    let type_string = if !self.object_type.is_empty() {
+      format!(" type=\"{}\"", self.object_type)
     } else {
       String::default()
     };
@@ -102,6 +126,19 @@ impl MapObject {
       )
     } else {
       String::default()
+    };
+
+    let properties_string = if self.custom_properties.is_empty() {
+      String::default()
+    } else {
+      let mut property_strings: Vec<String> = vec![];
+
+      for (name, value) in &self.custom_properties {
+        let property_string = format!("<property name=\"{}\" value=\"{}\"/>", name, value);
+        property_strings.push(property_string);
+      }
+
+      format!("<properties>{}</properties>", property_strings.join(""))
     };
 
     let mut data_string = String::new();
@@ -134,18 +171,21 @@ impl MapObject {
 
     format!(
       "\
-      <object id=\"{}\"{}{} x=\"{}\" y=\"{}\"{}{}{}>\
+      <object id=\"{}\"{}{}{} x=\"{}\" y=\"{}\"{}{}{}>\
+        {}\
         {}\
       </object>\
       ",
       self.id,
       name_string,
+      type_string,
       gid_string,
       self.x / scale_x,
       self.y / scale_y,
       dimensions_string,
       rotation_string,
       visible_str,
+      properties_string,
       data_string,
     )
   }

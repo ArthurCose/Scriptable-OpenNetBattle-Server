@@ -144,7 +144,7 @@ impl Map {
           for object_element in child.children() {
             let map_object = MapObject::from(object_element, object_layers, scale_x, scale_y);
 
-            if map_object.name == "Home Warp" {
+            if map_object.object_type == "Home Warp" {
               map.spawn_x = map_object.x + map_object.height / 2.0;
               map.spawn_y = map_object.y + map_object.height / 2.0;
               map.spawn_z = object_layers as f32;
@@ -284,6 +284,8 @@ impl Map {
     rotation: f32,
     data: MapObjectData,
   ) -> u32 {
+    use std::collections::HashMap;
+
     let id = self.next_object_id;
     let map_object = MapObject {
       id,
@@ -297,6 +299,7 @@ impl Map {
       height,
       rotation,
       data,
+      custom_properties: HashMap::new(),
     };
 
     self.objects.push(map_object);
@@ -318,6 +321,22 @@ impl Map {
   pub fn set_object_name(&mut self, id: u32, name: String) {
     if let Some(object) = self.objects.iter_mut().find(|object| object.id == id) {
       object.name = name;
+
+      self.cached = false;
+    }
+  }
+
+  pub fn set_object_type(&mut self, id: u32, object_type: String) {
+    if let Some(object) = self.objects.iter_mut().find(|object| object.id == id) {
+      object.object_type = object_type;
+
+      self.cached = false;
+    }
+  }
+
+  pub fn set_object_custom_property(&mut self, id: u32, name: String, value: String) {
+    if let Some(object) = self.objects.iter_mut().find(|object| object.id == id) {
+      object.custom_properties.insert(name, value);
 
       self.cached = false;
     }

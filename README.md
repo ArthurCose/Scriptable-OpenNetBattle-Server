@@ -175,11 +175,13 @@ Net.set_tile(area_id, x, y, z, tile_gid, flip_h?, flip_v?, rotate?)
 
 ```lua
 Net.list_objects(area_id) -- object_id[]
-Net.get_object_by_id(area_id, object_id) -- { id, name, type, visible, x, y, z, width, height, rotation, data }?
-Net.get_object_by_name(area_id, name) -- { id, name, type, visible, x, y, z, width, height, rotation, data }?
+Net.get_object_by_id(area_id, object_id) -- { id, name, type, visible, x, y, z, width, height, rotation, data, customProperties }?
+Net.get_object_by_name(area_id, name) -- { id, name, type, visible, x, y, z, width, height, rotation, data, customProperties }?
 Net.create_object(area_id, name, x, y, layer, width, height, rotation, data) -- object_id
 Net.remove_object(area_id, object_id)
 Net.set_object_name(area_id, object_id, name)
+Net.set_object_type(area_id, object_id, type)
+Net.set_object_custom_property(area_id, object_id, name, value)
 Net.resize_object(area_id, object_id, width, height)
 Net.set_object_rotation(area_id, object_id, rotation)
 Net.set_object_visibility(area_id, object_id, visibility)

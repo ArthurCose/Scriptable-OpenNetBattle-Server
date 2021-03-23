@@ -43,7 +43,7 @@
   <object id="44" x="49" y="-49">
    <point/>
   </object>
-  <object id="46" name="Home Warp" gid="15" x="128" y="256" width="60" height="32"/>
+  <object id="46" type="Home Warp" gid="15" x="128" y="256" width="60" height="32"/>
   <object id="47" gid="2147483668" x="44" y="46" width="44" height="61"/>
   <object id="48" gid="20" x="205" y="77" width="44" height="61"/>
   <object id="49" gid="20" x="270" y="110" width="44" height="61"/>

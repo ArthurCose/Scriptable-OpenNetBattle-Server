@@ -257,6 +257,7 @@ impl Server {
           }
 
           let client = net.get_client(player_id).unwrap();
+          #[allow(clippy::float_cmp)]
           let position_changed = client.navi.x != x || client.navi.y != y || client.navi.z != z;
 
           if position_changed {

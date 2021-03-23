@@ -165,6 +165,44 @@ pub fn add_object_api<'a, 'b>(
   )?;
 
   api_table.set(
+    "set_object_type",
+    scope.create_function(
+      move |_, (area_id, id, object_type): (String, u32, String)| {
+        let mut net = net_ref.borrow_mut();
+
+        if let Some(area) = net.get_area_mut(&area_id) {
+          let map = area.get_map_mut();
+
+          map.set_object_type(id, object_type);
+
+          Ok(())
+        } else {
+          Err(create_area_error(&area_id))
+        }
+      },
+    )?,
+  )?;
+
+  api_table.set(
+    "set_object_custom_property",
+    scope.create_function(
+      move |_, (area_id, id, name, value): (String, u32, String, String)| {
+        let mut net = net_ref.borrow_mut();
+
+        if let Some(area) = net.get_area_mut(&area_id) {
+          let map = area.get_map_mut();
+
+          map.set_object_custom_property(id, name, value);
+
+          Ok(())
+        } else {
+          Err(create_area_error(&area_id))
+        }
+      },
+    )?,
+  )?;
+
+  api_table.set(
     "resize_object",
     scope.create_function(
       move |_, (area_id, id, width, height): (String, u32, f32, f32)| {
@@ -295,7 +333,17 @@ fn map_optional_object_to_table<'a>(
 
   table.set("data", data_table).ok()?;
 
-  // todo: properties
+  let custom_properties_table = lua_ctx.create_table().ok()?;
+
+  for (name, value) in &object.custom_properties {
+    custom_properties_table
+      .set(name.as_str(), value.clone())
+      .ok()?
+  }
+
+  table
+    .set("customProperties", custom_properties_table)
+    .ok()?;
 
   Some(table)
 }
