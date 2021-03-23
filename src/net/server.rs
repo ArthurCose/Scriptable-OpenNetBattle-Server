@@ -18,6 +18,7 @@ pub struct ServerConfig {
   pub resend_budget: usize,
   pub player_asset_limit: usize,
   pub avatar_dimensions_limit: u32,
+  pub worker_thread_count: u16,
 }
 
 pub struct Server {

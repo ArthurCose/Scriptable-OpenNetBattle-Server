@@ -4,6 +4,7 @@ use super::map::Map;
 use super::server::ServerConfig;
 use super::{Area, Asset, AssetData, Navi};
 use crate::packets::{create_asset_stream, Reliability, ServerPacket};
+use crate::threads::worker_threads::{Job, JobGiver};
 use std::collections::HashMap;
 use std::net::UdpSocket;
 use std::rc::Rc;
@@ -19,11 +20,13 @@ pub struct Net {
   assets: HashMap<String, Asset>,
   active_script: usize,
   kick_list: Vec<Boot>,
+  job_giver: JobGiver,
 }
 
 impl Net {
   pub fn new(socket: Rc<UdpSocket>, server_config: &ServerConfig) -> Net {
     use super::asset::get_map_path;
+    use crate::threads::create_worker_threads;
     use std::fs::{read_dir, read_to_string};
 
     let mut assets = HashMap::new();
@@ -71,6 +74,7 @@ impl Net {
       assets,
       active_script: 0,
       kick_list: Vec::new(),
+      job_giver: create_worker_threads(server_config.worker_thread_count),
     }
   }
 
@@ -1114,6 +1118,10 @@ impl Net {
         },
       );
     }
+  }
+
+  pub fn add_job(&mut self, job: Job) {
+    self.job_giver.give_job(job);
   }
 
   // ugly opengl like context storing

@@ -104,6 +104,16 @@ fn main() {
                     Err(_) => Err(String::from("Invalid length")),
                 }),
         )
+        .arg(
+            clap::Arg::with_name("worker_threads")
+                .long("worker_thread_count")
+                .help("Sets the amount of threads to spawn for handling special tasks")
+                .default_value("2")
+                .validator(|value| match value.parse::<u16>() {
+                    Ok(_) => Ok(()),
+                    Err(_) => Err(String::from("Invalid quantity")),
+                }),
+        )
         .get_matches();
 
     let config = net::ServerConfig {
@@ -119,6 +129,7 @@ fn main() {
         avatar_dimensions_limit: unwrap_and_parse_or_default(
             matches.value_of("avatar_dimensions_limit"),
         ),
+        worker_thread_count: unwrap_and_parse_or_default(matches.value_of("worker_thread_count")),
     };
 
     let mut server = net::Server::new(config);
