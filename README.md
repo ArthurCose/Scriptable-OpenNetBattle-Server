@@ -63,6 +63,11 @@ Tilesets:
   - Bottom - For tile objects that act as a wall
 - Place in a Tile Layer to tune drawing offset
 
+Layers:
+
+- Horizontal Offset: 0
+- Vertical Offset: (number of layers below this one) \* -16
+
 ### Custom properties
 
 Map:
@@ -99,11 +104,64 @@ Map:
 - Background Vel Y: int
   - Requires "custom" Background
 
-Tiles:
+### Types
 
-- Solid: bool
-  - Object Layer Only
-  - Defines whether the collision is used for blocking movement or just interactions
+Types are used to denote special tiles or objects understood by the client.
+
+Home Warp:
+
+- Tile Objects only
+- Visible in minimap
+- Players will be warped home if walking into the tile this object is centered on
+
+Position Warp:
+
+- Tile Objects only
+- Visible in minimap
+- Players will be warped to the set position if walking into the tile this object is centered on
+- Custom properties:
+  - X: float
+  - Y: float
+  - Z: float
+  - Direction: string
+    - Left
+    - Right
+    - Up
+    - Down
+    - Up Left
+    - Up Right
+    - Down Left
+    - Down Right
+
+Custom Warp:
+
+- Tile Objects only
+- Visible in minimap
+
+Board:
+
+- Tile Objects only
+- Visible in minimap
+
+Shop:
+
+- Tile Objects only
+- Visible in minimap
+
+Stairs:
+
+- Tiles only
+- Visible in minimap
+- Allows players to walk up or down a layer
+- Makes tile directly above become treated as a hole
+- Custom properties:
+
+  - Direction: string
+    - Marks the direction the player will travel up
+    - Up Left
+    - Up Right
+    - Down Left
+    - Down Right
 
 ## Lua API
 
@@ -147,7 +205,9 @@ Interactions with the cyberworld are performed through functions attached to a g
 -- ./assets/my_area.tmx would be my_area
 
 Net.list_areas() -- area_id[]
--- Net.create_area(area_id)
+-- Net.create_area(new_area_id)
+-- Net.load_area(new_area_id, path)
+-- Net.reload_area(area_id)
 Net.clone_area(area_id, new_area_id)
 Net.remove_area(area_id)
 Net.get_width(area_id)
@@ -235,6 +295,12 @@ Net.quiz_player(player_id, option_a?, option_b?, option_c?, mug_texture_path?, m
 Net.transfer_player(player_id, area_id, warp_in?, x?, y?, z?)
 -- Net.transfer_server(player_id, server)
 Net.kick_player(player_id, reason)
+```
+
+#### Assets API
+
+```Lua
+-- Net.load_asset(server_path, path)
 ```
 
 ## Building
