@@ -1,6 +1,6 @@
 local flavorTextMap = {
-  ["../tiles/coffee.tsx"] = "A cafe sign.\nYou feel welcomed.",
-  ["../tiles/gate.tsx"] = "The gate needs a key to get through."
+  ["/server/assets/tiles/coffee.tsx"] = "A cafe sign.\nYou feel welcomed.",
+  ["/server/assets/tiles/gate.tsx"] = "The gate needs a key to get through."
 }
 
 function handle_object_interaction(player_id, object_id)
