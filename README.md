@@ -320,7 +320,7 @@ promise.is_pending()
 promise.get_value()
 
 Async.request(url, { method?, headers?, body? }?) -- promise, value = { status, headers, body }
-Async.download(url, path, { method?, headers?, body? }?) -- promise, value = bool
+Async.download(path, url, { method?, headers?, body? }?) -- promise, value = bool
 Async.read_file(path) -- promise, value = string
 Async.write_file(path, content) -- promise, value = bool
 ```

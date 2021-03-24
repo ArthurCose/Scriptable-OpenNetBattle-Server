@@ -5,8 +5,8 @@ use std::io::Write;
 use std::io::{BufRead, BufReader, BufWriter};
 
 pub fn web_download(
-  url: String,
   destination: String,
+  url: String,
   method: String,
   headers: Vec<(String, String)>,
   body: Option<String>,

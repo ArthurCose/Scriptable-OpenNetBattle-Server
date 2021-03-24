@@ -222,7 +222,7 @@ pub fn add_async_api<'a, 'b>(
   api_table.set(
     "download",
     scope.create_function(
-      move |lua_ctx, (url, path, options): (String, String, Option<rlua::Table>)| {
+      move |lua_ctx, (path, url, options): (String, String, Option<rlua::Table>)| {
         let mut net = net_ref.borrow_mut();
 
         let method: String;
@@ -253,7 +253,7 @@ pub fn add_async_api<'a, 'b>(
           headers = Vec::new();
         }
 
-        let (job, promise) = web_download(url, path, method, headers, body);
+        let (job, promise) = web_download(path, url, method, headers, body);
         net.add_job(job);
 
         let lua_promise = create_lua_promise(&lua_ctx, promise_manager_ref, promise);
