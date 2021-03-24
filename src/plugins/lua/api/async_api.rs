@@ -1,6 +1,7 @@
 use crate::jobs::read_file::read_file;
 use crate::jobs::web_download::web_download;
 use crate::jobs::web_request::web_request;
+use crate::jobs::write_file::write_file;
 use crate::jobs::{JobPromise, JobPromiseManager, PromiseValue};
 use crate::net::Net;
 use std::cell::RefCell;
@@ -268,6 +269,20 @@ pub fn add_async_api<'a, 'b>(
       let mut net = net_ref.borrow_mut();
 
       let (job, promise) = read_file(path);
+      net.add_job(job);
+
+      let lua_promise = create_lua_promise(&lua_ctx, promise_manager_ref, promise);
+
+      Ok(lua_promise)
+    })?,
+  )?;
+
+  api_table.set(
+    "write_file",
+    scope.create_function(move |lua_ctx, (path, content): (String, rlua::String)| {
+      let mut net = net_ref.borrow_mut();
+
+      let (job, promise) = write_file(path, content.as_bytes());
       net.add_job(job);
 
       let lua_promise = create_lua_promise(&lua_ctx, promise_manager_ref, promise);
