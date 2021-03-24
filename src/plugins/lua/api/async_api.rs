@@ -6,6 +6,8 @@ use std::cell::RefCell;
 pub fn add_promise_api(lua_ctx: &rlua::Context) -> rlua::Result<()> {
   let promise_api = lua_ctx.create_table()?;
 
+  promise_api.set("_needs_cleanup", Vec::<usize>::new())?;
+
   promise_api.set(
     "_create_promise",
     lua_ctx.create_function(|lua_ctx, id: usize| {
@@ -43,6 +45,24 @@ pub fn add_promise_api(lua_ctx: &rlua::Context) -> rlua::Result<()> {
           Ok(value)
         })?,
       )?;
+
+      let promise_meta_table = lua_ctx.create_table()?;
+
+      promise_meta_table.set(
+        "__gc",
+        lua_ctx.create_function(move |lua_ctx, _: ()| {
+          let promise_api: rlua::Table = lua_ctx.globals().get("Promise")?;
+          let mut needs_cleanup: Vec<usize> = promise_api.get("_needs_cleanup")?;
+
+          needs_cleanup.push(id);
+
+          promise_api.set("_needs_cleanup", needs_cleanup)?;
+
+          Ok(())
+        })?,
+      )?;
+
+      promise.set_metatable(Some(promise_meta_table));
 
       Ok(promise)
     })?,
@@ -115,6 +135,9 @@ pub fn add_async_api<'a, 'b>(
     "request",
     scope.create_function(
       move |lua_ctx, (url, options): (String, Option<rlua::Table>)| {
+        // we should clean up gc'd promises any time we create new promises
+        clean_up_promises(&lua_ctx, promise_manager_ref)?;
+
         let mut net = net_ref.borrow_mut();
 
         let method: String;
@@ -158,6 +181,25 @@ pub fn add_async_api<'a, 'b>(
       },
     )?,
   )?;
+
+  Ok(())
+}
+
+fn clean_up_promises(
+  lua_ctx: &rlua::Context,
+  promise_manager_ref: &RefCell<&mut JobPromiseManager>,
+) -> rlua::Result<()> {
+  let promise_api: rlua::Table = lua_ctx.globals().get("Promise")?;
+
+  let needs_cleanup: Vec<usize> = promise_api.get("_needs_cleanup")?;
+
+  let mut promise_manager = promise_manager_ref.borrow_mut();
+
+  for id in needs_cleanup {
+    promise_manager.remove_promise(id);
+  }
+
+  promise_api.set("_needs_cleanup", Vec::<usize>::new())?;
 
   Ok(())
 }
