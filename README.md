@@ -306,14 +306,23 @@ Net.get_asset_size(server_path)
 
 ### Async API
 
+If you want to use IO while players are connected, you'll want to use the Async API to prevent server hiccups.
+Note: paths in this section use system paths and not asset paths.
+
 ```Lua
+-- promise helper table
+Promise.await(promise) -- value -- for coroutines
+Promise.all(promises) -- values[] -- for coroutines
+
+-- promise objects
 promise.is_ready()
 promise.is_pending()
 promise.get_value()
--- Promise.await(promise) -- for coroutines
--- Promise.all(promises) -- values[] - for coroutines
 
-Async.request(url, { method?, headers?, body? }) -- promise, value = { status, headers, body }
+Async.request(url, { method?, headers?, body? }?) -- promise, value = { status, headers, body }
+-- Async.download(url, path, { method?, headers?, body? }?) -- promise, value = bool
+-- Async.readFile(path) -- promise, value = string
+-- Async.writeFile(path, content) -- promise, value = bool
 ```
 
 ## Building

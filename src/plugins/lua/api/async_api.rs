@@ -70,6 +70,44 @@ pub fn add_promise_api(lua_ctx: &rlua::Context) -> rlua::Result<()> {
 
   lua_ctx.globals().set("Promise", promise_api)?;
 
+  lua_ctx
+    .load(
+      // todo: move to separate file?
+      "\
+        function Promise.await(promise)\n\
+          while promise.is_pending() do\n\
+            coroutine.yield()\n\
+          end\n\
+
+          return promise.get_value()\n\
+        end\n\
+
+        function Promise.all(promises)\n\
+          while true do\n\
+            local completed = 0\n\
+
+            for i, promise in pairs(promises) do\n\
+              if promise.is_pending() then\n
+                break\n\
+              end\n\
+              completed = completed + 1\n\
+            end\n\
+
+            if completed == #promises then\n\
+              local values = {};\n\
+              for i, promise in pairs(promises) do\n\
+                values[i] = promise.get_value()\n\
+              end\n\
+              return values\n\
+            end\n\
+
+            coroutine.yield()\n\
+          end\n\
+        end\n\
+      ",
+    )
+    .exec()?;
+
   Ok(())
 }
 
