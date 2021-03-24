@@ -42,7 +42,7 @@ pub fn add_promise_api(lua_ctx: &rlua::Context) -> rlua::Result<()> {
         lua_ctx.create_function(move |lua_ctx, _: ()| {
           let async_table: rlua::Table = lua_ctx.globals().get("Async")?;
           let get_value_function: rlua::Function = async_table.get("_get_promise_value")?;
-          let value: rlua::Table = get_value_function.call(id)?;
+          let value: rlua::Value = get_value_function.call(id)?;
 
           Ok(value)
         })?,
