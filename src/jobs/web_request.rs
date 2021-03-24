@@ -36,26 +36,32 @@ pub fn web_request(
       request.call()
     };
 
-    if let Ok(response) = result {
-      let status = response.status();
-      let mut headers = Vec::new();
+    let response = match result {
+      Ok(response) => response,
+      Err(err) => {
+        println!("{}", err);
 
-      for header_name in &response.headers_names() {
-        let value = response.header(&header_name).unwrap().to_string();
-
-        headers.push((header_name.clone(), value));
+        thread_promise.set_value(PromiseValue::None);
+        return;
       }
+    };
 
-      let body = response.into_string().unwrap_or_default();
+    let status = response.status();
+    let mut headers = Vec::new();
 
-      thread_promise.set_value(PromiseValue::HttpResponse(HttpResponse {
-        status,
-        body,
-        headers,
-      }));
-    } else {
-      thread_promise.set_value(PromiseValue::None);
+    for header_name in &response.headers_names() {
+      let value = response.header(&header_name).unwrap().to_string();
+
+      headers.push((header_name.clone(), value));
     }
+
+    let body = response.into_string().unwrap_or_default();
+
+    thread_promise.set_value(PromiseValue::HttpResponse(HttpResponse {
+      status,
+      body,
+      headers,
+    }));
   });
 
   (job, promise)
