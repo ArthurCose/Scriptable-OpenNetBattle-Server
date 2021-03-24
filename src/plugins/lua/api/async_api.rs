@@ -1,3 +1,4 @@
+use crate::jobs::web_download::web_download;
 use crate::jobs::web_request::web_request;
 use crate::jobs::{JobPromiseManager, PromiseValue};
 use crate::net::Net;
@@ -156,8 +157,9 @@ pub fn add_async_api<'a, 'b>(
               table.set("headers", headers_table)?;
               table.set("body", response_data.body)?;
 
-              Some(table)
+              Some(rlua::Value::Table(table))
             }
+            PromiseValue::Success(success) => Some(rlua::Value::Boolean(success)),
             PromiseValue::None => None,
           }
         }
@@ -179,6 +181,7 @@ pub fn add_async_api<'a, 'b>(
         let method: String;
         let body: Option<String>;
         let headers: Vec<(String, String)>;
+
         if let Some(options) = options {
           method = options.get("method").ok().unwrap_or_default();
 
@@ -204,6 +207,58 @@ pub fn add_async_api<'a, 'b>(
         }
 
         let (job, promise) = web_request(url, method, headers, body);
+        net.add_job(job);
+
+        let mut promise_manager = promise_manager_ref.borrow_mut();
+        let id = promise_manager.add_promise(promise);
+
+        let promise_api: rlua::Table = lua_ctx.globals().get("Promise")?;
+        let create_promise: rlua::Function = promise_api.get("_create_promise")?;
+        let promise: rlua::Table = create_promise.call(id)?;
+
+        Ok(promise)
+      },
+    )?,
+  )?;
+
+  api_table.set(
+    "download",
+    scope.create_function(
+      move |lua_ctx, (url, path, options): (String, String, Option<rlua::Table>)| {
+        // we should clean up gc'd promises any time we create new promises
+        clean_up_promises(&lua_ctx, promise_manager_ref)?;
+
+        let mut net = net_ref.borrow_mut();
+
+        let method: String;
+        let body: Option<String>;
+        let headers: Vec<(String, String)>;
+
+        if let Some(options) = options {
+          method = options.get("method").ok().unwrap_or_default();
+
+          body = options.get("body").ok();
+
+          headers = options
+            .get("headers")
+            .ok()
+            .map(|table: rlua::Table| {
+              table
+                .pairs()
+                .filter_map(|result| {
+                  let (key, value): (String, String) = result.ok()?;
+                  Some((key, value))
+                })
+                .collect()
+            })
+            .unwrap_or_default();
+        } else {
+          method = String::from("get");
+          body = None;
+          headers = Vec::new();
+        }
+
+        let (job, promise) = web_download(url, path, method, headers, body);
         net.add_job(job);
 
         let mut promise_manager = promise_manager_ref.borrow_mut();

@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex};
 
 pub enum PromiseValue {
   HttpResponse(HttpResponse),
+  Success(bool),
   None,
 }
 
