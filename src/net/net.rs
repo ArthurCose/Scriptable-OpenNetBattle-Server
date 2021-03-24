@@ -268,6 +268,14 @@ impl Net {
     }
   }
 
+  pub fn is_player_in_widget(&self, id: &str) -> bool {
+    if let Some(client) = self.clients.get(id) {
+      return client.is_in_widget();
+    }
+
+    false
+  }
+
   pub fn exclude_object_for_player(&mut self, id: &str, object_id: u32) {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(

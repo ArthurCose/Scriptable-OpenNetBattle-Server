@@ -122,6 +122,17 @@ pub fn add_player_api<'a, 'b>(
   )?;
 
   api_table.set(
+    "is_player_in_widget",
+    scope.create_function(move |_, id: String| {
+      let net = net_ref.borrow();
+
+      let is_in_widget = net.is_player_in_widget(&id);
+
+      Ok(is_in_widget)
+    })?,
+  )?;
+
+  api_table.set(
     "exclude_object_for_player",
     scope.create_function(move |_, (id, object_id): (String, u32)| {
       let mut net = net_ref.borrow_mut();
