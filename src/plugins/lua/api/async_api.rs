@@ -1,7 +1,7 @@
 use crate::jobs::read_file::read_file;
 use crate::jobs::web_download::web_download;
 use crate::jobs::web_request::web_request;
-use crate::jobs::{JobPromiseManager, PromiseValue};
+use crate::jobs::{JobPromise, JobPromiseManager, PromiseValue};
 use crate::net::Net;
 use std::cell::RefCell;
 
@@ -179,9 +179,6 @@ pub fn add_async_api<'a, 'b>(
     "request",
     scope.create_function(
       move |lua_ctx, (url, options): (String, Option<rlua::Table>)| {
-        // we should clean up gc'd promises any time we create new promises
-        clean_up_promises(&lua_ctx, promise_manager_ref)?;
-
         let mut net = net_ref.borrow_mut();
 
         let method: String;
@@ -215,14 +212,8 @@ pub fn add_async_api<'a, 'b>(
         let (job, promise) = web_request(url, method, headers, body);
         net.add_job(job);
 
-        let mut promise_manager = promise_manager_ref.borrow_mut();
-        let id = promise_manager.add_promise(promise);
-
-        let promise_api: rlua::Table = lua_ctx.globals().get("Promise")?;
-        let create_promise: rlua::Function = promise_api.get("_create_promise")?;
-        let promise: rlua::Table = create_promise.call(id)?;
-
-        Ok(promise)
+        let lua_promise = create_lua_promise(&lua_ctx, promise_manager_ref, promise);
+        Ok(lua_promise)
       },
     )?,
   )?;
@@ -231,9 +222,6 @@ pub fn add_async_api<'a, 'b>(
     "download",
     scope.create_function(
       move |lua_ctx, (url, path, options): (String, String, Option<rlua::Table>)| {
-        // we should clean up gc'd promises any time we create new promises
-        clean_up_promises(&lua_ctx, promise_manager_ref)?;
-
         let mut net = net_ref.borrow_mut();
 
         let method: String;
@@ -267,14 +255,9 @@ pub fn add_async_api<'a, 'b>(
         let (job, promise) = web_download(url, path, method, headers, body);
         net.add_job(job);
 
-        let mut promise_manager = promise_manager_ref.borrow_mut();
-        let id = promise_manager.add_promise(promise);
+        let lua_promise = create_lua_promise(&lua_ctx, promise_manager_ref, promise);
 
-        let promise_api: rlua::Table = lua_ctx.globals().get("Promise")?;
-        let create_promise: rlua::Function = promise_api.get("_create_promise")?;
-        let promise: rlua::Table = create_promise.call(id)?;
-
-        Ok(promise)
+        Ok(lua_promise)
       },
     )?,
   )?;
@@ -290,18 +273,31 @@ pub fn add_async_api<'a, 'b>(
       let (job, promise) = read_file(path);
       net.add_job(job);
 
-      let mut promise_manager = promise_manager_ref.borrow_mut();
-      let id = promise_manager.add_promise(promise);
+      let lua_promise = create_lua_promise(&lua_ctx, promise_manager_ref, promise);
 
-      let promise_api: rlua::Table = lua_ctx.globals().get("Promise")?;
-      let create_promise: rlua::Function = promise_api.get("_create_promise")?;
-      let promise: rlua::Table = create_promise.call(id)?;
-
-      Ok(promise)
+      Ok(lua_promise)
     })?,
   )?;
 
   Ok(())
+}
+
+fn create_lua_promise<'a>(
+  lua_ctx: &rlua::Context<'a>,
+  promise_manager_ref: &RefCell<&mut JobPromiseManager>,
+  promise: JobPromise,
+) -> rlua::Result<rlua::Table<'a>> {
+  // clean up gc'd promises every time we create new promises
+  clean_up_promises(&lua_ctx, promise_manager_ref)?;
+
+  let mut promise_manager = promise_manager_ref.borrow_mut();
+  let id = promise_manager.add_promise(promise);
+
+  let promise_api: rlua::Table = lua_ctx.globals().get("Promise")?;
+  let create_promise: rlua::Function = promise_api.get("_create_promise")?;
+  let lua_promise: rlua::Table = create_promise.call(id)?;
+
+  Ok(lua_promise)
 }
 
 fn clean_up_promises(
