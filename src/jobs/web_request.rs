@@ -1,9 +1,10 @@
 use super::job_promise::{JobPromise, PromiseValue};
 use super::Job;
+use std::io::Read;
 
 pub struct HttpResponse {
   pub status: u16,
-  pub body: String,
+  pub body: Vec<u8>,
   pub headers: Vec<(String, String)>,
 }
 
@@ -11,7 +12,7 @@ pub fn web_request(
   url: String,
   method: String,
   headers: Vec<(String, String)>,
-  body: Option<String>,
+  body: Option<Vec<u8>>,
 ) -> (Job, JobPromise) {
   let promise = JobPromise::new();
   let mut thread_promise = promise.clone();
@@ -30,8 +31,8 @@ pub fn web_request(
       request = request.set(key.as_str(), value.as_str());
     }
 
-    let result = if let Some(body) = body {
-      request.send_string(&body)
+    let result = if let Some(data) = body {
+      request.send_bytes(&data)
     } else {
       request.call()
     };
@@ -55,7 +56,8 @@ pub fn web_request(
       headers.push((header_name.clone(), value));
     }
 
-    let body = response.into_string().unwrap_or_default();
+    let mut body = Vec::new();
+    response.into_reader().read_to_end(&mut body);
 
     thread_promise.set_value(PromiseValue::HttpResponse(HttpResponse {
       status,

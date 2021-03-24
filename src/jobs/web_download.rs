@@ -9,7 +9,7 @@ pub fn web_download(
   url: String,
   method: String,
   headers: Vec<(String, String)>,
-  body: Option<String>,
+  body: Option<Vec<u8>>,
 ) -> (Job, JobPromise) {
   let promise = JobPromise::new();
   let mut thread_promise = promise.clone();
@@ -28,8 +28,8 @@ pub fn web_download(
       request = request.set(key.as_str(), value.as_str());
     }
 
-    let result = if let Some(body) = body {
-      request.send_string(&body)
+    let result = if let Some(data) = body {
+      request.send_bytes(&data)
     } else {
       request.call()
     };

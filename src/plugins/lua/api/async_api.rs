@@ -183,13 +183,16 @@ pub fn add_async_api<'a, 'b>(
         let mut net = net_ref.borrow_mut();
 
         let method: String;
-        let body: Option<String>;
+        let body: Option<Vec<u8>>;
         let headers: Vec<(String, String)>;
 
         if let Some(options) = options {
           method = options.get("method").ok().unwrap_or_default();
 
-          body = options.get("body").ok();
+          body = options
+            .get("body")
+            .ok()
+            .map(|lua_string: rlua::String| lua_string.as_bytes().to_vec());
 
           headers = options
             .get("headers")
@@ -226,13 +229,16 @@ pub fn add_async_api<'a, 'b>(
         let mut net = net_ref.borrow_mut();
 
         let method: String;
-        let body: Option<String>;
+        let body: Option<Vec<u8>>;
         let headers: Vec<(String, String)>;
 
         if let Some(options) = options {
           method = options.get("method").ok().unwrap_or_default();
 
-          body = options.get("body").ok();
+          body = options
+            .get("body")
+            .ok()
+            .map(|lua_string: rlua::String| lua_string.as_bytes().to_vec());
 
           headers = options
             .get("headers")
