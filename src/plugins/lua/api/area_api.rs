@@ -129,6 +129,32 @@ pub fn add_area_api<'a, 'b>(
   )?;
 
   api_table.set(
+    "get_tile_width",
+    scope.create_function(move |_, area_id: String| {
+      let mut net = net_ref.borrow_mut();
+
+      if let Some(area) = net.get_area_mut(&area_id) {
+        Ok(area.get_map_mut().get_tile_width())
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
+    "get_tile_height",
+    scope.create_function(move |_, area_id: String| {
+      let mut net = net_ref.borrow_mut();
+
+      if let Some(area) = net.get_area_mut(&area_id) {
+        Ok(area.get_map_mut().get_tile_height())
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
     "get_area_name",
     scope.create_function(move |_, area_id: String| {
       let net = net_ref.borrow();

@@ -212,6 +212,8 @@ Net.save_area(area_id) -- unstable, blocking, may throw
 Net.remove_area(area_id)
 Net.get_width(area_id)
 Net.get_height(area_id)
+Net.get_tile_width()
+Net.get_tile_height()
 Net.get_area_name(area_id)
 Net.set_area_name(area_id)
 Net.get_song(area_id) -- song_path

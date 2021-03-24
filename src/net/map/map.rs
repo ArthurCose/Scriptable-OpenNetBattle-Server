@@ -21,8 +21,8 @@ pub struct Map {
   song_path: String,
   width: usize,
   height: usize,
-  tile_width: f32,
-  tile_height: f32,
+  tile_width: u32,
+  tile_height: u32,
   spawn_x: f32,
   spawn_y: f32,
   spawn_z: f32,
@@ -48,8 +48,8 @@ impl Map {
       song_path: String::new(),
       width: 0,
       height: 0,
-      tile_width: 0.0,
-      tile_height: 0.0,
+      tile_width: 0,
+      tile_height: 0,
       spawn_x: 0.0,
       spawn_y: 0.0,
       spawn_z: 0.0,
@@ -73,8 +73,8 @@ impl Map {
     map.next_layer_id = unwrap_and_parse_or_default(map_element.attr("nextlayerid"));
     map.next_object_id = unwrap_and_parse_or_default(map_element.attr("nextobjectid"));
 
-    let scale_x = 1.0 / (map.tile_width / 2.0);
-    let scale_y = 1.0 / map.tile_height;
+    let scale_x = 1.0 / (map.tile_width as f32 / 2.0);
+    let scale_y = 1.0 / map.tile_height as f32;
 
     let mut object_layers = 0;
 
@@ -229,6 +229,14 @@ impl Map {
 
   pub fn get_height(&self) -> usize {
     self.height
+  }
+
+  pub fn get_tile_width(&self) -> u32 {
+    self.tile_width
+  }
+
+  pub fn get_tile_height(&self) -> u32 {
+    self.tile_height
   }
 
   pub fn get_spawn(&self) -> (f32, f32, f32) {
@@ -425,8 +433,8 @@ impl Map {
         ));
       }
 
-      let scale_x = 1.0 / (self.tile_width / 2.0);
-      let scale_y = 1.0 / self.tile_height;
+      let scale_x = 1.0 / (self.tile_width as f32 / 2.0);
+      let scale_y = 1.0 / self.tile_height as f32;
 
       for layer_index in 0..self.layers.len() {
         text.push(self.layers[layer_index].render());
