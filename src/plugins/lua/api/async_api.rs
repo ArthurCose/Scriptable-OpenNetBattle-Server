@@ -125,8 +125,6 @@ pub fn add_async_api<'a, 'b>(
         }
       }
 
-      promise_manager.remove_promise(id);
-
       Ok(value)
     })?,
   )?;

@@ -309,7 +309,7 @@ Net.get_asset_size(server_path)
 ```Lua
 promise.is_ready()
 promise.is_pending()
-promise.get_value() -- moves value
+promise.get_value()
 -- Promise.await(promise) -- for coroutines
 -- Promise.all(promises) -- values[] - for coroutines
 
