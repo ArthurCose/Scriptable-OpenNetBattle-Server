@@ -265,9 +265,6 @@ pub fn add_async_api<'a, 'b>(
   api_table.set(
     "read_file",
     scope.create_function(move |lua_ctx, path: String| {
-      // we should clean up gc'd promises any time we create new promises
-      clean_up_promises(&lua_ctx, promise_manager_ref)?;
-
       let mut net = net_ref.borrow_mut();
 
       let (job, promise) = read_file(path);
