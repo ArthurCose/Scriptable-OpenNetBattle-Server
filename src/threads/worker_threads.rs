@@ -1,7 +1,6 @@
+pub use crate::jobs::Job;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex};
-
-pub type Job = Box<dyn FnOnce() + std::marker::Send>;
 
 pub struct JobGiver {
   sender: Sender<Job>,

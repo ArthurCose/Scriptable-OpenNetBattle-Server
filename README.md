@@ -305,6 +305,18 @@ Net.get_asset_type(server_path)
 Net.get_asset_size(server_path)
 ```
 
+### Async API
+
+```Lua
+promise.is_ready()
+promise.is_pending()
+promise.get_value() -- moves value
+-- Promise.await(promise) -- for coroutines
+-- Promise.all(promises) -- values[] - for coroutines
+
+Async.request(url, { method?, headers?, body? }) -- promise, value = { status, headers, body }
+```
+
 ## Building
 
 This project is built with Rust, so after installing Cargo, you can compile and run the project with `cargo run`.

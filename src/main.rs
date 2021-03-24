@@ -1,4 +1,5 @@
 mod helpers;
+mod jobs;
 mod net;
 mod packets;
 mod plugins;
@@ -105,8 +106,8 @@ fn main() {
                 }),
         )
         .arg(
-            clap::Arg::with_name("worker_threads")
-                .long("worker_thread_count")
+            clap::Arg::with_name("worker_thread_count")
+                .long("worker-threads")
                 .help("Sets the amount of threads to spawn for handling special tasks")
                 .default_value("2")
                 .validator(|value| match value.parse::<u16>() {
