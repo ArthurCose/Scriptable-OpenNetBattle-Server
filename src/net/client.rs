@@ -63,7 +63,7 @@ impl Client {
   }
 
   pub fn is_in_widget(&self) -> bool {
-    self.message_queue.len() > 0
+    !self.message_queue.is_empty()
   }
 
   pub(super) fn track_message(&mut self, owner: usize) {
