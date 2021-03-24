@@ -313,7 +313,7 @@ Net.kick_player(player_id, reason)
 #### Asset API
 
 ```Lua
-Net.load_asset(server_path) -- unstable, blocking, can silently fail (stores as a 0 byte asset)
+Net.update_asset(server_path, content)
 Net.has_asset(server_path)
 Net.get_asset_type(server_path)
 Net.get_asset_size(server_path)

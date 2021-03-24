@@ -63,37 +63,11 @@ fn build_flattened_dependency_chain_with_recursion<'a>(
 }
 
 pub(super) fn load_asset(path: std::path::PathBuf) -> Asset {
-  use std::fs::{metadata, read, read_to_string};
+  use std::fs::{metadata, read};
 
-  let path_string = path.to_str().unwrap_or_default();
-  let extension_index = path_string.rfind('.').unwrap_or_else(|| path_string.len());
-  let extension = path_string.to_lowercase().split_off(extension_index);
-
-  let asset_data = if extension == ".ogg" {
-    AssetData::Audio(read(&path).unwrap_or_default())
-  } else if extension == ".png" || extension == ".bmp" {
-    AssetData::Texture(read(&path).unwrap_or_default())
-  } else if extension == ".tsx" {
-    let original_data = read_to_string(&path).unwrap_or_default();
-    let translated_data = translate_tsx(&path, &original_data);
-
-    if translated_data == None {
-      println!("Invalid .tsx file: {:?}", path);
-    }
-
-    AssetData::Text(translated_data.unwrap_or(original_data))
-  } else {
-    AssetData::Text(read_to_string(&path).unwrap_or_default())
-  };
-
-  let mut dependencies = Vec::new();
-
-  if extension == ".tsx" {
-    // can't chain yet: https://github.com/rust-lang/rust/issues/53667
-    if let AssetData::Text(data) = &asset_data {
-      dependencies = resolve_tsx_dependencies(data);
-    }
-  }
+  let data = read(&path).unwrap_or_default();
+  let asset_data = resolve_asset_data(&path, &data);
+  let dependencies = resolve_dependencies(&path, &asset_data);
 
   let mut last_modified = 0;
 
@@ -111,6 +85,30 @@ pub(super) fn load_asset(path: std::path::PathBuf) -> Asset {
     dependencies,
     last_modified,
     cachable: true,
+  }
+}
+
+pub fn resolve_asset_data(path: &std::path::PathBuf, data: &[u8]) -> AssetData {
+  let extension = path
+    .extension()
+    .unwrap_or_default()
+    .to_str()
+    .unwrap_or_default();
+
+  match extension {
+    ".ogg" => AssetData::Audio(data.to_vec()),
+    ".png" | ".bmp" => AssetData::Texture(data.to_vec()),
+    ".tsx" => {
+      let original_data = String::from_utf8_lossy(data);
+      let translated_data = translate_tsx(&path, &original_data);
+
+      if translated_data == None {
+        println!("Invalid .tsx file: {:?}", path);
+      }
+
+      AssetData::Text(translated_data.unwrap_or(original_data.to_string()))
+    }
+    _ => AssetData::Text(String::from_utf8_lossy(data).to_string()),
   }
 }
 
@@ -145,6 +143,25 @@ pub(super) fn translate_tsx(path: &std::path::PathBuf, data: &str) -> Option<Str
   tileset_element.write_to(&mut output).ok()?;
 
   Some(String::from_utf8_lossy(&output[..]).into_owned())
+}
+
+pub fn resolve_dependencies(path: &std::path::PathBuf, asset_data: &AssetData) -> Vec<String> {
+  let extension = path
+    .extension()
+    .unwrap_or_default()
+    .to_str()
+    .unwrap_or_default();
+
+  match extension {
+    ".tsx" => {
+      if let AssetData::Text(data) = &asset_data {
+        resolve_tsx_dependencies(data)
+      } else {
+        vec![]
+      }
+    }
+    _ => vec![],
+  }
 }
 
 pub(super) fn resolve_tsx_dependencies(data: &str) -> Vec<String> {

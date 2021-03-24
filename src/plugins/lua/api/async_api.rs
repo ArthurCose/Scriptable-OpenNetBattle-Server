@@ -1,7 +1,3 @@
-use crate::jobs::read_file::read_file;
-use crate::jobs::web_download::web_download;
-use crate::jobs::web_request::web_request;
-use crate::jobs::write_file::write_file;
 use crate::jobs::{JobPromise, JobPromiseManager, PromiseValue};
 use crate::net::Net;
 use std::cell::RefCell;
@@ -180,6 +176,8 @@ pub fn add_async_api<'a, 'b>(
     "request",
     scope.create_function(
       move |lua_ctx, (url, options): (String, Option<rlua::Table>)| {
+        use crate::jobs::web_request::web_request;
+
         let mut net = net_ref.borrow_mut();
 
         let method: String;
@@ -226,6 +224,8 @@ pub fn add_async_api<'a, 'b>(
     "download",
     scope.create_function(
       move |lua_ctx, (path, url, options): (String, String, Option<rlua::Table>)| {
+        use crate::jobs::web_download::web_download;
+
         let mut net = net_ref.borrow_mut();
 
         let method: String;
@@ -272,6 +272,8 @@ pub fn add_async_api<'a, 'b>(
   api_table.set(
     "read_file",
     scope.create_function(move |lua_ctx, path: String| {
+      use crate::jobs::read_file::read_file;
+
       let mut net = net_ref.borrow_mut();
 
       let (job, promise) = read_file(path);
@@ -286,6 +288,7 @@ pub fn add_async_api<'a, 'b>(
   api_table.set(
     "write_file",
     scope.create_function(move |lua_ctx, (path, content): (String, rlua::String)| {
+      use crate::jobs::write_file::write_file;
       let mut net = net_ref.borrow_mut();
 
       let (job, promise) = write_file(path, content.as_bytes());
