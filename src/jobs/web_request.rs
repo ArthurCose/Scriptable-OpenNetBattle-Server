@@ -57,7 +57,13 @@ pub fn web_request(
     }
 
     let mut body = Vec::new();
-    response.into_reader().read_to_end(&mut body);
+
+    if let Err(err) = response.into_reader().read_to_end(&mut body) {
+      println!("{}", err);
+
+      thread_promise.set_value(PromiseValue::None);
+      return;
+    }
 
     thread_promise.set_value(PromiseValue::HttpResponse(HttpResponse {
       status,
