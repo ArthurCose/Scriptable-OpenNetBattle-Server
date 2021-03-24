@@ -2,7 +2,7 @@
 
 use super::bytes::*;
 use super::{VERSION_ID, VERSION_ITERATION};
-use crate::net::{Asset, AssetData};
+use crate::net::{Asset, AssetData, Direction};
 
 #[derive(Debug)]
 pub enum ServerPacket<'a> {
@@ -18,6 +18,7 @@ pub enum ServerPacket<'a> {
     spawn_x: f32,
     spawn_y: f32,
     spawn_z: f32,
+    spawn_direction: Direction,
   },
   Kick {
     reason: String,
@@ -41,8 +42,13 @@ pub enum ServerPacket<'a> {
   IncludeObject {
     id: u32,
   },
-  TransferStart,
-  TransferComplete,
+  TransferStart {
+    warp_out: bool,
+  },
+  TransferComplete {
+    warp_in: bool,
+    direction: Direction,
+  },
   MoveCamera {
     x: f32,
     y: f32,
@@ -142,12 +148,14 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       spawn_x,
       spawn_y,
       spawn_z,
+      spawn_direction,
     } => {
       write_u16(&mut buf, 2);
       write_string(&mut buf, ticket);
       write_f32(&mut buf, *spawn_x);
       write_f32(&mut buf, *spawn_y);
       write_f32(&mut buf, *spawn_z);
+      buf.push(translate_direction(*spawn_direction));
     }
     ServerPacket::Kick { reason } => {
       write_u16(&mut buf, 3);
@@ -192,11 +200,14 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_u16(&mut buf, 9);
       write_u32(&mut buf, *id);
     }
-    ServerPacket::TransferStart => {
+    ServerPacket::TransferStart { warp_out } => {
       write_u16(&mut buf, 10);
+      write_bool(&mut buf, *warp_out);
     }
-    ServerPacket::TransferComplete => {
+    ServerPacket::TransferComplete { warp_in, direction } => {
       write_u16(&mut buf, 11);
+      write_bool(&mut buf, *warp_in);
+      buf.push(translate_direction(*direction));
     }
     ServerPacket::MoveCamera { x, y, z, hold_time } => {
       write_u16(&mut buf, 12);
@@ -361,4 +372,18 @@ pub fn create_asset_stream<'a>(
   });
 
   packets
+}
+
+fn translate_direction(direction: Direction) -> u8 {
+  match direction {
+    Direction::Up => 0x01,
+    Direction::Left => 0x02,
+    Direction::Down => 0x04,
+    Direction::Right => 0x08,
+    Direction::UpLeft => 0x10,
+    Direction::UpRight => 0x20,
+    Direction::DownLeft => 0x40,
+    Direction::DownRight => 0x80,
+    _ => 0x00,
+  }
 }

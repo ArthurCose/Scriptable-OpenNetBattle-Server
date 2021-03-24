@@ -113,6 +113,16 @@ Home Warp:
 - Tile Objects only
 - Visible in minimap
 - Players will be warped home if walking into the tile this object is centered on
+- Custom properties:
+  - Direction: string
+    - Left
+    - Right
+    - Up
+    - Down
+    - Up Left
+    - Up Right
+    - Down Left
+    - Down Right
 
 Position Warp:
 
@@ -225,6 +235,8 @@ Net.get_custom_background_velocity(area_id) -- { x, y }
 Net.set_custom_background(area_id, texture_path, animation_path?, vel_x?, vel_y?)
 Net.get_spawn_position(area_id) -- { x, y, z }
 Net.set_spawn_position(area_id, x, y, z)
+Net.get_spawn_direction(area_id)
+Net.set_spawn_direction(area_id, direction)
 Net.list_tilesets(area_id) -- tileset_path[]
 Net.get_tileset(area_id, tileset_path) -- { path, firstGid }?
 Net.get_tileset_for_tile(area_id, tile_gid) -- { path, firstGid }?
@@ -287,12 +299,13 @@ Net.unlock_player_camera(player_id)
 Net.lock_player(player_id)
 Net.unlock_player(player_id)
 Net.move_player(player_id, x, y, z)
+-- Net.warp_player(player_id, x, y, z, direction?)
 Net.message_player(player_id, message, mug_texture_path?, mug_animation_path?)
 Net.question_player(player_id, question, mug_texture_path?, mug_animation_path?)
 Net.quiz_player(player_id, option_a?, option_b?, option_c?, mug_texture_path?, mug_animation_path?)
 -- Net.send_virus(player_id, data)
 -- Net.initiate_pvp(player_1_id, player_2_id, data)
-Net.transfer_player(player_id, area_id, warp_in?, x?, y?, z?)
+Net.transfer_player(player_id, area_id, warp_in?, x?, y?, z?, direction?)
 -- Net.transfer_server(player_id, server)
 Net.kick_player(player_id, reason)
 ```

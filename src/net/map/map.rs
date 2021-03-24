@@ -1,4 +1,4 @@
-use super::super::Asset;
+use super::super::{Asset, Direction};
 use super::map_layer::MapLayer;
 use super::map_object::{MapObject, MapObjectData};
 use super::Tile;
@@ -26,6 +26,7 @@ pub struct Map {
   spawn_x: f32,
   spawn_y: f32,
   spawn_z: f32,
+  spawn_direction: Direction,
   tilesets: Vec<TilesetInfo>,
   layers: Vec<MapLayer>,
   next_layer_id: u32,
@@ -53,6 +54,7 @@ impl Map {
       spawn_x: 0.0,
       spawn_y: 0.0,
       spawn_z: 0.0,
+      spawn_direction: Direction::None,
       tilesets: Vec::new(),
       layers: Vec::new(),
       next_layer_id: 0,
@@ -150,6 +152,20 @@ impl Map {
               map.spawn_x = map_object.x + map_object.height / 2.0;
               map.spawn_y = map_object.y + map_object.height / 2.0;
               map.spawn_z = object_layers as f32;
+
+              let direction_string = map_object
+                .custom_properties
+                .get("Direction")
+                .map(|string| string.as_str())
+                .unwrap_or_default();
+
+              map.spawn_direction = Direction::from(direction_string);
+
+              // make sure direction is set if the spawn is on a home warp
+              // otherwise the player will immediately warp out
+              if matches!(map.spawn_direction, Direction::None) {
+                map.spawn_direction = Direction::UpRight;
+              }
             }
 
             map.objects.push(map_object);
@@ -247,6 +263,14 @@ impl Map {
     self.spawn_x = x;
     self.spawn_y = y;
     self.spawn_z = z;
+  }
+
+  pub fn get_spawn_direction(&self) -> Direction {
+    self.spawn_direction
+  }
+
+  pub fn set_spawn_direction(&mut self, direction: Direction) {
+    self.spawn_direction = direction;
   }
 
   pub fn get_tile(&self, x: usize, y: usize, z: usize) -> Tile {

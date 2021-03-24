@@ -1,6 +1,6 @@
 use super::lua_errors::create_area_error;
 use crate::net::map::{Map, Tile};
-use crate::net::Net;
+use crate::net::{Direction, Net};
 use std::cell::RefCell;
 
 #[allow(clippy::type_complexity)]
@@ -350,6 +350,39 @@ pub fn add_area_api<'a, 'b>(
         let map = area.get_map_mut();
 
         map.set_spawn(x, y, z);
+
+        Ok(())
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
+    "get_spawn_direction",
+    scope.create_function(move |_, area_id: String| {
+      let net = net_ref.borrow();
+
+      if let Some(area) = net.get_area(&area_id) {
+        let direction = area.get_map().get_spawn_direction();
+
+        Ok(direction.to_string())
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    })?,
+  )?;
+
+  api_table.set(
+    "set_spawn_direction",
+    scope.create_function(move |_, (area_id, direction_string): (String, String)| {
+      let mut net = net_ref.borrow_mut();
+
+      if let Some(area) = net.get_area_mut(&area_id) {
+        let map = area.get_map_mut();
+
+        let direction = Direction::from(direction_string.as_str());
+        map.set_spawn_direction(direction);
 
         Ok(())
       } else {

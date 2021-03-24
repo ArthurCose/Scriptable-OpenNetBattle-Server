@@ -2,7 +2,7 @@ use super::boot::Boot;
 use super::client::Client;
 use super::map::Map;
 use super::server::ServerConfig;
-use super::{Area, Asset, AssetData, Navi};
+use super::{Area, Asset, AssetData, Direction, Navi};
 use crate::packets::{create_asset_stream, Reliability, ServerPacket};
 use crate::threads::worker_threads::{Job, JobGiver};
 use std::collections::HashMap;
@@ -517,6 +517,7 @@ impl Net {
     );
   }
 
+  #[allow(clippy::too_many_arguments)]
   pub fn transfer_player(
     &mut self,
     id: &str,
@@ -525,6 +526,7 @@ impl Net {
     x: f32,
     y: f32,
     z: f32,
+    direction: Direction,
   ) {
     if self.areas.get(area_id).is_none() {
       // non existent area
@@ -553,7 +555,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         &Reliability::ReliableOrdered,
-        &ServerPacket::TransferStart,
+        &ServerPacket::TransferStart { warp_out: warp_in },
       );
 
       let previous_area = self.areas.get_mut(&client.navi.area_id).unwrap();
@@ -617,7 +619,7 @@ impl Net {
     client.packet_shipper.send(
       &self.socket,
       &Reliability::ReliableOrdered,
-      &ServerPacket::TransferComplete,
+      &ServerPacket::TransferComplete { warp_in, direction },
     );
   }
 
@@ -721,6 +723,8 @@ impl Net {
     let animation_path = client.navi.animation_path.clone();
 
     let area = self.areas.get_mut(&area_id).unwrap();
+    let spawn_direction = area.get_map().get_spawn_direction();
+
     area.add_player(client.navi.id.clone());
 
     assert_asset(
@@ -750,6 +754,7 @@ impl Net {
       spawn_x: client.warp_x,
       spawn_y: client.warp_y,
       spawn_z: client.warp_z,
+      spawn_direction,
     };
 
     client

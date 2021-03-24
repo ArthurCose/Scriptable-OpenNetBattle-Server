@@ -1,6 +1,6 @@
 use super::super::super::MessageTracker;
 use super::lua_errors::{create_area_error, create_player_error};
-use crate::net::Net;
+use crate::net::{Direction, Net};
 use std::cell::RefCell;
 
 #[allow(clippy::type_complexity)]
@@ -316,13 +316,14 @@ pub fn add_player_api<'a, 'b>(
     "transfer_player",
     scope.create_function(
       move |_,
-            (id, area_id, warp_in_option, x_option, y_option, z_option): (
+            (id, area_id, warp_in_option, x_option, y_option, z_option, direction_option): (
         String,
         String,
         Option<bool>,
         Option<f32>,
         Option<f32>,
         Option<f32>,
+        Option<String>,
       )| {
         let mut net = net_ref.borrow_mut();
         let warp_in = warp_in_option.unwrap_or(true);
@@ -338,7 +339,9 @@ pub fn add_player_api<'a, 'b>(
           return Err(create_player_error(&id));
         }
 
-        net.transfer_player(&id, &area_id, warp_in, x, y, z);
+        let direction = Direction::from(direction_option.unwrap_or_default().as_str());
+
+        net.transfer_player(&id, &area_id, warp_in, x, y, z, direction);
 
         Ok(())
       },
