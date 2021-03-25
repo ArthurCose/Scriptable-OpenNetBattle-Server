@@ -91,6 +91,7 @@ pub enum ServerPacket<'a> {
     name: String,
     texture_path: String,
     animation_path: String,
+    direction: Direction,
     x: f32,
     y: f32,
     z: f32,
@@ -277,6 +278,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       name,
       texture_path,
       animation_path,
+      direction,
       x,
       y,
       z,
@@ -288,6 +290,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_string(&mut buf, name);
       write_string(&mut buf, texture_path);
       write_string(&mut buf, animation_path);
+      buf.push(translate_direction(*direction));
       write_f32(&mut buf, *x);
       write_f32(&mut buf, *y);
       write_f32(&mut buf, *z);

@@ -1,6 +1,5 @@
 use super::lua_errors::{create_area_error, create_bot_error};
-use crate::net::Navi;
-use crate::net::Net;
+use crate::net::{Direction, Navi, Net};
 use std::cell::RefCell;
 
 pub fn add_bot_api<'a, 'b>(
@@ -48,6 +47,7 @@ pub fn add_bot_api<'a, 'b>(
             area_id,
             texture_path,
             animation_path,
+            direction: Direction::None,
             x,
             y,
             z,

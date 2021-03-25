@@ -1,4 +1,4 @@
-use super::Navi;
+use super::{Direction, Navi};
 use crate::packets::PacketShipper;
 use std::collections::HashSet;
 use std::collections::VecDeque;
@@ -44,6 +44,7 @@ impl Client {
         area_id,
         texture_path: get_player_texture_path(&id),
         animation_path: get_player_animation_path(&id),
+        direction: Direction::None,
         x: spawn_x,
         y: spawn_y,
         z: spawn_z,

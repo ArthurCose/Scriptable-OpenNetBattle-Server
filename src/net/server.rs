@@ -252,7 +252,7 @@ impl Server {
 
           self.disconnect_client(net, &socket_address, "leaving");
         }
-        ClientPacket::Position { x, y, z } => {
+        ClientPacket::Position { x, y, z, direction } => {
           if self.config.log_packets {
             println!("Received Position packet from {}", socket_address);
           }
@@ -269,7 +269,7 @@ impl Server {
                 .handle_player_move(net, player_id, x, y, z);
             }
 
-            net.update_player_position(player_id, x, y, z);
+            net.update_player_position(player_id, x, y, z, direction);
           }
         }
         ClientPacket::Ready => {

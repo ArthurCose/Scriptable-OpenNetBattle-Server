@@ -3,25 +3,56 @@
 use super::bytes::*;
 use super::management::{get_reliability, Reliability};
 use super::PacketHeaders;
+use crate::net::Direction;
 
 #[derive(Debug)]
 pub enum ClientPacket {
   Ping,
-  Ack { reliability: Reliability, id: u64 },
-  AssetFound { path: String, last_modified: u64 },
-  TextureStream { data: Vec<u8> },
-  AnimationStream { data: Vec<u8> },
-  Login { username: String, password: String },
+  Ack {
+    reliability: Reliability,
+    id: u64,
+  },
+  AssetFound {
+    path: String,
+    last_modified: u64,
+  },
+  TextureStream {
+    data: Vec<u8>,
+  },
+  AnimationStream {
+    data: Vec<u8>,
+  },
+  Login {
+    username: String,
+    password: String,
+  },
   Logout,
   RequestJoin,
   Ready,
-  Position { x: f32, y: f32, z: f32 },
+  Position {
+    x: f32,
+    y: f32,
+    z: f32,
+    direction: Direction,
+  },
   AvatarChange,
-  Emote { emote_id: u8 },
-  ObjectInteraction { tile_object_id: u32 },
-  NaviInteraction { navi_id: String },
-  TileInteraction { x: f32, y: f32, z: f32 },
-  DialogResponse { response: u8 },
+  Emote {
+    emote_id: u8,
+  },
+  ObjectInteraction {
+    tile_object_id: u32,
+  },
+  NaviInteraction {
+    navi_id: String,
+  },
+  TileInteraction {
+    x: f32,
+    y: f32,
+    z: f32,
+  },
+  DialogResponse {
+    response: u8,
+  },
 }
 
 pub fn parse_client_packet(buf: &[u8]) -> Option<(PacketHeaders, ClientPacket)> {
@@ -78,6 +109,7 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
       x: read_f32(work_buf)?,
       y: read_f32(work_buf)?,
       z: read_f32(work_buf)?,
+      direction: read_direction(read_byte(work_buf)?),
     }),
     10 => Some(ClientPacket::AvatarChange),
     11 => Some(ClientPacket::Emote {
@@ -98,5 +130,19 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
       response: read_byte(work_buf)?,
     }),
     _ => None,
+  }
+}
+
+fn read_direction(byte: u8) -> Direction {
+  match byte {
+    0x01 => Direction::Up,
+    0x02 => Direction::Left,
+    0x04 => Direction::Down,
+    0x08 => Direction::Right,
+    0x10 => Direction::UpLeft,
+    0x20 => Direction::UpRight,
+    0x40 => Direction::DownLeft,
+    0x80 => Direction::DownRight,
+    _ => Direction::None,
   }
 }

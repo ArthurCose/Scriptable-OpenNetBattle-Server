@@ -342,11 +342,19 @@ impl Net {
     }
   }
 
-  pub(crate) fn update_player_position(&mut self, id: &str, x: f32, y: f32, z: f32) {
+  pub(crate) fn update_player_position(
+    &mut self,
+    id: &str,
+    x: f32,
+    y: f32,
+    z: f32,
+    direction: Direction,
+  ) {
     let client = self.clients.get_mut(id).unwrap();
     client.navi.x = x;
     client.navi.y = y;
     client.navi.z = z;
+    client.navi.direction = direction;
 
     // skip if client has not even been sent to anyone yet
     if !client.ready {
@@ -775,6 +783,7 @@ impl Net {
         name: other_client.navi.name.clone(),
         texture_path: other_client.navi.texture_path.clone(),
         animation_path: other_client.navi.animation_path.clone(),
+        direction: other_client.navi.direction,
         x: other_client.navi.x,
         y: other_client.navi.y,
         z: other_client.navi.z,
@@ -795,6 +804,7 @@ impl Net {
         name: bot.name.clone(),
         texture_path: bot.texture_path.clone(),
         animation_path: bot.animation_path.clone(),
+        direction: bot.direction,
         x: bot.x,
         y: bot.y,
         z: bot.z,
@@ -843,6 +853,7 @@ impl Net {
         name: client.navi.name.clone(),
         texture_path,
         animation_path,
+        direction: client.navi.direction,
         x: client.warp_x,
         y: client.warp_y,
         z: client.warp_z,
@@ -902,6 +913,7 @@ impl Net {
         name: bot.name.clone(),
         texture_path: bot.texture_path.clone(),
         animation_path: bot.animation_path.clone(),
+        direction: bot.direction,
         x: bot.x,
         y: bot.y,
         z: bot.z,
@@ -1107,6 +1119,7 @@ impl Net {
           name: bot.name.clone(),
           texture_path: bot.texture_path.clone(),
           animation_path: bot.animation_path.clone(),
+          direction: bot.direction,
           x: bot.x,
           y: bot.y,
           z: bot.z,
