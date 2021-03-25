@@ -75,7 +75,7 @@ pub(super) fn load_asset(path: std::path::PathBuf) -> Asset {
     if let Ok(time) = file_meta.modified() {
       last_modified = time
         .duration_since(std::time::UNIX_EPOCH)
-        .expect("File written before epoch?")
+        .unwrap_or_default()
         .as_secs();
     }
   }
