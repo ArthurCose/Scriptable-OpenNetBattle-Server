@@ -96,9 +96,9 @@ pub fn resolve_asset_data(path: &std::path::PathBuf, data: &[u8]) -> AssetData {
     .unwrap_or_default();
 
   match extension {
-    ".ogg" => AssetData::Audio(data.to_vec()),
-    ".png" | ".bmp" => AssetData::Texture(data.to_vec()),
-    ".tsx" => {
+    "ogg" => AssetData::Audio(data.to_vec()),
+    "png" | "bmp" => AssetData::Texture(data.to_vec()),
+    "tsx" => {
       let original_data = String::from_utf8_lossy(data);
       let translated_data = translate_tsx(&path, &original_data);
 
@@ -153,7 +153,7 @@ pub fn resolve_dependencies(path: &std::path::PathBuf, asset_data: &AssetData) -
     .unwrap_or_default();
 
   match extension {
-    ".tsx" => {
+    "tsx" => {
       if let AssetData::Text(data) = &asset_data {
         resolve_tsx_dependencies(data)
       } else {
