@@ -24,22 +24,11 @@ pub fn add_area_api<'a, 'b>(
   )?;
 
   api_table.set(
-    "reload_area",
-    scope.create_function(move |_, area_id: String| {
-      use std::fs::read_to_string;
-      use std::path::PathBuf;
-
+    "update_area",
+    scope.create_function(move |_, (area_id, data): (String, String)| {
       let mut net = net_ref.borrow_mut();
 
-      let path = PathBuf::from("areas").join(&area_id);
-
-      // todo: make non blocking?
-      let map = match read_to_string(path) {
-        Ok(text) => Map::from(text),
-        Err(err) => {
-          return Err(rlua::Error::RuntimeError(err.to_string()));
-        }
-      };
+      let map = Map::from(data);
 
       if let Some(area) = net.get_area_mut(&area_id) {
         area.set_map(map);

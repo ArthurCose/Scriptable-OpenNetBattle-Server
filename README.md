@@ -216,7 +216,7 @@ Interactions with the cyberworld are performed through functions attached to a g
 
 Net.list_areas() -- area_id[]
 -- Net.create_area(new_area_id)
-Net.reload_area(area_id) -- unstable, blocking, may throw
+Net.update_area(area_id, tmx)
 Net.clone_area(area_id, new_area_id)
 Net.save_area(area_id) -- unstable, blocking, may throw
 Net.remove_area(area_id)
