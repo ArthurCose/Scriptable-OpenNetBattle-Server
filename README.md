@@ -218,8 +218,8 @@ Net.list_areas() -- area_id[]
 -- Net.create_area(new_area_id)
 Net.update_area(area_id, tmx)
 Net.clone_area(area_id, new_area_id)
-Net.save_area(area_id) -- unstable, blocking, may throw
 Net.remove_area(area_id)
+Net.map_to_string(area_id)
 Net.get_width(area_id)
 Net.get_height(area_id)
 Net.get_tile_width()

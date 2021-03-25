@@ -58,25 +58,16 @@ pub fn add_area_api<'a, 'b>(
   )?;
 
   api_table.set(
-    "save_area",
+    "map_to_string",
     scope.create_function(move |_, area_id: String| {
-      use std::fs::write;
-      use std::path::PathBuf;
-
       let mut net = net_ref.borrow_mut();
 
-      // todo: make non blocking?
       if let Some(area) = net.get_area_mut(&area_id) {
         let map = area.get_map_mut();
-
-        let path = PathBuf::from("areas").join(&area_id);
-
-        if let Err(err) = write(path, map.render()) {
-          return Err(rlua::Error::RuntimeError(err.to_string()));
-        }
+        Ok(map.render())
+      } else {
+        Err(create_area_error(&area_id))
       }
-
-      Ok(())
     })?,
   )?;
 
