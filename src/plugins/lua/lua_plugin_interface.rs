@@ -1,5 +1,5 @@
 use super::super::MessageTracker;
-use super::api::{add_async_api, add_net_api, add_static_api};
+use super::api::{add_net_api, add_static_api, extend_async_api};
 use crate::jobs::JobPromiseManager;
 use crate::net::Net;
 use crate::plugins::PluginInterface;
@@ -96,9 +96,8 @@ impl LuaPluginInterface {
         )?;
         globals.set("Net", api_table)?;
 
-        let async_api_table = lua_ctx.create_table()?;
-        add_async_api(&async_api_table, &scope, &promise_manager_ref, &net_ref)?;
-        globals.set("Async", async_api_table)?;
+        let async_api_table = globals.get("Async")?;
+        extend_async_api(&async_api_table, &scope, &promise_manager_ref, &net_ref)?;
 
         lua_ctx.load(&script).exec()?;
 
@@ -416,9 +415,8 @@ fn handle_event<F>(
             )?;
             globals.set("Net", api_table)?;
 
-            let async_api_table = lua_ctx.create_table()?;
-            add_async_api(&async_api_table, &scope, &promise_manager_ref, &net_ref)?;
-            globals.set("Async", async_api_table)?;
+            let async_api_table = globals.get("Async")?;
+            extend_async_api(&async_api_table, &scope, &promise_manager_ref, &net_ref)?;
 
             if let Ok(func) = globals.get::<_, rlua::Function>(event_fn_name) {
               if let Err(err) = fn_caller(func) {

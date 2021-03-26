@@ -2,12 +2,12 @@ use crate::jobs::{JobPromise, JobPromiseManager, PromiseValue};
 use crate::net::Net;
 use std::cell::RefCell;
 
-pub fn add_promise_api(lua_ctx: &rlua::Context) -> rlua::Result<()> {
-  let promise_api = lua_ctx.create_table()?;
+pub fn add_async_api(lua_ctx: &rlua::Context) -> rlua::Result<()> {
+  let async_api = lua_ctx.create_table()?;
 
-  promise_api.set("_needs_cleanup", Vec::<usize>::new())?;
+  async_api.set("_needs_cleanup", Vec::<usize>::new())?;
 
-  promise_api.set(
+  async_api.set(
     "_create_promise",
     lua_ctx.create_function(|lua_ctx, id: usize| {
       let promise = lua_ctx.create_table()?;
@@ -50,12 +50,12 @@ pub fn add_promise_api(lua_ctx: &rlua::Context) -> rlua::Result<()> {
       promise_meta_table.set(
         "__gc",
         lua_ctx.create_function(move |lua_ctx, _: ()| {
-          let promise_api: rlua::Table = lua_ctx.globals().get("Promise")?;
-          let mut needs_cleanup: Vec<usize> = promise_api.get("_needs_cleanup")?;
+          let async_api: rlua::Table = lua_ctx.globals().get("Async")?;
+          let mut needs_cleanup: Vec<usize> = async_api.get("_needs_cleanup")?;
 
           needs_cleanup.push(id);
 
-          promise_api.set("_needs_cleanup", needs_cleanup)?;
+          async_api.set("_needs_cleanup", needs_cleanup)?;
 
           Ok(())
         })?,
@@ -67,13 +67,13 @@ pub fn add_promise_api(lua_ctx: &rlua::Context) -> rlua::Result<()> {
     })?,
   )?;
 
-  lua_ctx.globals().set("Promise", promise_api)?;
+  lua_ctx.globals().set("Async", async_api)?;
 
   lua_ctx
     .load(
       // todo: move to separate file?
       "\
-        function Promise.await(promise)\n\
+        function Async.await(promise)\n\
           while promise.is_pending() do\n\
             coroutine.yield()\n\
           end\n\
@@ -81,7 +81,7 @@ pub fn add_promise_api(lua_ctx: &rlua::Context) -> rlua::Result<()> {
           return promise.get_value()\n\
         end\n\
 
-        function Promise.await_all(promises)\n\
+        function Async.await_all(promises)\n\
           while true do\n\
             local completed = 0\n\
 
@@ -110,7 +110,7 @@ pub fn add_promise_api(lua_ctx: &rlua::Context) -> rlua::Result<()> {
   Ok(())
 }
 
-pub fn add_async_api<'a, 'b>(
+pub fn extend_async_api<'a, 'b>(
   api_table: &rlua::Table<'a>,
   scope: &rlua::Scope<'a, 'b>,
   promise_manager_ref: &'b RefCell<&mut JobPromiseManager>,
@@ -314,8 +314,8 @@ fn create_lua_promise<'a>(
   let mut promise_manager = promise_manager_ref.borrow_mut();
   let id = promise_manager.add_promise(promise);
 
-  let promise_api: rlua::Table = lua_ctx.globals().get("Promise")?;
-  let create_promise: rlua::Function = promise_api.get("_create_promise")?;
+  let async_api: rlua::Table = lua_ctx.globals().get("Async")?;
+  let create_promise: rlua::Function = async_api.get("_create_promise")?;
   let lua_promise: rlua::Table = create_promise.call(id)?;
 
   Ok(lua_promise)
@@ -325,9 +325,9 @@ fn clean_up_promises(
   lua_ctx: &rlua::Context,
   promise_manager_ref: &RefCell<&mut JobPromiseManager>,
 ) -> rlua::Result<()> {
-  let promise_api: rlua::Table = lua_ctx.globals().get("Promise")?;
+  let async_api: rlua::Table = lua_ctx.globals().get("Async")?;
 
-  let needs_cleanup: Vec<usize> = promise_api.get("_needs_cleanup")?;
+  let needs_cleanup: Vec<usize> = async_api.get("_needs_cleanup")?;
 
   let mut promise_manager = promise_manager_ref.borrow_mut();
 
@@ -335,7 +335,7 @@ fn clean_up_promises(
     promise_manager.remove_promise(id);
   }
 
-  promise_api.set("_needs_cleanup", Vec::<usize>::new())?;
+  async_api.set("_needs_cleanup", Vec::<usize>::new())?;
 
   Ok(())
 }

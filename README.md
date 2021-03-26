@@ -326,16 +326,14 @@ If you want to use IO while players are connected, you'll want to use the Async 
 Note: paths in this section use system paths and not asset paths.
 
 ```Lua
--- promise helper table
-Promise.await(promise) -- value -- for coroutines
-Promise.await_all(promises) -- values[] -- for coroutines
-
--- promise objects
+-- promise objects returned by most async functions
 promise.is_ready()
 promise.is_pending()
-promise.get_value()
+promise.get_value() -- future get_value() calls will return nil
 
-Async.request(url, { method?, headers?, body? }?) -- promise, value = { status, headers, body }
+Async.await(promise) -- value -- for coroutines
+Async.await_all(promises) -- values[] -- for coroutines
+Async.request(url, { method?, headers?, body? }?) -- promise, value = { status, headers, body }?
 Async.download(path, url, { method?, headers?, body? }?) -- promise, value = bool
 Async.read_file(path) -- promise, value = string
 Async.write_file(path, content) -- promise, value = bool

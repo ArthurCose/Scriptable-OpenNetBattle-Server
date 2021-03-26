@@ -7,12 +7,11 @@ mod object_api;
 mod player_api;
 
 use super::super::MessageTracker;
-use crate::jobs::JobPromiseManager;
 use crate::net::Net;
 use std::cell::RefCell;
 
 pub fn add_static_api(lua_ctx: &rlua::Context) -> rlua::Result<()> {
-  async_api::add_promise_api(lua_ctx)?;
+  async_api::add_async_api(lua_ctx)?;
 
   Ok(())
 }
@@ -33,13 +32,4 @@ pub fn add_net_api<'a, 'b>(
   Ok(())
 }
 
-pub fn add_async_api<'a, 'b>(
-  api_table: &rlua::Table<'a>,
-  scope: &rlua::Scope<'a, 'b>,
-  promise_manager_ref: &'b RefCell<&mut JobPromiseManager>,
-  net_ref: &'b RefCell<&mut Net>,
-) -> rlua::Result<()> {
-  async_api::add_async_api(api_table, scope, promise_manager_ref, net_ref)?;
-
-  Ok(())
-}
+pub use async_api::extend_async_api;
