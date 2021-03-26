@@ -259,6 +259,7 @@ Net.resize_object(area_id, object_id, width, height)
 Net.set_object_rotation(area_id, object_id, rotation)
 Net.set_object_visibility(area_id, object_id, visibility)
 Net.move_object(area_id, object_id, x, y, layer)
+-- Net.set_object_data(area_id, object_id, data)
 ```
 
 #### Bot API
@@ -327,7 +328,7 @@ Note: paths in this section use system paths and not asset paths.
 ```Lua
 -- promise helper table
 Promise.await(promise) -- value -- for coroutines
-Promise.all(promises) -- values[] -- for coroutines
+Promise.await_all(promises) -- values[] -- for coroutines
 
 -- promise objects
 promise.is_ready()

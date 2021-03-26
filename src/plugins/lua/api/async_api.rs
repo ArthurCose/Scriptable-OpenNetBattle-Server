@@ -81,7 +81,7 @@ pub fn add_promise_api(lua_ctx: &rlua::Context) -> rlua::Result<()> {
           return promise.get_value()\n\
         end\n\
 
-        function Promise.all(promises)\n\
+        function Promise.await_all(promises)\n\
           while true do\n\
             local completed = 0\n\
 
