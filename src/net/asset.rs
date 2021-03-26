@@ -24,11 +24,11 @@ impl Asset {
 }
 
 pub fn get_player_texture_path(player_id: &str) -> String {
-  String::from("/server/navis/") + player_id + ".texture"
+  String::from("/server/players/") + player_id + ".texture"
 }
 
 pub fn get_player_animation_path(player_id: &str) -> String {
-  String::from("/server/navis/") + player_id + ".animation"
+  String::from("/server/players/") + player_id + ".animation"
 }
 
 pub fn get_map_path(map_id: &str) -> String {

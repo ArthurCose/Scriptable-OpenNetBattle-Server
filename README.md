@@ -21,7 +21,7 @@ Paths
   - `/assets`
     - Generated at start from files in `./assets`.
     - `./assets/prog.png` can be referenced with `/server/assets/prog.png`
-  - `/navis`
+  - `/players`
     - Stores avatar files sent from players (5 MiB limit)
     - Textures are stored as `[id].texture`, and animations are stored as `[id].animation`
   - `/maps`
