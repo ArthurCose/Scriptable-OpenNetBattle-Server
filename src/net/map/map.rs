@@ -129,6 +129,26 @@ impl Map {
           let id: u32 = unwrap_and_parse_or_default(child.attr("id"));
           let name: String = child.attr("name").unwrap_or_default().to_string();
 
+          // warnings
+          let manual_horizontal_offset: i32 = unwrap_and_parse_or_default(child.attr("offsetx"));
+          let manual_vertical_offset: i32 = unwrap_and_parse_or_default(child.attr("offsety"));
+          let correct_vertical_offset = map.layers.len() as i32 * -16;
+
+          if manual_horizontal_offset != 0 {
+            println!(
+              "Layer {} has incorrect horizontal offset! (Should be 0)",
+              name
+            );
+          }
+
+          if manual_vertical_offset != correct_vertical_offset {
+            println!(
+              "Layer {} has incorrect vertical offset! (Should be {})",
+              name, correct_vertical_offset
+            );
+          }
+
+          // actual handling
           let data: Vec<u32> = child
             .get_child("data", minidom::NSChoice::Any)
             .unwrap()
