@@ -129,24 +129,13 @@ impl Map {
           let id: u32 = unwrap_and_parse_or_default(child.attr("id"));
           let name: String = child.attr("name").unwrap_or_default().to_string();
 
-          // warnings
-          let manual_horizontal_offset: i32 = unwrap_and_parse_or_default(child.attr("offsetx"));
-          let manual_vertical_offset: i32 = unwrap_and_parse_or_default(child.attr("offsety"));
-          let correct_vertical_offset = map.layers.len() as i32 * -16;
-
-          if manual_horizontal_offset != 0 {
-            println!(
-              "Layer {} has incorrect horizontal offset! (Should be 0)",
-              name
-            );
-          }
-
-          if manual_vertical_offset != correct_vertical_offset {
-            println!(
-              "Layer {} has incorrect vertical offset! (Should be {})",
-              name, correct_vertical_offset
-            );
-          }
+          // map name might be missing if the file wasn't generated
+          Map::test_offsets_and_warn_for_layer(
+            map.name.as_str(),
+            name.as_str(),
+            map.layers.len(),
+            child,
+          );
 
           // actual handling
           let data: Vec<u32> = child
@@ -165,6 +154,15 @@ impl Map {
           map.layers.push(layer);
         }
         "objectgroup" => {
+          let name: &str = child.attr("name").unwrap_or_default();
+
+          // map name might be missing if the file wasn't generated
+          Map::test_offsets_and_warn_for_layer(map.name.as_str(), name, object_layers, child);
+
+          if object_layers + 1 != map.layers.len() {
+            println!("{}: Layer \"{}\" will link to layer {}! (Layer order starting from bottom is Tile, Object, Tile, Object, etc)", map.name, name, object_layers);
+          }
+
           for object_element in child.children() {
             let map_object = MapObject::from(object_element, object_layers, scale_x, scale_y);
 
@@ -198,6 +196,32 @@ impl Map {
     }
 
     map
+  }
+
+  fn test_offsets_and_warn_for_layer(
+    map_name: &str,
+    layer_name: &str,
+    layer_index: usize,
+    layer_element: &minidom::Element,
+  ) {
+    // warnings
+    let manual_horizontal_offset: i32 = unwrap_and_parse_or_default(layer_element.attr("offsetx"));
+    let manual_vertical_offset: i32 = unwrap_and_parse_or_default(layer_element.attr("offsety"));
+    let correct_vertical_offset = layer_index as i32 * -16;
+
+    if manual_horizontal_offset != 0 {
+      println!(
+        "{}: Layer \"{}\" has incorrect horizontal offset! (Should be 0)",
+        map_name, layer_name
+      );
+    }
+
+    if manual_vertical_offset != correct_vertical_offset {
+      println!(
+        "{}: Layer \"{}\" has incorrect vertical offset! (Should be {})",
+        map_name, layer_name, correct_vertical_offset
+      );
+    }
   }
 
   pub fn get_tilesets(&self) -> &Vec<TilesetInfo> {
