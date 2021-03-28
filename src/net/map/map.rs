@@ -234,7 +234,7 @@ impl Map {
 
   pub fn set_name(&mut self, name: String) {
     self.name = name;
-    self.cached = false;
+    self.mark_dirty();
   }
 
   pub fn get_song_path(&self) -> &String {
@@ -243,7 +243,7 @@ impl Map {
 
   pub fn set_song_path(&mut self, path: String) {
     self.song_path = path;
-    self.cached = false;
+    self.mark_dirty();
   }
 
   pub fn get_background_name(&self) -> &String {
@@ -252,7 +252,7 @@ impl Map {
 
   pub fn set_background_name(&mut self, name: String) {
     self.background_name = name;
-    self.cached = false;
+    self.mark_dirty();
   }
 
   pub fn get_custom_background_texture_path(&self) -> &String {
@@ -261,7 +261,7 @@ impl Map {
 
   pub fn set_custom_background_texture_path(&mut self, path: String) {
     self.background_texture_path = path;
-    self.cached = false;
+    self.mark_dirty();
   }
 
   pub fn get_custom_background_animation_path(&self) -> &String {
@@ -270,7 +270,7 @@ impl Map {
 
   pub fn set_custom_background_animation_path(&mut self, path: String) {
     self.background_animation_path = path;
-    self.cached = false;
+    self.mark_dirty();
   }
 
   pub fn get_custom_background_velocity(&self) -> (f32, f32) {
@@ -280,7 +280,7 @@ impl Map {
   pub fn set_custom_background_velocity(&mut self, x: f32, y: f32) {
     self.background_vel_x = x;
     self.background_vel_y = y;
-    self.cached = false;
+    self.mark_dirty();
   }
 
   pub fn get_width(&self) -> usize {
@@ -334,7 +334,7 @@ impl Map {
 
     if layer.get_tile(x, y) != tile {
       layer.set_tile(x, y, tile);
-      self.cached = false;
+      self.mark_dirty();
     }
   }
 
@@ -384,7 +384,7 @@ impl Map {
     self.objects.push(map_object);
 
     self.next_object_id += 1;
-    self.cached = false;
+    self.mark_dirty();
 
     id
   }
@@ -393,7 +393,7 @@ impl Map {
     if let Some(index) = self.objects.iter().position(|object| object.id == id) {
       self.objects.remove(index);
 
-      self.cached = false;
+      self.mark_dirty();
     }
   }
 
@@ -401,7 +401,7 @@ impl Map {
     if let Some(object) = self.objects.iter_mut().find(|object| object.id == id) {
       object.name = name;
 
-      self.cached = false;
+      self.mark_dirty();
     }
   }
 
@@ -409,7 +409,7 @@ impl Map {
     if let Some(object) = self.objects.iter_mut().find(|object| object.id == id) {
       object.object_type = object_type;
 
-      self.cached = false;
+      self.mark_dirty();
     }
   }
 
@@ -417,7 +417,7 @@ impl Map {
     if let Some(object) = self.objects.iter_mut().find(|object| object.id == id) {
       object.custom_properties.insert(name, value);
 
-      self.cached = false;
+      self.mark_dirty();
     }
   }
 
@@ -431,7 +431,7 @@ impl Map {
       object.width = width;
       object.height = height;
 
-      self.cached = false;
+      self.mark_dirty();
     }
   }
 
@@ -439,7 +439,7 @@ impl Map {
     if let Some(object) = self.objects.iter_mut().find(|object| object.id == id) {
       object.rotation = rotation;
 
-      self.cached = false;
+      self.mark_dirty();
     }
   }
 
@@ -447,7 +447,7 @@ impl Map {
     if let Some(object) = self.objects.iter_mut().find(|object| object.id == id) {
       object.visible = visibility;
 
-      self.cached = false;
+      self.mark_dirty();
     }
   }
 
@@ -457,7 +457,7 @@ impl Map {
       object.y = y;
       object.layer = layer;
 
-      self.cached = false;
+      self.mark_dirty();
     }
   }
 
@@ -524,6 +524,11 @@ impl Map {
     }
 
     self.cached_string.clone()
+  }
+
+  fn mark_dirty(&mut self) {
+    self.asset_stale = true;
+    self.cached = false;
   }
 
   pub(in super::super) fn asset_is_stale(&self) -> bool {
