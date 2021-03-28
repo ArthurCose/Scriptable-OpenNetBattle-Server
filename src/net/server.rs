@@ -261,7 +261,8 @@ impl Server {
 
           if client.ready {
             #[allow(clippy::float_cmp)]
-            let position_changed = client.navi.x != x || client.navi.y != y || client.navi.z != z;
+            let position_changed =
+              client.actor.x != x || client.actor.y != y || client.actor.z != z;
 
             if position_changed {
               self
@@ -327,14 +328,14 @@ impl Server {
             .plugin_wrapper
             .handle_object_interaction(net, player_id, tile_object_id);
         }
-        ClientPacket::NaviInteraction { navi_id } => {
+        ClientPacket::ActorInteraction { actor_id } => {
           if self.config.log_packets {
-            println!("Received NaviInteraction packet from {}", socket_address);
+            println!("Received ActorInteraction packet from {}", socket_address);
           }
 
           self
             .plugin_wrapper
-            .handle_navi_interaction(net, player_id, &navi_id);
+            .handle_actor_interaction(net, player_id, &actor_id);
         }
         ClientPacket::TileInteraction { x, y, z } => {
           if self.config.log_packets {

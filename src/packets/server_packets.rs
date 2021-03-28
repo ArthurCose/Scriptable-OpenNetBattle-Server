@@ -86,7 +86,7 @@ pub enum ServerPacket<'a> {
     mug_texture_path: String,
     mug_animation_path: String,
   },
-  NaviConnected {
+  ActorConnected {
     ticket: String,
     name: String,
     texture_path: String,
@@ -98,26 +98,26 @@ pub enum ServerPacket<'a> {
     solid: bool,
     warp_in: bool,
   },
-  NaviDisconnected {
+  ActorDisconnected {
     ticket: String,
     warp_out: bool,
   },
-  NaviSetName {
+  ActorSetName {
     ticket: String,
     name: String,
   },
-  NaviMove {
+  ActorMove {
     ticket: String,
     x: f32,
     y: f32,
     z: f32,
   },
-  NaviSetAvatar {
+  ActorSetAvatar {
     ticket: String,
     texture_path: String,
     animation_path: String,
   },
-  NaviEmote {
+  ActorEmote {
     ticket: String,
     emote_id: u8,
   },
@@ -273,7 +273,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_string(&mut buf, mug_texture_path);
       write_string(&mut buf, mug_animation_path);
     }
-    ServerPacket::NaviConnected {
+    ServerPacket::ActorConnected {
       ticket,
       name,
       texture_path,
@@ -297,24 +297,24 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_bool(&mut buf, *solid);
       write_bool(&mut buf, *warp_in);
     }
-    ServerPacket::NaviDisconnected { ticket, warp_out } => {
+    ServerPacket::ActorDisconnected { ticket, warp_out } => {
       write_u16(&mut buf, 22);
       write_string(&mut buf, ticket);
       write_bool(&mut buf, *warp_out);
     }
-    ServerPacket::NaviSetName { ticket, name } => {
+    ServerPacket::ActorSetName { ticket, name } => {
       write_u16(&mut buf, 23);
       write_string(&mut buf, ticket);
       write_string(&mut buf, name);
     }
-    ServerPacket::NaviMove { ticket, x, y, z } => {
+    ServerPacket::ActorMove { ticket, x, y, z } => {
       write_u16(&mut buf, 24);
       write_string(&mut buf, ticket);
       write_f32(&mut buf, *x);
       write_f32(&mut buf, *y);
       write_f32(&mut buf, *z);
     }
-    ServerPacket::NaviSetAvatar {
+    ServerPacket::ActorSetAvatar {
       ticket,
       texture_path,
       animation_path,
@@ -324,7 +324,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_string(&mut buf, texture_path);
       write_string(&mut buf, animation_path);
     }
-    ServerPacket::NaviEmote { ticket, emote_id } => {
+    ServerPacket::ActorEmote { ticket, emote_id } => {
       write_u16(&mut buf, 26);
       buf.push(*emote_id);
       write_string(&mut buf, ticket);

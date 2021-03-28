@@ -2,7 +2,7 @@ use super::boot::Boot;
 use super::client::Client;
 use super::map::Map;
 use super::server::ServerConfig;
-use super::{Area, Asset, AssetData, Direction, Navi};
+use super::{Actor, Area, Asset, AssetData, Direction};
 use crate::packets::{create_asset_stream, Reliability, ServerPacket};
 use crate::threads::worker_threads::{Job, JobGiver};
 use std::collections::HashMap;
@@ -16,7 +16,7 @@ pub struct Net {
   avatar_dimensions_limit: u32,
   areas: HashMap<String, Area>,
   clients: HashMap<String, Client>,
-  bots: HashMap<String, Navi>,
+  bots: HashMap<String, Actor>,
   assets: HashMap<String, Asset>,
   active_script: usize,
   kick_list: Vec<Boot>,
@@ -155,8 +155,8 @@ impl Net {
     self.assets.remove(path);
   }
 
-  pub fn get_player(&self, id: &str) -> Option<&Navi> {
-    self.clients.get(id).map(|client| &client.navi)
+  pub fn get_player(&self, id: &str) -> Option<&Actor> {
+    self.clients.get(id).map(|client| &client.actor)
   }
 
   pub(super) fn get_client(&self, id: &str) -> Option<&Client> {
@@ -169,16 +169,16 @@ impl Net {
 
   pub fn set_player_name(&mut self, id: &str, name: String) {
     if let Some(client) = self.clients.get_mut(id) {
-      client.navi.name = name.clone();
+      client.actor.name = name.clone();
 
       // skip if client has not even been sent to anyone yet
       if client.ready {
-        let packet = ServerPacket::NaviSetName {
+        let packet = ServerPacket::ActorSetName {
           ticket: id.to_string(),
           name,
         };
 
-        let area = self.areas.get(&client.navi.area_id).unwrap();
+        let area = self.areas.get(&client.actor.area_id).unwrap();
 
         broadcast_to_area(
           &self.socket,
@@ -193,10 +193,10 @@ impl Net {
 
   pub fn set_player_avatar(&mut self, id: &str, texture_path: String, animation_path: String) {
     if let Some(client) = self.clients.get_mut(id) {
-      client.navi.texture_path = texture_path.clone();
-      client.navi.animation_path = animation_path.clone();
+      client.actor.texture_path = texture_path.clone();
+      client.actor.animation_path = animation_path.clone();
 
-      let area = self.areas.get(&client.navi.area_id).unwrap();
+      let area = self.areas.get(&client.actor.area_id).unwrap();
 
       // skip if client has not even been sent to anyone yet
       if client.ready {
@@ -216,7 +216,7 @@ impl Net {
           &animation_path,
         );
 
-        let packet = ServerPacket::NaviSetAvatar {
+        let packet = ServerPacket::ActorSetAvatar {
           ticket: id.to_string(),
           texture_path,
           animation_path,
@@ -235,12 +235,12 @@ impl Net {
 
   pub fn player_emote(&mut self, id: &str, emote_id: u8) {
     if let Some(client) = self.clients.get(id) {
-      let packet = ServerPacket::NaviEmote {
+      let packet = ServerPacket::ActorEmote {
         ticket: id.to_string(),
         emote_id,
       };
 
-      let area = self.areas.get(&client.navi.area_id).unwrap();
+      let area = self.areas.get(&client.actor.area_id).unwrap();
 
       broadcast_to_area(
         &self.socket,
@@ -351,24 +351,24 @@ impl Net {
     direction: Direction,
   ) {
     let client = self.clients.get_mut(id).unwrap();
-    client.navi.x = x;
-    client.navi.y = y;
-    client.navi.z = z;
-    client.navi.direction = direction;
+    client.actor.x = x;
+    client.actor.y = y;
+    client.actor.z = z;
+    client.actor.direction = direction;
 
     // skip if client has not even been sent to anyone yet
     if !client.ready {
       return;
     }
 
-    let packet = ServerPacket::NaviMove {
+    let packet = ServerPacket::ActorMove {
       ticket: id.to_string(),
       x,
       y,
       z,
     };
 
-    let area = self.areas.get(&client.navi.area_id).unwrap();
+    let area = self.areas.get(&client.actor.area_id).unwrap();
 
     broadcast_to_area(
       &self.socket,
@@ -529,7 +529,7 @@ impl Net {
     let animation_path;
 
     if let Some(client) = self.clients.get_mut(id) {
-      let previous_area = self.areas.get_mut(&client.navi.area_id).unwrap();
+      let previous_area = self.areas.get_mut(&client.actor.area_id).unwrap();
 
       if !previous_area
         .get_connected_players()
@@ -537,12 +537,12 @@ impl Net {
       {
         // client has not been added to any area yet
         // assume client was transferred on initial connection by a plugin
-        client.navi.area_id = area_id.to_string();
+        client.actor.area_id = area_id.to_string();
         return;
       }
 
-      texture_path = client.navi.texture_path.clone();
-      animation_path = client.navi.animation_path.clone();
+      texture_path = client.actor.texture_path.clone();
+      animation_path = client.actor.animation_path.clone();
 
       client.packet_shipper.send(
         &self.socket,
@@ -550,7 +550,7 @@ impl Net {
         &ServerPacket::TransferStart { warp_out: warp_in },
       );
 
-      let previous_area = self.areas.get_mut(&client.navi.area_id).unwrap();
+      let previous_area = self.areas.get_mut(&client.actor.area_id).unwrap();
       previous_area.remove_player(&id);
 
       broadcast_to_area(
@@ -558,7 +558,7 @@ impl Net {
         &mut self.clients,
         previous_area,
         Reliability::Reliable,
-        ServerPacket::NaviDisconnected {
+        ServerPacket::ActorDisconnected {
           ticket: id.to_string(),
           warp_out: warp_in,
         },
@@ -594,7 +594,7 @@ impl Net {
 
     let mut client = self.clients.get_mut(id).unwrap();
 
-    client.navi.area_id = area_id.to_string();
+    client.actor.area_id = area_id.to_string();
     client.warp_in = warp_in;
     client.warp_x = x;
     client.warp_y = y;
@@ -651,7 +651,7 @@ impl Net {
       self.resend_budget,
     );
 
-    let id = client.navi.id.clone();
+    let id = client.actor.id.clone();
 
     self.clients.insert(id.clone(), client);
 
@@ -710,14 +710,14 @@ impl Net {
 
   pub(super) fn connect_client(&mut self, player_id: &str) {
     let client = self.clients.get(player_id).unwrap();
-    let area_id = client.navi.area_id.clone();
-    let texture_path = client.navi.texture_path.clone();
-    let animation_path = client.navi.animation_path.clone();
+    let area_id = client.actor.area_id.clone();
+    let texture_path = client.actor.texture_path.clone();
+    let animation_path = client.actor.animation_path.clone();
 
     let area = self.areas.get_mut(&area_id).unwrap();
     let spawn_direction = area.get_map().get_spawn_direction();
 
-    area.add_player(client.navi.id.clone());
+    area.add_player(client.actor.id.clone());
 
     assert_asset(
       &self.socket,
@@ -775,19 +775,19 @@ impl Net {
 
       let other_client = self.clients.get(other_player_id).unwrap();
 
-      asset_paths.push(other_client.navi.texture_path.clone());
-      asset_paths.push(other_client.navi.animation_path.clone());
+      asset_paths.push(other_client.actor.texture_path.clone());
+      asset_paths.push(other_client.actor.animation_path.clone());
 
-      packets.push(ServerPacket::NaviConnected {
-        ticket: other_client.navi.id.clone(),
-        name: other_client.navi.name.clone(),
-        texture_path: other_client.navi.texture_path.clone(),
-        animation_path: other_client.navi.animation_path.clone(),
-        direction: other_client.navi.direction,
-        x: other_client.navi.x,
-        y: other_client.navi.y,
-        z: other_client.navi.z,
-        solid: other_client.navi.solid,
+      packets.push(ServerPacket::ActorConnected {
+        ticket: other_client.actor.id.clone(),
+        name: other_client.actor.name.clone(),
+        texture_path: other_client.actor.texture_path.clone(),
+        animation_path: other_client.actor.animation_path.clone(),
+        direction: other_client.actor.direction,
+        x: other_client.actor.x,
+        y: other_client.actor.y,
+        z: other_client.actor.z,
+        solid: other_client.actor.solid,
         warp_in: false,
       });
     }
@@ -799,7 +799,7 @@ impl Net {
       asset_paths.push(bot.texture_path.clone());
       asset_paths.push(bot.animation_path.clone());
 
-      packets.push(ServerPacket::NaviConnected {
+      packets.push(ServerPacket::ActorConnected {
         ticket: bot.id.clone(),
         name: bot.name.clone(),
         texture_path: bot.texture_path.clone(),
@@ -843,21 +843,21 @@ impl Net {
       client.transferring = false;
 
       // clone id to end mutable client lifetime
-      let player_id = client.navi.id.clone();
-      let area = self.areas.get_mut(&client.navi.area_id).unwrap();
-      let texture_path = client.navi.texture_path.clone();
-      let animation_path = client.navi.animation_path.clone();
+      let player_id = client.actor.id.clone();
+      let area = self.areas.get_mut(&client.actor.area_id).unwrap();
+      let texture_path = client.actor.texture_path.clone();
+      let animation_path = client.actor.animation_path.clone();
 
-      let packet = ServerPacket::NaviConnected {
+      let packet = ServerPacket::ActorConnected {
         ticket: player_id,
-        name: client.navi.name.clone(),
+        name: client.actor.name.clone(),
         texture_path,
         animation_path,
-        direction: client.navi.direction,
+        direction: client.actor.direction,
         x: client.warp_x,
         y: client.warp_y,
         z: client.warp_z,
-        solid: client.navi.solid,
+        solid: client.actor.solid,
         warp_in: client.warp_in,
       };
 
@@ -880,12 +880,12 @@ impl Net {
     if let Some(client) = self.clients.remove(id) {
       let area = self
         .areas
-        .get_mut(&client.navi.area_id)
+        .get_mut(&client.actor.area_id)
         .expect("Missing area for removed client");
 
-      area.remove_player(&client.navi.id);
+      area.remove_player(&client.actor.id);
 
-      let packet = ServerPacket::NaviDisconnected {
+      let packet = ServerPacket::ActorDisconnected {
         ticket: id.to_string(),
         warp_out: true,
       };
@@ -900,15 +900,15 @@ impl Net {
     }
   }
 
-  pub fn get_bot(&self, id: &str) -> Option<&Navi> {
+  pub fn get_bot(&self, id: &str) -> Option<&Actor> {
     self.bots.get(id)
   }
 
-  pub fn add_bot(&mut self, bot: Navi) {
+  pub fn add_bot(&mut self, bot: Actor) {
     if let Some(area) = self.areas.get_mut(&bot.area_id) {
       area.add_bot(bot.id.clone());
 
-      let packet = ServerPacket::NaviConnected {
+      let packet = ServerPacket::ActorConnected {
         ticket: bot.id.clone(),
         name: bot.name.clone(),
         texture_path: bot.texture_path.clone(),
@@ -960,7 +960,7 @@ impl Net {
 
       area.remove_bot(&bot.id);
 
-      let packet = ServerPacket::NaviDisconnected {
+      let packet = ServerPacket::ActorDisconnected {
         ticket: id.to_string(),
         warp_out: true,
       };
@@ -979,7 +979,7 @@ impl Net {
     if let Some(bot) = self.bots.get_mut(id) {
       bot.name = name.clone();
 
-      let packet = ServerPacket::NaviSetName {
+      let packet = ServerPacket::ActorSetName {
         ticket: id.to_string(),
         name,
       };
@@ -1027,7 +1027,7 @@ impl Net {
         &animation_path,
       );
 
-      let packet = ServerPacket::NaviSetAvatar {
+      let packet = ServerPacket::ActorSetAvatar {
         ticket: id.to_string(),
         texture_path,
         animation_path,
@@ -1045,7 +1045,7 @@ impl Net {
 
   pub fn set_bot_emote(&mut self, id: &str, emote_id: u8) {
     if let Some(bot) = self.bots.get(id) {
-      let packet = ServerPacket::NaviEmote {
+      let packet = ServerPacket::ActorEmote {
         ticket: id.to_string(),
         emote_id,
       };
@@ -1077,7 +1077,7 @@ impl Net {
         &mut self.clients,
         previous_area,
         Reliability::Reliable,
-        ServerPacket::NaviDisconnected {
+        ServerPacket::ActorDisconnected {
           ticket: id.to_string(),
           warp_out: warp_in,
         },
@@ -1114,7 +1114,7 @@ impl Net {
         &mut self.clients,
         area,
         Reliability::Reliable,
-        ServerPacket::NaviConnected {
+        ServerPacket::ActorConnected {
           ticket: id.to_string(),
           name: bot.name.clone(),
           texture_path: bot.texture_path.clone(),
@@ -1149,7 +1149,7 @@ impl Net {
 
   fn broadcast_bot_positions(&mut self) {
     for bot in self.bots.values() {
-      let packet = ServerPacket::NaviMove {
+      let packet = ServerPacket::ActorMove {
         ticket: bot.id.clone(),
         x: bot.x,
         y: bot.y,

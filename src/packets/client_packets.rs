@@ -42,8 +42,8 @@ pub enum ClientPacket {
   ObjectInteraction {
     tile_object_id: u32,
   },
-  NaviInteraction {
-    navi_id: String,
+  ActorInteraction {
+    actor_id: String,
   },
   TileInteraction {
     x: f32,
@@ -118,8 +118,8 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
     12 => Some(ClientPacket::ObjectInteraction {
       tile_object_id: read_u32(work_buf)?,
     }),
-    13 => Some(ClientPacket::NaviInteraction {
-      navi_id: read_string(work_buf)?,
+    13 => Some(ClientPacket::ActorInteraction {
+      actor_id: read_string(work_buf)?,
     }),
     14 => Some(ClientPacket::TileInteraction {
       x: read_f32(work_buf)?,

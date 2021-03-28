@@ -1,4 +1,4 @@
-use super::{Direction, Navi};
+use super::{Direction, Actor};
 use crate::packets::PacketShipper;
 use std::collections::HashSet;
 use std::collections::VecDeque;
@@ -7,7 +7,7 @@ use std::net::SocketAddr;
 pub(super) struct Client {
   pub socket_address: SocketAddr,
   pub packet_shipper: PacketShipper,
-  pub navi: Navi,
+  pub actor: Actor,
   pub warp_in: bool,
   pub warp_x: f32,
   pub warp_y: f32,
@@ -38,7 +38,7 @@ impl Client {
     Client {
       socket_address,
       packet_shipper: PacketShipper::new(socket_address, resend_budget),
-      navi: Navi {
+      actor: Actor {
         id: id.clone(),
         name,
         area_id,

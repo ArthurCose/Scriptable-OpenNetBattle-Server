@@ -53,8 +53,8 @@ function tick(delta_time)
   bot._tick(delta_time)
 end
 
-function handle_navi_interaction(player_id, other_id)
-  bot._handle_navi_interaction(player_id, other_id)
+function handle_actor_interaction(player_id, other_id)
+  bot._handle_actor_interaction(player_id, other_id)
 end
 
 function handle_player_response(player_id, response)

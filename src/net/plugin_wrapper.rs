@@ -113,9 +113,9 @@ impl PluginInterface for PluginWrapper {
     });
   }
 
-  fn handle_navi_interaction(&mut self, net: &mut Net, player_id: &str, navi_id: &str) {
+  fn handle_actor_interaction(&mut self, net: &mut Net, player_id: &str, actor_id: &str) {
     self.wrap_calls(net, |plugin_interface, net| {
-      plugin_interface.handle_navi_interaction(net, player_id, navi_id)
+      plugin_interface.handle_actor_interaction(net, player_id, actor_id)
     });
   }
 

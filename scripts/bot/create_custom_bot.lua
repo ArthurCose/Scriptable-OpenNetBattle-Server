@@ -67,7 +67,7 @@ local function create_custom_bot(id, name, area_id, texture_path, animation_path
     Net.quiz_player(player_id, option_a, option_b, option_c, bot.mug_texture_path, bot.mug_animation_path)
   end
 
-  function bot._handle_navi_interaction(player_id, other_id)
+  function bot._handle_actor_interaction(player_id, other_id)
     if other_id ~= bot._id then
       return
     end

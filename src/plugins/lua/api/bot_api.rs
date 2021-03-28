@@ -1,6 +1,6 @@
 use super::lua_errors::{create_area_error, create_bot_error};
 use super::LuaAPI;
-use crate::net::{Direction, Navi};
+use crate::net::{Actor, Direction};
 
 pub fn inject_dynamic(lua_api: &mut LuaAPI) {
   lua_api.add_dynamic_function("Net", "list_bots", |api_ctx, lua_ctx, params| {
@@ -32,7 +32,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     let mut net = api_ctx.net_ref.borrow_mut();
 
     if net.get_area_mut(&area_id).is_some() {
-      let bot = Navi {
+      let bot = Actor {
         id,
         name,
         area_id,

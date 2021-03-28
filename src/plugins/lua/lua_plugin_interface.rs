@@ -18,7 +18,7 @@ pub struct LuaPluginInterface {
   player_avatar_change_listeners: Vec<std::path::PathBuf>,
   player_emote_listeners: Vec<std::path::PathBuf>,
   object_interaction_listeners: Vec<std::path::PathBuf>,
-  navi_interaction_listeners: Vec<std::path::PathBuf>,
+  actor_interaction_listeners: Vec<std::path::PathBuf>,
   tile_interaction_listeners: Vec<std::path::PathBuf>,
   dialog_response_listeners: Vec<std::path::PathBuf>,
   message_tracker: MessageTracker<std::path::PathBuf>,
@@ -39,7 +39,7 @@ impl LuaPluginInterface {
       player_avatar_change_listeners: Vec::new(),
       player_emote_listeners: Vec::new(),
       object_interaction_listeners: Vec::new(),
-      navi_interaction_listeners: Vec::new(),
+      actor_interaction_listeners: Vec::new(),
       tile_interaction_listeners: Vec::new(),
       dialog_response_listeners: Vec::new(),
       message_tracker: MessageTracker::new(),
@@ -161,10 +161,10 @@ impl LuaPluginInterface {
       }
 
       if globals
-        .get::<_, rlua::Function>("handle_navi_interaction")
+        .get::<_, rlua::Function>("handle_actor_interaction")
         .is_ok()
       {
-        self.navi_interaction_listeners.push(script_dir.clone());
+        self.actor_interaction_listeners.push(script_dir.clone());
       }
 
       if globals
@@ -343,16 +343,16 @@ impl PluginInterface for LuaPluginInterface {
     );
   }
 
-  fn handle_navi_interaction(&mut self, net: &mut Net, player_id: &str, navi_id: &str) {
+  fn handle_actor_interaction(&mut self, net: &mut Net, player_id: &str, actor_id: &str) {
     handle_event(
       &mut self.scripts,
-      &self.navi_interaction_listeners,
+      &self.actor_interaction_listeners,
       &mut self.message_tracker,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_navi_interaction",
-      |callback| callback.call((player_id, navi_id)),
+      "handle_actor_interaction",
+      |callback| callback.call((player_id, actor_id)),
     );
   }
 

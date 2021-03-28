@@ -1,6 +1,6 @@
 use super::Direction;
 
-pub struct Navi {
+pub struct Actor {
   pub id: String,
   pub name: String,
   pub area_id: String,

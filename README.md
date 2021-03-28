@@ -185,7 +185,7 @@ function handle_player_connect(player_id) -- player connects to the server (tran
 function handle_player_join(player_id) -- player enters their first area after connecting
 function handle_player_transfer(player_id) -- player changes area
 function handle_object_interaction(player_id, object)
-function handle_navi_interaction(player_id, navi_id) -- navi_id is a player or bot id
+function handle_actor_interaction(player_id, actor_id) -- actor_id is a player or bot id
 function handle_tile_interaction(player_id, x, y, z)
 function handle_player_response(player_id, response) -- response is an index
 -- function handle_battle_completion(player_id, results) -- results = { status: "won" | "loss" | "ran", rank? }
