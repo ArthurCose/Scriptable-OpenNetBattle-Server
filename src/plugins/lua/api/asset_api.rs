@@ -1,79 +1,67 @@
-use crate::net::{Asset, AssetData, Net};
-use std::cell::RefCell;
+use super::LuaAPI;
+use crate::net::{Asset, AssetData};
 
-pub fn add_asset_api<'a, 'b>(
-  api_table: &rlua::Table<'a>,
-  scope: &rlua::Scope<'a, 'b>,
-  net_ref: &'b RefCell<&mut Net>,
-) -> rlua::Result<()> {
-  api_table.set(
-    "update_asset",
-    scope.create_function(move |_, (path, data): (String, rlua::String)| {
-      use crate::net::asset::{resolve_asset_data, resolve_dependencies};
+pub fn inject_dynamic(lua_api: &mut LuaAPI) {
+  lua_api.add_dynamic_function("Net", "update_asset", |api_ctx, lua_ctx, params| {
+    let (path, data): (String, rlua::String) = lua_ctx.unpack_multi(params)?;
+    use crate::net::asset::{resolve_asset_data, resolve_dependencies};
 
-      let mut net = net_ref.borrow_mut();
+    let mut net = api_ctx.net_ref.borrow_mut();
 
-      let path_buf = std::path::PathBuf::from(path.to_string());
-      let asset_data = resolve_asset_data(&path_buf, data.as_bytes());
-      let dependencies = resolve_dependencies(&path_buf, &asset_data);
-      let last_modified = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .expect("Current time is before epoch?")
-        .as_secs();
+    let path_buf = std::path::PathBuf::from(path.to_string());
+    let asset_data = resolve_asset_data(&path_buf, data.as_bytes());
+    let dependencies = resolve_dependencies(&path_buf, &asset_data);
+    let last_modified = std::time::SystemTime::now()
+      .duration_since(std::time::UNIX_EPOCH)
+      .expect("Current time is before epoch?")
+      .as_secs();
 
-      let asset = Asset {
-        data: asset_data,
-        dependencies,
-        last_modified,
-        cachable: true,
-      };
+    let asset = Asset {
+      data: asset_data,
+      dependencies,
+      last_modified,
+      cachable: true,
+    };
 
-      net.set_asset(path, asset);
+    net.set_asset(path, asset);
 
-      Ok(())
-    })?,
-  )?;
+    lua_ctx.pack_multi(())
+  });
 
-  api_table.set(
-    "has_asset",
-    scope.create_function(move |_, path: String| {
-      let net = net_ref.borrow();
+  lua_api.add_dynamic_function("Net", "has_asset", |api_ctx, lua_ctx, params| {
+    let path: String = lua_ctx.unpack_multi(params)?;
+    let net = api_ctx.net_ref.borrow();
 
-      let has_asset = net.get_asset(&path).is_some();
+    let has_asset = net.get_asset(&path).is_some();
 
-      Ok(has_asset)
-    })?,
-  )?;
+    lua_ctx.pack_multi(has_asset)
+  });
 
-  api_table.set(
-    "get_asset_type",
-    scope.create_function(move |_, path: String| {
-      let net = net_ref.borrow();
+  lua_api.add_dynamic_function("Net", "get_asset_type", |api_ctx, lua_ctx, params| {
+    let path: String = lua_ctx.unpack_multi(params)?;
+    let net = api_ctx.net_ref.borrow();
 
-      if let Some(asset) = net.get_asset(&path) {
-        match asset.data {
-          AssetData::Text(_) => Ok(Some("text")),
-          AssetData::Texture(_) => Ok(Some("texture")),
-          AssetData::Audio(_) => Ok(Some("audio")),
-        }
-      } else {
-        Ok(None)
+    let asset_type = if let Some(asset) = net.get_asset(&path) {
+      match asset.data {
+        AssetData::Text(_) => Some("text"),
+        AssetData::Texture(_) => Some("texture"),
+        AssetData::Audio(_) => Some("audio"),
       }
-    })?,
-  )?;
+    } else {
+      None
+    };
 
-  api_table.set(
-    "get_asset_size",
-    scope.create_function(move |_, path: String| {
-      let net = net_ref.borrow();
+    lua_ctx.pack_multi(asset_type)
+  });
 
-      if let Some(asset) = net.get_asset(&path) {
-        Ok(asset.len())
-      } else {
-        Ok(0)
-      }
-    })?,
-  )?;
+  lua_api.add_dynamic_function("Net", "get_asset_size", |api_ctx, lua_ctx, params| {
+    let path: String = lua_ctx.unpack_multi(params)?;
+    let net = api_ctx.net_ref.borrow();
 
-  Ok(())
+    if let Some(asset) = net.get_asset(&path) {
+      lua_ctx.pack_multi(asset.len())
+    } else {
+      lua_ctx.pack_multi(0)
+    }
+  });
 }

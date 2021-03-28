@@ -1,280 +1,247 @@
 use super::lua_errors::create_area_error;
+use super::LuaAPI;
 use crate::net::map::{MapObject, MapObjectData, Tile};
-use crate::net::Net;
-use std::cell::RefCell;
 
-#[allow(clippy::type_complexity)]
-pub fn add_object_api<'a, 'b>(
-  api_table: &rlua::Table<'a>,
-  scope: &rlua::Scope<'a, 'b>,
-  net_ref: &'b RefCell<&mut Net>,
-) -> rlua::Result<()> {
-  api_table.set(
-    "list_objects",
-    scope.create_function(move |_, area_id: String| {
-      let net = net_ref.borrow();
+pub fn inject_dynamic(lua_api: &mut LuaAPI) {
+  lua_api.add_dynamic_function("Net", "list_objects", |api_ctx, lua_ctx, params| {
+    let area_id: String = lua_ctx.unpack_multi(params)?;
+    let net = api_ctx.net_ref.borrow();
 
-      if let Some(area) = net.get_area(&area_id) {
-        let result: Vec<u32> = area
-          .get_map()
-          .get_objects()
-          .iter()
-          .map(|object| object.id)
-          .collect();
+    if let Some(area) = net.get_area(&area_id) {
+      let result: Vec<u32> = area
+        .get_map()
+        .get_objects()
+        .iter()
+        .map(|object| object.id)
+        .collect();
 
-        Ok(result)
-      } else {
-        Err(create_area_error(&area_id))
-      }
-    })?,
-  )?;
+      lua_ctx.pack_multi(result)
+    } else {
+      Err(create_area_error(&area_id))
+    }
+  });
 
-  api_table.set(
-    "get_object_by_id",
-    scope.create_function(move |lua_ctx, (area_id, id): (String, u32)| {
-      let net = net_ref.borrow();
+  lua_api.add_dynamic_function("Net", "get_object_by_id", |api_ctx, lua_ctx, params| {
+    let (area_id, id): (String, u32) = lua_ctx.unpack_multi(params)?;
+    let net = api_ctx.net_ref.borrow();
 
-      if let Some(area) = net.get_area(&area_id) {
-        let optional_object = area.get_map().get_object_by_id(id);
+    if let Some(area) = net.get_area(&area_id) {
+      let optional_object = area.get_map().get_object_by_id(id);
 
-        Ok(map_optional_object_to_table(&lua_ctx, optional_object))
-      } else {
-        Err(create_area_error(&area_id))
-      }
-    })?,
-  )?;
+      lua_ctx.pack_multi(map_optional_object_to_table(&lua_ctx, optional_object))
+    } else {
+      Err(create_area_error(&area_id))
+    }
+  });
 
-  api_table.set(
-    "get_object_by_name",
-    scope.create_function(move |lua_ctx, (area_id, name): (String, String)| {
-      let net = net_ref.borrow();
+  lua_api.add_dynamic_function("Net", "get_object_by_name", |api_ctx, lua_ctx, params| {
+    let (area_id, name): (String, String) = lua_ctx.unpack_multi(params)?;
+    let net = api_ctx.net_ref.borrow();
 
-      if let Some(area) = net.get_area(&area_id) {
-        let optional_object = area.get_map().get_object_by_name(&name);
+    if let Some(area) = net.get_area(&area_id) {
+      let optional_object = area.get_map().get_object_by_name(&name);
 
-        Ok(map_optional_object_to_table(&lua_ctx, optional_object))
-      } else {
-        Err(create_area_error(&area_id))
-      }
-    })?,
-  )?;
+      lua_ctx.pack_multi(map_optional_object_to_table(&lua_ctx, optional_object))
+    } else {
+      Err(create_area_error(&area_id))
+    }
+  });
 
-  api_table.set(
-    "create_object",
-    scope.create_function(
-      move |_,
-            (area_id, name, object_type, x, y, layer, width, height, rotation, data_table): (
-        String,
-        String,
-        String,
-        f32,
-        f32,
-        usize,
-        f32,
-        f32,
-        f32,
-        rlua::Table,
-      )| {
-        let mut net = net_ref.borrow_mut();
+  lua_api.add_dynamic_function("Net", "create_object", |api_ctx, lua_ctx, params| {
+    let (area_id, name, object_type, x, y, layer, width, height, rotation, data_table): (
+      String,
+      String,
+      String,
+      f32,
+      f32,
+      usize,
+      f32,
+      f32,
+      f32,
+      rlua::Table,
+    ) = lua_ctx.unpack_multi(params)?;
+    let mut net = api_ctx.net_ref.borrow_mut();
 
-        if let Some(area) = net.get_area_mut(&area_id) {
-          let map = area.get_map_mut();
+    if let Some(area) = net.get_area_mut(&area_id) {
+      let map = area.get_map_mut();
 
-          let data = if data_table.contains_key("gid")? {
-            let flipped_horizontally: Option<bool> = data_table.get("flippedHorizontally")?;
-            let flipped_vertically: Option<bool> = data_table.get("flippedVertically")?;
+      let data = if data_table.contains_key("gid")? {
+        let flipped_horizontally: Option<bool> = data_table.get("flippedHorizontally")?;
+        let flipped_vertically: Option<bool> = data_table.get("flippedVertically")?;
 
-            let tile = Tile {
-              gid: data_table.get("gid")?,
-              flipped_horizontally: flipped_horizontally.unwrap_or_default(),
-              flipped_vertically: flipped_vertically.unwrap_or_default(),
-              flipped_anti_diagonally: false,
-            };
+        let tile = Tile {
+          gid: data_table.get("gid")?,
+          flipped_horizontally: flipped_horizontally.unwrap_or_default(),
+          flipped_vertically: flipped_vertically.unwrap_or_default(),
+          flipped_anti_diagonally: false,
+        };
 
-            MapObjectData::TileObject { tile }
-          } else if data_table.contains_key("points")? {
-            let point_tables: Vec<rlua::Table> = data_table.get("points")?;
-            let mut points = Vec::new();
-            points.reserve(point_tables.len());
+        MapObjectData::TileObject { tile }
+      } else if data_table.contains_key("points")? {
+        let point_tables: Vec<rlua::Table> = data_table.get("points")?;
+        let mut points = Vec::new();
+        points.reserve(point_tables.len());
 
-            for point_table in point_tables {
-              let x = point_table.get("x")?;
-              let y = point_table.get("y")?;
+        for point_table in point_tables {
+          let x = point_table.get("x")?;
+          let y = point_table.get("y")?;
 
-              points.push((x, y));
-            }
-
-            MapObjectData::Polygon { points }
-          } else {
-            // no ellipse or point support
-            MapObjectData::Rect
-          };
-
-          let id = map.create_object(
-            name,
-            object_type,
-            x,
-            y,
-            layer,
-            width,
-            height,
-            rotation,
-            data,
-          );
-
-          Ok(id)
-        } else {
-          Err(create_area_error(&area_id))
+          points.push((x, y));
         }
-      },
-    )?,
-  )?;
 
-  api_table.set(
-    "remove_object",
-    scope.create_function(move |_, (area_id, id): (String, u32)| {
-      let mut net = net_ref.borrow_mut();
-
-      if let Some(area) = net.get_area_mut(&area_id) {
-        let map = area.get_map_mut();
-
-        map.remove_object(id);
-
-        Ok(())
+        MapObjectData::Polygon { points }
       } else {
-        Err(create_area_error(&area_id))
-      }
-    })?,
-  )?;
+        // no ellipse or point support
+        MapObjectData::Rect
+      };
 
-  api_table.set(
-    "set_object_name",
-    scope.create_function(move |_, (area_id, id, name): (String, u32, String)| {
-      let mut net = net_ref.borrow_mut();
+      let id = map.create_object(
+        name,
+        object_type,
+        x,
+        y,
+        layer,
+        width,
+        height,
+        rotation,
+        data,
+      );
 
-      if let Some(area) = net.get_area_mut(&area_id) {
-        let map = area.get_map_mut();
+      lua_ctx.pack_multi(id)
+    } else {
+      Err(create_area_error(&area_id))
+    }
+  });
 
-        map.set_object_name(id, name);
+  lua_api.add_dynamic_function("Net", "remove_object", |api_ctx, lua_ctx, params| {
+    let (area_id, id): (String, u32) = lua_ctx.unpack_multi(params)?;
+    let mut net = api_ctx.net_ref.borrow_mut();
 
-        Ok(())
-      } else {
-        Err(create_area_error(&area_id))
-      }
-    })?,
-  )?;
+    if let Some(area) = net.get_area_mut(&area_id) {
+      let map = area.get_map_mut();
 
-  api_table.set(
-    "set_object_type",
-    scope.create_function(
-      move |_, (area_id, id, object_type): (String, u32, String)| {
-        let mut net = net_ref.borrow_mut();
+      map.remove_object(id);
 
-        if let Some(area) = net.get_area_mut(&area_id) {
-          let map = area.get_map_mut();
+      lua_ctx.pack_multi(())
+    } else {
+      Err(create_area_error(&area_id))
+    }
+  });
 
-          map.set_object_type(id, object_type);
+  lua_api.add_dynamic_function("Net", "set_object_name", |api_ctx, lua_ctx, params| {
+    let (area_id, id, name): (String, u32, String) = lua_ctx.unpack_multi(params)?;
+    let mut net = api_ctx.net_ref.borrow_mut();
 
-          Ok(())
-        } else {
-          Err(create_area_error(&area_id))
-        }
-      },
-    )?,
-  )?;
+    if let Some(area) = net.get_area_mut(&area_id) {
+      let map = area.get_map_mut();
 
-  api_table.set(
+      map.set_object_name(id, name);
+
+      lua_ctx.pack_multi(())
+    } else {
+      Err(create_area_error(&area_id))
+    }
+  });
+
+  lua_api.add_dynamic_function("Net", "set_object_type", |api_ctx, lua_ctx, params| {
+    let (area_id, id, object_type): (String, u32, String) = lua_ctx.unpack_multi(params)?;
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    if let Some(area) = net.get_area_mut(&area_id) {
+      let map = area.get_map_mut();
+
+      map.set_object_type(id, object_type);
+
+      lua_ctx.pack_multi(())
+    } else {
+      Err(create_area_error(&area_id))
+    }
+  });
+
+  lua_api.add_dynamic_function(
+    "Net",
     "set_object_custom_property",
-    scope.create_function(
-      move |_, (area_id, id, name, value): (String, u32, String, String)| {
-        let mut net = net_ref.borrow_mut();
-
-        if let Some(area) = net.get_area_mut(&area_id) {
-          let map = area.get_map_mut();
-
-          map.set_object_custom_property(id, name, value);
-
-          Ok(())
-        } else {
-          Err(create_area_error(&area_id))
-        }
-      },
-    )?,
-  )?;
-
-  api_table.set(
-    "resize_object",
-    scope.create_function(
-      move |_, (area_id, id, width, height): (String, u32, f32, f32)| {
-        let mut net = net_ref.borrow_mut();
-
-        if let Some(area) = net.get_area_mut(&area_id) {
-          let map = area.get_map_mut();
-
-          map.resize_object(id, width, height);
-
-          Ok(())
-        } else {
-          Err(create_area_error(&area_id))
-        }
-      },
-    )?,
-  )?;
-
-  api_table.set(
-    "set_object_rotation",
-    scope.create_function(move |_, (area_id, id, rotation): (String, u32, f32)| {
-      let mut net = net_ref.borrow_mut();
+    |api_ctx, lua_ctx, params| {
+      let (area_id, id, name, value): (String, u32, String, String) =
+        lua_ctx.unpack_multi(params)?;
+      let mut net = api_ctx.net_ref.borrow_mut();
 
       if let Some(area) = net.get_area_mut(&area_id) {
         let map = area.get_map_mut();
 
-        map.set_object_rotation(id, rotation);
+        map.set_object_custom_property(id, name, value);
 
-        Ok(())
+        lua_ctx.pack_multi(())
       } else {
         Err(create_area_error(&area_id))
       }
-    })?,
-  )?;
+    },
+  );
 
-  api_table.set(
+  lua_api.add_dynamic_function("Net", "resize_object", |api_ctx, lua_ctx, params| {
+    let (area_id, id, width, height): (String, u32, f32, f32) = lua_ctx.unpack_multi(params)?;
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    if let Some(area) = net.get_area_mut(&area_id) {
+      let map = area.get_map_mut();
+
+      map.resize_object(id, width, height);
+
+      lua_ctx.pack_multi(())
+    } else {
+      Err(create_area_error(&area_id))
+    }
+  });
+
+  lua_api.add_dynamic_function("Net", "set_object_rotation", |api_ctx, lua_ctx, params| {
+    let (area_id, id, rotation): (String, u32, f32) = lua_ctx.unpack_multi(params)?;
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    if let Some(area) = net.get_area_mut(&area_id) {
+      let map = area.get_map_mut();
+
+      map.set_object_rotation(id, rotation);
+
+      lua_ctx.pack_multi(())
+    } else {
+      Err(create_area_error(&area_id))
+    }
+  });
+
+  lua_api.add_dynamic_function(
+    "Net",
     "set_object_visibility",
-    scope.create_function(move |_, (area_id, id, visibility): (String, u32, bool)| {
-      let mut net = net_ref.borrow_mut();
+    |api_ctx, lua_ctx, params| {
+      let (area_id, id, visibility): (String, u32, bool) = lua_ctx.unpack_multi(params)?;
+      let mut net = api_ctx.net_ref.borrow_mut();
 
       if let Some(area) = net.get_area_mut(&area_id) {
         let map = area.get_map_mut();
 
         map.set_object_visibility(id, visibility);
 
-        Ok(())
+        lua_ctx.pack_multi(())
       } else {
         Err(create_area_error(&area_id))
       }
-    })?,
-  )?;
+    },
+  );
 
-  api_table.set(
-    "move_object",
-    scope.create_function(
-      move |_, (area_id, id, x, y, layer): (String, u32, f32, f32, usize)| {
-        let mut net = net_ref.borrow_mut();
+  lua_api.add_dynamic_function("Net", "move_object", |api_ctx, lua_ctx, params| {
+    let (area_id, id, x, y, layer): (String, u32, f32, f32, usize) =
+      lua_ctx.unpack_multi(params)?;
+    let mut net = api_ctx.net_ref.borrow_mut();
 
-        if let Some(area) = net.get_area_mut(&area_id) {
-          let map = area.get_map_mut();
+    if let Some(area) = net.get_area_mut(&area_id) {
+      let map = area.get_map_mut();
 
-          map.move_object(id, x, y, layer);
+      map.move_object(id, x, y, layer);
 
-          Ok(())
-        } else {
-          Err(create_area_error(&area_id))
-        }
-      },
-    )?,
-  )?;
-
-  Ok(())
+      lua_ctx.pack_multi(())
+    } else {
+      Err(create_area_error(&area_id))
+    }
+  });
 }
 
 fn map_optional_object_to_table<'a>(

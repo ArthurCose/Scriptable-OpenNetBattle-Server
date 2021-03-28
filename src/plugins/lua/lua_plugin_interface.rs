@@ -1,5 +1,5 @@
 use super::super::MessageTracker;
-use super::api::{add_net_api, add_static_api, extend_async_api};
+use super::api::{APIContext, LuaAPI};
 use crate::jobs::JobPromiseManager;
 use crate::net::Net;
 use crate::plugins::PluginInterface;
@@ -23,6 +23,7 @@ pub struct LuaPluginInterface {
   dialog_response_listeners: Vec<std::path::PathBuf>,
   message_tracker: MessageTracker<std::path::PathBuf>,
   promise_manager: JobPromiseManager,
+  lua_api: LuaAPI,
 }
 
 impl LuaPluginInterface {
@@ -43,13 +44,12 @@ impl LuaPluginInterface {
       dialog_response_listeners: Vec::new(),
       message_tracker: MessageTracker::new(),
       promise_manager: JobPromiseManager::new(),
+      lua_api: LuaAPI::new(),
     }
   }
 
   fn load_scripts(&mut self, net_ref: &mut Net) -> std::io::Result<()> {
     use std::fs::{read_dir, read_to_string};
-
-    let net_ref = RefCell::new(net_ref);
 
     for wrapped_dir_entry in read_dir("./scripts")? {
       let dir_path = wrapped_dir_entry?.path();
@@ -57,8 +57,8 @@ impl LuaPluginInterface {
 
       for script_path in &script_paths {
         if let Ok(script) = read_to_string(script_path) {
-          if let Err(err) = self.load_script(&net_ref, dir_path.clone(), script) {
-            println!("{}", err)
+          if let Err(err) = self.load_script(net_ref, script_path.to_path_buf(), script) {
+            println!("Failed to load {}:\n{}", script_path.to_string_lossy(), err)
           }
 
           break;
@@ -71,34 +71,30 @@ impl LuaPluginInterface {
 
   fn load_script(
     &mut self,
-    net_ref: &RefCell<&mut Net>,
+    net_ref: &mut Net,
     script_dir: std::path::PathBuf,
     script: String,
   ) -> rlua::Result<()> {
+    let net_ref = RefCell::new(net_ref);
+
     let lua_env = Lua::new();
 
     lua_env.context(|lua_ctx| {
-      let globals = lua_ctx.globals();
-
-      add_static_api(&lua_ctx)?;
-
       let message_tracker_ref = RefCell::new(&mut self.message_tracker);
       let promise_manager_ref = RefCell::new(&mut self.promise_manager);
 
-      lua_ctx.scope(|scope| -> rlua::Result<()> {
-        let api_table = lua_ctx.create_table()?;
-        add_net_api(
-          &api_table,
-          &scope,
-          &script_dir,
-          &message_tracker_ref,
-          &net_ref,
-        )?;
-        globals.set("Net", api_table)?;
+      let api_ctx = APIContext {
+        script_dir: &script_dir,
+        net_ref: &net_ref,
+        message_tracker_ref: &message_tracker_ref,
+        promise_manager_ref: &promise_manager_ref,
+      };
 
-        let async_api_table = globals.get("Async")?;
-        extend_async_api(&async_api_table, &scope, &promise_manager_ref, &net_ref)?;
+      let globals = lua_ctx.globals();
 
+      self.lua_api.inject_static(&lua_ctx)?;
+
+      self.lua_api.inject_dynamic(lua_ctx, api_ctx, |lua_ctx| {
         lua_ctx.load(&script).exec()?;
 
         Ok(())
@@ -207,6 +203,7 @@ impl PluginInterface for LuaPluginInterface {
       &self.tick_listeners,
       &mut self.message_tracker,
       &mut self.promise_manager,
+      &mut self.lua_api,
       net,
       "tick",
       |callback| callback.call(delta_time),
@@ -219,6 +216,7 @@ impl PluginInterface for LuaPluginInterface {
       &self.player_connect_listeners,
       &mut self.message_tracker,
       &mut self.promise_manager,
+      &mut self.lua_api,
       net,
       "handle_player_connect",
       |callback| callback.call(player_id),
@@ -231,6 +229,7 @@ impl PluginInterface for LuaPluginInterface {
       &self.player_join_listeners,
       &mut self.message_tracker,
       &mut self.promise_manager,
+      &mut self.lua_api,
       net,
       "handle_player_join",
       |callback| callback.call(player_id),
@@ -243,6 +242,7 @@ impl PluginInterface for LuaPluginInterface {
       &self.player_transfer_listeners,
       &mut self.message_tracker,
       &mut self.promise_manager,
+      &mut self.lua_api,
       net,
       "handle_player_transfer",
       |callback| callback.call(player_id),
@@ -255,6 +255,7 @@ impl PluginInterface for LuaPluginInterface {
       &self.player_disconnect_listeners,
       &mut self.message_tracker,
       &mut self.promise_manager,
+      &mut self.lua_api,
       net,
       "handle_player_disconnect",
       |callback| callback.call(player_id),
@@ -269,6 +270,7 @@ impl PluginInterface for LuaPluginInterface {
       &self.player_move_listeners,
       &mut self.message_tracker,
       &mut self.promise_manager,
+      &mut self.lua_api,
       net,
       "handle_player_move",
       |callback| callback.call((player_id, x, y, z)),
@@ -289,6 +291,7 @@ impl PluginInterface for LuaPluginInterface {
       &self.player_avatar_change_listeners,
       &mut self.message_tracker,
       &mut self.promise_manager,
+      &mut self.lua_api,
       net,
       "handle_player_avatar_change",
       |callback| {
@@ -312,6 +315,7 @@ impl PluginInterface for LuaPluginInterface {
       &self.player_emote_listeners,
       &mut self.message_tracker,
       &mut self.promise_manager,
+      &mut self.lua_api,
       net,
       "handle_player_emote",
       |callback| {
@@ -332,6 +336,7 @@ impl PluginInterface for LuaPluginInterface {
       &self.object_interaction_listeners,
       &mut self.message_tracker,
       &mut self.promise_manager,
+      &mut self.lua_api,
       net,
       "handle_object_interaction",
       |callback| callback.call((player_id, tile_object_id)),
@@ -344,6 +349,7 @@ impl PluginInterface for LuaPluginInterface {
       &self.navi_interaction_listeners,
       &mut self.message_tracker,
       &mut self.promise_manager,
+      &mut self.lua_api,
       net,
       "handle_navi_interaction",
       |callback| callback.call((player_id, navi_id)),
@@ -356,6 +362,7 @@ impl PluginInterface for LuaPluginInterface {
       &self.tile_interaction_listeners,
       &mut self.message_tracker,
       &mut self.promise_manager,
+      &mut self.lua_api,
       net,
       "handle_tile_interaction",
       |callback| callback.call((player_id, x, y, z)),
@@ -370,6 +377,7 @@ impl PluginInterface for LuaPluginInterface {
       &[script_dir],
       &mut self.message_tracker,
       &mut self.promise_manager,
+      &mut self.lua_api,
       net,
       "handle_player_response",
       |callback| callback.call((player_id, response)),
@@ -377,11 +385,13 @@ impl PluginInterface for LuaPluginInterface {
   }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn handle_event<F>(
   scripts: &mut HashMap<std::path::PathBuf, Lua>,
   event_listeners: &[std::path::PathBuf],
   message_tracker: &mut MessageTracker<std::path::PathBuf>,
   promise_manager: &mut JobPromiseManager,
+  lua_api: &mut LuaAPI,
   net: &mut Net,
   event_fn_name: &str,
   fn_caller: F,
@@ -400,29 +410,23 @@ fn handle_event<F>(
       // grab the lua_env (should always be true)
       if let Some(lua_env) = scripts.get_mut(script_dir) {
         // enter the lua context
+        let api_ctx = APIContext {
+          script_dir,
+          net_ref: &net_ref,
+          message_tracker_ref: &message_tracker_ref,
+          promise_manager_ref: &promise_manager_ref,
+        };
 
-        lua_env.context(|lua_ctx: rlua::Context| -> rlua::Result<()> {
-          lua_ctx.scope(|scope| -> rlua::Result<()> {
+        lua_env.context(|lua_ctx| -> rlua::Result<()> {
+          lua_api.inject_dynamic(lua_ctx, api_ctx, |lua_ctx| {
             let globals = lua_ctx.globals();
-
-            let api_table = lua_ctx.create_table()?;
-            add_net_api(
-              &api_table,
-              &scope,
-              script_dir,
-              &message_tracker_ref,
-              &net_ref,
-            )?;
-            globals.set("Net", api_table)?;
-
-            let async_api_table = globals.get("Async")?;
-            extend_async_api(&async_api_table, &scope, &promise_manager_ref, &net_ref)?;
 
             if let Ok(func) = globals.get::<_, rlua::Function>(event_fn_name) {
               if let Err(err) = fn_caller(func) {
                 println!("{}", err);
               }
             }
+
             Ok(())
           })?;
 
