@@ -400,11 +400,15 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
   });
 
   lua_api.add_dynamic_function("Net", "get_tile", |api_ctx, lua_ctx, params| {
-    let (area_id, x, y, z): (String, usize, usize, usize) = lua_ctx.unpack_multi(params)?;
+    let (area_id, x, y, z): (String, i32, i32, i32) = lua_ctx.unpack_multi(params)?;
     let net = api_ctx.net_ref.borrow();
 
     if let Some(area) = net.get_area(&area_id) {
-      let tile = area.get_map().get_tile(x, y, z);
+      let tile = if x < 0 || y < 0 || z < 0 {
+        Tile::default()
+      } else {
+        area.get_map().get_tile(x as usize, y as usize, z as usize)
+      };
 
       let table = lua_ctx.create_table()?;
 
@@ -429,15 +433,19 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
   lua_api.add_dynamic_function("Net", "set_tile", |api_ctx, lua_ctx, params| {
     let (area_id, x, y, z, gid, flip_horizontal, flip_vertical, rotate): (
       String,
-      usize,
-      usize,
-      usize,
+      i32,
+      i32,
+      i32,
       u32,
       Option<bool>,
       Option<bool>,
       Option<bool>,
     ) = lua_ctx.unpack_multi(params)?;
     let mut net = api_ctx.net_ref.borrow_mut();
+
+    if x < 0 || y < 0 || z < 0 {
+      return lua_ctx.pack_multi(());
+    }
 
     if let Some(area) = net.get_area_mut(&area_id) {
       let tile = Tile {
@@ -447,7 +455,10 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
         flipped_anti_diagonally: rotate.unwrap_or(false),
       };
 
-      area.get_map_mut().set_tile(x, y, z, tile);
+      area
+        .get_map_mut()
+        .set_tile(x as usize, y as usize, z as usize, tile);
+
       lua_ctx.pack_multi(())
     } else {
       Err(create_area_error(&area_id))
