@@ -350,6 +350,7 @@ impl Map {
     self.objects.iter().find(|&o| o.name == name)
   }
 
+  #[allow(clippy::too_many_arguments)]
   pub fn create_object(
     &mut self,
     name: String,

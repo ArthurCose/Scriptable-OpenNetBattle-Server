@@ -106,7 +106,7 @@ pub fn resolve_asset_data(path: &std::path::PathBuf, data: &[u8]) -> AssetData {
         println!("Invalid .tsx file: {:?}", path);
       }
 
-      AssetData::Text(translated_data.unwrap_or(original_data.to_string()))
+      AssetData::Text(translated_data.unwrap_or_else(|| original_data.to_string()))
     }
     _ => AssetData::Text(String::from_utf8_lossy(data).to_string()),
   }
