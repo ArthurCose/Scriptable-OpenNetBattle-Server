@@ -78,8 +78,8 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
 
     if let Some(player) = net.get_player(&id) {
       let table = lua_ctx.create_table()?;
-      table.set("texturePath", player.texture_path.clone())?;
-      table.set("animationPath", player.animation_path.clone())?;
+      table.set("texture_path", player.texture_path.clone())?;
+      table.set("animation_path", player.animation_path.clone())?;
 
       lua_ctx.pack_multi(table)
     } else {

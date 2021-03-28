@@ -202,12 +202,12 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
         let table = lua_ctx.create_table()?;
 
         table.set(
-          "texturePath",
+          "texture_path",
           map.get_custom_background_texture_path().clone(),
         )?;
 
         table.set(
-          "animationPath",
+          "animation_path",
           map.get_custom_background_animation_path().clone(),
         )?;
 
@@ -362,7 +362,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
       if let Some(tileset) = optional_tileset {
         let table = lua_ctx.create_table()?;
         table.set("path", tileset.path.clone())?;
-        table.set("firstGid", tileset.first_gid)?;
+        table.set("first_gid", tileset.first_gid)?;
 
         return lua_ctx.pack_multi(Some(table));
       }
@@ -388,7 +388,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
       if let Some(tileset) = optional_tileset {
         let table = lua_ctx.create_table()?;
         table.set("path", tileset.path.clone())?;
-        table.set("firstGid", tileset.first_gid)?;
+        table.set("first_gid", tileset.first_gid)?;
 
         return lua_ctx.pack_multi(Some(table));
       }

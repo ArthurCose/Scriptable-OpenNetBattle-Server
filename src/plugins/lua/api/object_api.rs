@@ -66,8 +66,8 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
       let map = area.get_map_mut();
 
       let data = if data_table.contains_key("gid")? {
-        let flipped_horizontally: Option<bool> = data_table.get("flippedHorizontally")?;
-        let flipped_vertically: Option<bool> = data_table.get("flippedVertically")?;
+        let flipped_horizontally: Option<bool> = data_table.get("flipped_horizontally")?;
+        let flipped_vertically: Option<bool> = data_table.get("flipped_vertically")?;
 
         let tile = Tile {
           gid: data_table.get("gid")?,
@@ -287,10 +287,10 @@ fn map_optional_object_to_table<'a>(
     MapObjectData::TileObject { tile } => {
       data_table.set("gid", tile.gid).ok()?;
       data_table
-        .set("flippedHorizontally", tile.flipped_horizontally)
+        .set("flipped_horizontally", tile.flipped_horizontally)
         .ok()?;
       data_table
-        .set("flippedVertically", tile.flipped_vertically)
+        .set("flipped_vertically", tile.flipped_vertically)
         .ok()?;
       data_table.set("rotated", false).ok()?;
       Some(())
@@ -309,7 +309,7 @@ fn map_optional_object_to_table<'a>(
   }
 
   table
-    .set("customProperties", custom_properties_table)
+    .set("custom_properties", custom_properties_table)
     .ok()?;
 
   Some(table)

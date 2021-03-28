@@ -230,7 +230,7 @@ Net.get_song(area_id) -- song_path
 Net.set_song(area_id, song_path)
 Net.get_background_name(area_id) -- background_name
 Net.set_background(area_id, background_name)
-Net.get_custom_background(area_id) -- { texturePath, animationPath }
+Net.get_custom_background(area_id) -- { texture_path, animation_path }
 Net.get_custom_background_velocity(area_id) -- { x, y }
 Net.set_custom_background(area_id, texture_path, animation_path?, vel_x?, vel_y?)
 Net.get_spawn_position(area_id) -- { x, y, z }
@@ -238,9 +238,9 @@ Net.set_spawn_position(area_id, x, y, z)
 Net.get_spawn_direction(area_id)
 Net.set_spawn_direction(area_id, direction)
 Net.list_tilesets(area_id) -- tileset_path[]
-Net.get_tileset(area_id, tileset_path) -- { path, firstGid }?
-Net.get_tileset_for_tile(area_id, tile_gid) -- { path, firstGid }?
-Net.get_tile(area_id, x, y, z) -- { gid, flippedHorizontally, flippedVertically, rotated }
+Net.get_tileset(area_id, tileset_path) -- { path, first_gid }?
+Net.get_tileset_for_tile(area_id, tile_gid) -- { path, first_gid }?
+Net.get_tile(area_id, x, y, z) -- { gid, flipped_horizontally, flipped_vertically, rotated }
 Net.set_tile(area_id, x, y, z, tile_gid, flip_h?, flip_v?, rotate?)
 ```
 
@@ -248,8 +248,8 @@ Net.set_tile(area_id, x, y, z, tile_gid, flip_h?, flip_v?, rotate?)
 
 ```lua
 Net.list_objects(area_id) -- object_id[]
-Net.get_object_by_id(area_id, object_id) -- { id, name, type, visible, x, y, z, width, height, rotation, data, customProperties }?
-Net.get_object_by_name(area_id, name) -- { id, name, type, visible, x, y, z, width, height, rotation, data, customProperties }?
+Net.get_object_by_id(area_id, object_id) -- { id, name, type, visible, x, y, z, width, height, rotation, data, custom_properties }?
+Net.get_object_by_name(area_id, name) -- { id, name, type, visible, x, y, z, width, height, rotation, data, custom_properties }?
 Net.create_object(area_id, name, x, y, layer, width, height, rotation, data) -- object_id
 Net.remove_object(area_id, object_id)
 Net.set_object_name(area_id, object_id, name)
@@ -289,7 +289,7 @@ Net.get_player_area(player_id) -- area_id
 Net.get_player_name(player_id) -- name
 Net.set_player_name(player_id)
 Net.get_player_position(player_id) -- { x, y, z }
-Net.get_player_avatar(player_id) -- { texturePath, animationPath }
+Net.get_player_avatar(player_id) -- { texture_path, animation_path }
 Net.set_player_avatar(player_id, texture_path, animation_path)
 Net.is_player_in_widget(player_id)
 -- Net.is_player_battling(player_id)
