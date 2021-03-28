@@ -13,6 +13,17 @@ bot.path = {
   { x=2.5, y=0.5 }
 }
 
+local directions = {
+  "Up Left",
+  "Up",
+  "Up Right",
+  "Right",
+  "Down Right",
+  "Down",
+  "Down Left",
+  "Left",
+}
+
 function bot.on_interact(player_id)
   if bot.talking_to then
     bot.message_player(player_id, "SORRY I'M BUSY TALKING TO SOMEONE RIGHT NOW.")
@@ -26,9 +37,8 @@ function bot.on_interact(player_id)
 
   local player_pos = Net.get_player_position(player_id)
   local angle = math.atan(player_pos.y - bot.y, player_pos.x - bot.x)
-  bot.x = bot.x + math.cos(angle) * .02
-  bot.y = bot.y + math.sin(angle) * .02
-  Net.move_bot(bot._id, bot.x, bot.y, bot.z)
+  local direction_index = math.floor(angle / math.pi * 4) + 5;
+  Net.set_bot_direction(bot._id, directions[direction_index])
 end
 
 function bot.on_response(player_id, response)

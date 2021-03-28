@@ -112,6 +112,10 @@ pub enum ServerPacket<'a> {
     y: f32,
     z: f32,
   },
+  ActorDirection {
+    ticket: String,
+    direction: Direction,
+  },
   ActorSetAvatar {
     ticket: String,
     texture_path: String,
@@ -314,18 +318,23 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_f32(&mut buf, *y);
       write_f32(&mut buf, *z);
     }
+    ServerPacket::ActorDirection { ticket, direction } => {
+      write_u16(&mut buf, 25);
+      write_string(&mut buf, ticket);
+      buf.push(translate_direction(*direction));
+    }
     ServerPacket::ActorSetAvatar {
       ticket,
       texture_path,
       animation_path,
     } => {
-      write_u16(&mut buf, 25);
+      write_u16(&mut buf, 26);
       write_string(&mut buf, ticket);
       write_string(&mut buf, texture_path);
       write_string(&mut buf, animation_path);
     }
     ServerPacket::ActorEmote { ticket, emote_id } => {
-      write_u16(&mut buf, 26);
+      write_u16(&mut buf, 27);
       buf.push(*emote_id);
       write_string(&mut buf, ticket);
     }

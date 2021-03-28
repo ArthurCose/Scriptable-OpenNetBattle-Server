@@ -1004,6 +1004,23 @@ impl Net {
     }
   }
 
+  pub fn set_bot_direction(&mut self, id: &str, direction: Direction) {
+    if let Some(bot) = self.bots.get(id) {
+      let area = self.areas.get(&bot.area_id).unwrap();
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.clients,
+        area,
+        Reliability::Reliable,
+        ServerPacket::ActorDirection {
+          ticket: id.to_string(),
+          direction,
+        },
+      );
+    }
+  }
+
   pub fn set_bot_avatar(&mut self, id: &str, texture_path: String, animation_path: String) {
     if let Some(bot) = self.bots.get_mut(id) {
       bot.texture_path = texture_path.clone();

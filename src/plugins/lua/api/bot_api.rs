@@ -125,6 +125,15 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     lua_ctx.pack_multi(())
   });
 
+  lua_api.add_dynamic_function("Net", "set_bot_direction", |api_ctx, lua_ctx, params| {
+    let (id, direction_string): (String, String) = lua_ctx.unpack_multi(params)?;
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    net.set_bot_direction(&id, Direction::from(&direction_string));
+
+    lua_ctx.pack_multi(())
+  });
+
   lua_api.add_dynamic_function("Net", "set_bot_avatar", |api_ctx, lua_ctx, params| {
     let (id, texture_path, animation_path): (String, String, String) =
       lua_ctx.unpack_multi(params)?;

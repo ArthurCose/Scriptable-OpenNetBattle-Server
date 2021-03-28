@@ -274,6 +274,7 @@ Net.get_bot_name(bot_id) -- name
 Net.set_bot_name(bot_id)
 Net.get_bot_position(bot_id) -- { x, y, z }
 Net.move_bot(bot_id, x, y, z)
+Net.set_bot_direction(bot_id, direction)
 Net.set_bot_avatar(bot_id, texture_path, animation_path)
 Net.set_bot_emote(bot_id, emote_id)
 Net.transfer_bot(bot_id, area_id, warp_in?, x?, y?, z?)
