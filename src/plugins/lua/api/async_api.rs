@@ -152,7 +152,9 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
             }
 
             table.set("headers", headers_table)?;
-            table.set("body", response_data.body)?;
+
+            let body = lua_ctx.create_string(&response_data.body)?;
+            table.set("body", body)?;
 
             Some(rlua::Value::Table(table))
           }
