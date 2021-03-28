@@ -277,6 +277,7 @@ Net.move_bot(bot_id, x, y, z)
 Net.set_bot_direction(bot_id, direction)
 Net.set_bot_avatar(bot_id, texture_path, animation_path)
 Net.set_bot_emote(bot_id, emote_id)
+-- Net.play_bot_animation(bot_id, state_name);
 Net.transfer_bot(bot_id, area_id, warp_in?, x?, y?, z?)
 ```
 

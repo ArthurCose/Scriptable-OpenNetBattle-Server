@@ -125,6 +125,10 @@ pub enum ServerPacket<'a> {
     ticket: String,
     emote_id: u8,
   },
+  ActorAnimate {
+    ticket: String,
+    state: String,
+  },
 }
 
 pub fn build_unreliable_packet(packet: &ServerPacket) -> Vec<u8> {
@@ -337,6 +341,11 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_u16(&mut buf, 27);
       buf.push(*emote_id);
       write_string(&mut buf, ticket);
+    }
+    ServerPacket::ActorAnimate { ticket, state } => {
+      write_u16(&mut buf, 28);
+      write_string(&mut buf, ticket);
+      write_string(&mut buf, state);
     }
   }
 

@@ -1079,6 +1079,23 @@ impl Net {
     }
   }
 
+  pub fn play_bot_animation(&mut self, id: &str, name: &str) {
+    if let Some(bot) = self.bots.get(id) {
+      let area = self.areas.get(&bot.area_id).unwrap();
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.clients,
+        area,
+        Reliability::Reliable,
+        ServerPacket::ActorAnimate {
+          ticket: id.to_string(),
+          state: name.to_string(),
+        },
+      );
+    }
+  }
+
   pub fn transfer_bot(&mut self, id: &str, area_id: &str, warp_in: bool, x: f32, y: f32, z: f32) {
     if self.areas.get(area_id).is_none() {
       // non existent area
