@@ -386,6 +386,24 @@ impl Net {
     mug_texture_path: &str,
     mug_animation_path: &str,
   ) {
+    assert_asset(
+      &self.socket,
+      self.max_payload_size,
+      &self.assets,
+      &mut self.clients,
+      &[id.to_string()],
+      &mug_texture_path,
+    );
+
+    assert_asset(
+      &self.socket,
+      self.max_payload_size,
+      &self.assets,
+      &mut self.clients,
+      &[id.to_string()],
+      &mug_animation_path,
+    );
+
     if let Some(client) = self.clients.get_mut(id) {
       client.track_message(self.active_script);
 
@@ -398,10 +416,16 @@ impl Net {
           mug_animation_path: mug_animation_path.to_string(),
         },
       );
-    } else {
-      return;
     }
+  }
 
+  pub fn question_player(
+    &mut self,
+    id: &str,
+    message: &str,
+    mug_texture_path: &str,
+    mug_animation_path: &str,
+  ) {
     assert_asset(
       &self.socket,
       self.max_payload_size,
@@ -419,15 +443,7 @@ impl Net {
       &[id.to_string()],
       &mug_animation_path,
     );
-  }
 
-  pub fn question_player(
-    &mut self,
-    id: &str,
-    message: &str,
-    mug_texture_path: &str,
-    mug_animation_path: &str,
-  ) {
     if let Some(client) = self.clients.get_mut(id) {
       client.track_message(self.active_script);
 
@@ -440,10 +456,18 @@ impl Net {
           mug_animation_path: mug_animation_path.to_string(),
         },
       );
-    } else {
-      return;
     }
+  }
 
+  pub fn quiz_player(
+    &mut self,
+    id: &str,
+    option_a: &str,
+    option_b: &str,
+    option_c: &str,
+    mug_texture_path: &str,
+    mug_animation_path: &str,
+  ) {
     assert_asset(
       &self.socket,
       self.max_payload_size,
@@ -461,17 +485,7 @@ impl Net {
       &[id.to_string()],
       &mug_animation_path,
     );
-  }
 
-  pub fn quiz_player(
-    &mut self,
-    id: &str,
-    option_a: &str,
-    option_b: &str,
-    option_c: &str,
-    mug_texture_path: &str,
-    mug_animation_path: &str,
-  ) {
     if let Some(client) = self.clients.get_mut(id) {
       client.track_message(self.active_script);
 
@@ -486,27 +500,7 @@ impl Net {
           mug_animation_path: mug_animation_path.to_string(),
         },
       );
-    } else {
-      return;
     }
-
-    assert_asset(
-      &self.socket,
-      self.max_payload_size,
-      &self.assets,
-      &mut self.clients,
-      &[id.to_string()],
-      &mug_texture_path,
-    );
-
-    assert_asset(
-      &self.socket,
-      self.max_payload_size,
-      &self.assets,
-      &mut self.clients,
-      &[id.to_string()],
-      &mug_animation_path,
-    );
   }
 
   #[allow(clippy::too_many_arguments)]
