@@ -145,7 +145,7 @@ impl Net {
       let player_ids = area.get_connected_players();
 
       for player_id in player_ids {
-        self.kick_player(player_id, "area destroyed");
+        self.kick_player(player_id, "Area destroyed");
       }
     }
   }
