@@ -16,10 +16,8 @@ pub enum ClientPacket {
     path: String,
     last_modified: u64,
   },
-  TextureStream {
-    data: Vec<u8>,
-  },
-  AnimationStream {
+  AssetStream {
+    asset_type: u8,
     data: Vec<u8>,
   },
   Login {
@@ -87,46 +85,41 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
       last_modified: read_u64(work_buf)?,
     }),
     3 => {
+      let asset_type = read_byte(work_buf)?;
       let size = read_u16(work_buf)? as usize;
       let data = read_data(work_buf, size)?;
 
-      Some(ClientPacket::TextureStream { data })
+      Some(ClientPacket::AssetStream { asset_type, data })
     }
-    4 => {
-      let size = read_u16(work_buf)? as usize;
-      let data = read_data(work_buf, size)?;
-
-      Some(ClientPacket::AnimationStream { data })
-    }
-    5 => Some(ClientPacket::Login {
+    4 => Some(ClientPacket::Login {
       username: read_string(work_buf)?,
       password: read_string(work_buf)?,
     }),
-    6 => Some(ClientPacket::Logout),
-    7 => Some(ClientPacket::RequestJoin),
-    8 => Some(ClientPacket::Ready),
-    9 => Some(ClientPacket::Position {
+    5 => Some(ClientPacket::Logout),
+    6 => Some(ClientPacket::RequestJoin),
+    7 => Some(ClientPacket::Ready),
+    8 => Some(ClientPacket::Position {
       x: read_f32(work_buf)?,
       y: read_f32(work_buf)?,
       z: read_f32(work_buf)?,
       direction: read_direction(read_byte(work_buf)?),
     }),
-    10 => Some(ClientPacket::AvatarChange),
-    11 => Some(ClientPacket::Emote {
+    9 => Some(ClientPacket::AvatarChange),
+    10 => Some(ClientPacket::Emote {
       emote_id: read_byte(work_buf)?,
     }),
-    12 => Some(ClientPacket::ObjectInteraction {
+    11 => Some(ClientPacket::ObjectInteraction {
       tile_object_id: read_u32(work_buf)?,
     }),
-    13 => Some(ClientPacket::ActorInteraction {
+    12 => Some(ClientPacket::ActorInteraction {
       actor_id: read_string(work_buf)?,
     }),
-    14 => Some(ClientPacket::TileInteraction {
+    13 => Some(ClientPacket::TileInteraction {
       x: read_f32(work_buf)?,
       y: read_f32(work_buf)?,
       z: read_f32(work_buf)?,
     }),
-    15 => Some(ClientPacket::DialogResponse {
+    14 => Some(ClientPacket::DialogResponse {
       response: read_byte(work_buf)?,
     }),
     _ => None,

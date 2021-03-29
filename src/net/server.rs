@@ -191,26 +191,30 @@ impl Server {
             }
           }
         }
-        ClientPacket::TextureStream { data } => {
+        ClientPacket::AssetStream { asset_type, data } => {
           if self.config.log_packets {
-            println!("Received TextureStream packet from {}", socket_address);
+            println!("Received AssetStream packet from {}", socket_address);
           }
 
           let client = net.get_client_mut(player_id).unwrap();
 
-          if client.texture_buffer.len() < self.config.player_asset_limit {
-            client.texture_buffer.extend(data);
-          }
-        }
-        ClientPacket::AnimationStream { data } => {
-          if self.config.log_packets {
-            println!("Received AnimationStream packet from {}", socket_address);
-          }
+          let asset_buffer = match asset_type {
+            0 => Some(&mut client.texture_buffer),
+            1 => Some(&mut client.animation_buffer),
+            _ => None,
+          };
 
-          let client = net.get_client_mut(player_id).unwrap();
+          if let Some(asset_buffer) = asset_buffer {
+            if asset_buffer.len() < self.config.player_asset_limit {
+              asset_buffer.extend(data);
+            } else {
+              let reason = format!(
+                "Avatar asset larger than {}KiB",
+                self.config.player_asset_limit / 1024
+              );
 
-          if client.animation_buffer.len() < self.config.player_asset_limit {
-            client.animation_buffer.extend(data);
+              net.kick_player(player_id, &reason);
+            }
           }
         }
         ClientPacket::Ack { reliability, id } => {
