@@ -198,38 +198,39 @@ impl Net {
 
       let area = self.areas.get(&client.actor.area_id).unwrap();
 
-      // skip if client has not even been sent to anyone yet
-      if client.ready {
-        update_cached_clients(
-          &self.socket,
-          self.max_payload_size,
-          &self.assets,
-          &mut self.clients,
-          &texture_path,
-        );
+      // we'd normally skip if the player has not been sent to anyone yet
+      // but for this we want to make sure the player sees this and updates their avatar
+      // if the other players receive this, they'll just ignore it
 
-        update_cached_clients(
-          &self.socket,
-          self.max_payload_size,
-          &self.assets,
-          &mut self.clients,
-          &animation_path,
-        );
+      update_cached_clients(
+        &self.socket,
+        self.max_payload_size,
+        &self.assets,
+        &mut self.clients,
+        &texture_path,
+      );
 
-        let packet = ServerPacket::ActorSetAvatar {
-          ticket: id.to_string(),
-          texture_path,
-          animation_path,
-        };
+      update_cached_clients(
+        &self.socket,
+        self.max_payload_size,
+        &self.assets,
+        &mut self.clients,
+        &animation_path,
+      );
 
-        broadcast_to_area(
-          &self.socket,
-          &mut self.clients,
-          area,
-          Reliability::ReliableOrdered,
-          packet,
-        );
-      }
+      let packet = ServerPacket::ActorSetAvatar {
+        ticket: id.to_string(),
+        texture_path,
+        animation_path,
+      };
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.clients,
+        area,
+        Reliability::ReliableOrdered,
+        packet,
+      );
     }
   }
 
