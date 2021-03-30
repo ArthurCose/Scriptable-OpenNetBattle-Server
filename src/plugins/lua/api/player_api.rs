@@ -72,6 +72,21 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     }
   });
 
+  lua_api.add_dynamic_function("Net", "get_player_mugshot", |api_ctx, lua_ctx, params| {
+    let id: String = lua_ctx.unpack_multi(params)?;
+    let net = api_ctx.net_ref.borrow();
+
+    if let Some(player) = net.get_player(&id) {
+      let table = lua_ctx.create_table()?;
+      table.set("texture_path", player.mugshot_texture_path.clone())?;
+      table.set("animation_path", player.mugshot_animation_path.clone())?;
+
+      lua_ctx.pack_multi(table)
+    } else {
+      Err(create_player_error(&id))
+    }
+  });
+
   lua_api.add_dynamic_function("Net", "get_player_avatar", |api_ctx, lua_ctx, params| {
     let id: String = lua_ctx.unpack_multi(params)?;
     let net = api_ctx.net_ref.borrow();

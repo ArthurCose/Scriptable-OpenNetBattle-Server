@@ -1,4 +1,4 @@
-use super::{Direction, Actor};
+use super::{Actor, Direction};
 use crate::packets::PacketShipper;
 use std::collections::HashSet;
 use std::collections::VecDeque;
@@ -17,6 +17,8 @@ pub(super) struct Client {
   pub cached_assets: HashSet<String>,
   pub texture_buffer: Vec<u8>,
   pub animation_buffer: Vec<u8>,
+  pub mugshot_texture_buffer: Vec<u8>,
+  pub mugshot_animation_buffer: Vec<u8>,
   message_queue: VecDeque<usize>, // for tracking what plugin sent the message this response is for
 }
 
@@ -30,7 +32,7 @@ impl Client {
     spawn_z: f32,
     resend_budget: usize,
   ) -> Client {
-    use super::asset::{get_player_animation_path, get_player_texture_path};
+    use super::asset;
     use uuid::Uuid;
 
     let id = Uuid::new_v4().to_string();
@@ -42,8 +44,10 @@ impl Client {
         id: id.clone(),
         name,
         area_id,
-        texture_path: get_player_texture_path(&id),
-        animation_path: get_player_animation_path(&id),
+        texture_path: asset::get_player_texture_path(&id),
+        animation_path: asset::get_player_animation_path(&id),
+        mugshot_texture_path: asset::get_player_mugshot_texture_path(&id),
+        mugshot_animation_path: asset::get_player_mugshot_animation_path(&id),
         direction: Direction::None,
         x: spawn_x,
         y: spawn_y,
@@ -59,6 +63,8 @@ impl Client {
       cached_assets: HashSet::new(),
       texture_buffer: Vec::new(),
       animation_buffer: Vec::new(),
+      mugshot_texture_buffer: Vec::new(),
+      mugshot_animation_buffer: Vec::new(),
       message_queue: VecDeque::new(),
     }
   }

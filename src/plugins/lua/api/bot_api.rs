@@ -38,6 +38,8 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
         area_id,
         texture_path,
         animation_path,
+        mugshot_texture_path: String::default(),
+        mugshot_animation_path: String::default(),
         direction: Direction::None,
         x,
         y,

@@ -31,6 +31,14 @@ pub fn get_player_animation_path(player_id: &str) -> String {
   String::from("/server/players/") + player_id + ".animation"
 }
 
+pub fn get_player_mugshot_texture_path(player_id: &str) -> String {
+  String::from("/server/players/") + player_id + "_mug.texture"
+}
+
+pub fn get_player_mugshot_animation_path(player_id: &str) -> String {
+  String::from("/server/players/") + player_id + "_mug.animation"
+}
+
 pub fn get_map_path(map_id: &str) -> String {
   String::from("/server/maps/") + map_id + ".tmx"
 }

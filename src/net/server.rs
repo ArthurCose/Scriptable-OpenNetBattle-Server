@@ -201,6 +201,8 @@ impl Server {
           let asset_buffer = match asset_type {
             0 => Some(&mut client.texture_buffer),
             1 => Some(&mut client.animation_buffer),
+            2 => Some(&mut client.mugshot_texture_buffer),
+            3 => Some(&mut client.mugshot_animation_buffer),
             _ => None,
           };
 
@@ -297,7 +299,7 @@ impl Server {
             println!("Received AvatarChange packet from {}", socket_address);
           }
 
-          if let Some((texture_path, animation_path)) = net.store_player_avatar(player_id) {
+          if let Some((texture_path, animation_path)) = net.store_player_assets(player_id) {
             let prevent_default = self.plugin_wrapper.handle_player_avatar_change(
               net,
               player_id,

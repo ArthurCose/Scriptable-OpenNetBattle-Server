@@ -652,7 +652,7 @@ impl Net {
     id
   }
 
-  pub(super) fn store_player_avatar(&mut self, player_id: &str) -> Option<(String, String)> {
+  pub(super) fn store_player_assets(&mut self, player_id: &str) -> Option<(String, String)> {
     use super::asset;
     use super::client::find_longest_frame_length;
 
@@ -660,10 +660,15 @@ impl Net {
 
     let texture_data = client.texture_buffer.clone();
     let animation_data = String::from_utf8_lossy(&client.animation_buffer).into_owned();
+    let mugshot_texture_data = client.mugshot_texture_buffer.clone();
+    let mugshot_animation_data =
+      String::from_utf8_lossy(&client.mugshot_animation_buffer).into_owned();
 
     // reset buffers to store new data later
-    client.animation_buffer.clear();
     client.texture_buffer.clear();
+    client.animation_buffer.clear();
+    client.mugshot_texture_buffer.clear();
+    client.mugshot_animation_buffer.clear();
 
     if find_longest_frame_length(&animation_data) > self.avatar_dimensions_limit {
       let reason = format!(
@@ -678,6 +683,8 @@ impl Net {
 
     let texture_path = asset::get_player_texture_path(player_id);
     let animation_path = asset::get_player_animation_path(player_id);
+    let mugshot_texture_path = asset::get_player_mugshot_texture_path(player_id);
+    let mugshot_animation_path = asset::get_player_mugshot_animation_path(player_id);
 
     self.set_asset(
       texture_path.clone(),
@@ -693,6 +700,26 @@ impl Net {
       animation_path.clone(),
       Asset {
         data: AssetData::Text(animation_data),
+        dependencies: Vec::new(),
+        last_modified: 0,
+        cachable: false,
+      },
+    );
+
+    self.set_asset(
+      mugshot_texture_path.clone(),
+      Asset {
+        data: AssetData::Texture(mugshot_texture_data),
+        dependencies: Vec::new(),
+        last_modified: 0,
+        cachable: false,
+      },
+    );
+
+    self.set_asset(
+      mugshot_animation_path.clone(),
+      Asset {
+        data: AssetData::Text(mugshot_animation_data),
         dependencies: Vec::new(),
         last_modified: 0,
         cachable: false,
