@@ -66,20 +66,24 @@ impl Direction {
       _ => Direction::None,
     }
   }
+
+  pub fn as_str(&self) -> &str {
+    match self {
+      Direction::None => "None",
+      Direction::Up => "Up",
+      Direction::Left => "Left",
+      Direction::Down => "Down",
+      Direction::Right => "Right",
+      Direction::UpLeft => "Up Left",
+      Direction::UpRight => "Up Right",
+      Direction::DownLeft => "Down Left",
+      Direction::DownRight => "Down Right",
+    }
+  }
 }
 
 impl std::string::ToString for Direction {
   fn to_string(&self) -> String {
-    match self {
-      Direction::None => String::from("None"),
-      Direction::Up => String::from("Up"),
-      Direction::Left => String::from("Left"),
-      Direction::Down => String::from("Down"),
-      Direction::Right => String::from("Right"),
-      Direction::UpLeft => String::from("Up Left"),
-      Direction::UpRight => String::from("Up Right"),
-      Direction::DownLeft => String::from("Down Left"),
-      Direction::DownRight => String::from("Down Right"),
-    }
+    String::from(self.as_str())
   }
 }

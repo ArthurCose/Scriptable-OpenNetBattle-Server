@@ -273,6 +273,7 @@ Net.get_bot_area(bot_id) -- area_id
 Net.get_bot_name(bot_id) -- name
 Net.set_bot_name(bot_id)
 Net.get_bot_position(bot_id) -- { x, y, z }
+Net.get_bot_direction(bot_id)
 Net.move_bot(bot_id, x, y, z)
 Net.set_bot_direction(bot_id, direction)
 Net.set_bot_avatar(bot_id, texture_path, animation_path)
@@ -290,6 +291,7 @@ Net.get_player_area(player_id) -- area_id
 Net.get_player_name(player_id) -- name
 Net.set_player_name(player_id)
 Net.get_player_position(player_id) -- { x, y, z }
+Net.get_player_direction(bot_id)
 Net.get_player_mugshot(player_id) -- { texture_path, animation_path }
 Net.get_player_avatar(player_id) -- { texture_path, animation_path }
 Net.set_player_avatar(player_id, texture_path, animation_path)
