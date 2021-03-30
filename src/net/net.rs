@@ -366,6 +366,7 @@ impl Net {
       x,
       y,
       z,
+      direction,
     };
 
     let area = self.areas.get(&client.actor.area_id).unwrap();
@@ -1019,6 +1020,12 @@ impl Net {
 
   pub fn move_bot(&mut self, id: &str, x: f32, y: f32, z: f32) {
     if let Some(bot) = self.bots.get_mut(id) {
+      let updated_direction = Direction::from_offset(x - bot.x, y - bot.y);
+
+      if matches!(updated_direction, Direction::None) {
+        bot.direction = updated_direction;
+      }
+
       bot.x = x;
       bot.y = y;
       bot.z = z;
@@ -1026,19 +1033,8 @@ impl Net {
   }
 
   pub fn set_bot_direction(&mut self, id: &str, direction: Direction) {
-    if let Some(bot) = self.bots.get(id) {
-      let area = self.areas.get(&bot.area_id).unwrap();
-
-      broadcast_to_area(
-        &self.socket,
-        &mut self.clients,
-        area,
-        Reliability::Reliable,
-        ServerPacket::ActorDirection {
-          ticket: id.to_string(),
-          direction,
-        },
-      );
+    if let Some(bot) = self.bots.get_mut(id) {
+      bot.direction = direction;
     }
   }
 
@@ -1209,6 +1205,7 @@ impl Net {
         x: bot.x,
         y: bot.y,
         z: bot.z,
+        direction: bot.direction,
       };
 
       let area = self.areas.get(&bot.area_id).unwrap();

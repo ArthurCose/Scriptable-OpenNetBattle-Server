@@ -111,9 +111,6 @@ pub enum ServerPacket<'a> {
     x: f32,
     y: f32,
     z: f32,
-  },
-  ActorDirection {
-    ticket: String,
     direction: Direction,
   },
   ActorSetAvatar {
@@ -315,16 +312,18 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_string(&mut buf, ticket);
       write_string(&mut buf, name);
     }
-    ServerPacket::ActorMove { ticket, x, y, z } => {
+    ServerPacket::ActorMove {
+      ticket,
+      x,
+      y,
+      z,
+      direction,
+    } => {
       write_u16(&mut buf, 24);
       write_string(&mut buf, ticket);
       write_f32(&mut buf, *x);
       write_f32(&mut buf, *y);
       write_f32(&mut buf, *z);
-    }
-    ServerPacket::ActorDirection { ticket, direction } => {
-      write_u16(&mut buf, 25);
-      write_string(&mut buf, ticket);
       buf.push(translate_direction(*direction));
     }
     ServerPacket::ActorSetAvatar {
@@ -332,18 +331,18 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       texture_path,
       animation_path,
     } => {
-      write_u16(&mut buf, 26);
+      write_u16(&mut buf, 25);
       write_string(&mut buf, ticket);
       write_string(&mut buf, texture_path);
       write_string(&mut buf, animation_path);
     }
     ServerPacket::ActorEmote { ticket, emote_id } => {
-      write_u16(&mut buf, 27);
+      write_u16(&mut buf, 26);
       buf.push(*emote_id);
       write_string(&mut buf, ticket);
     }
     ServerPacket::ActorAnimate { ticket, state } => {
-      write_u16(&mut buf, 28);
+      write_u16(&mut buf, 27);
       write_string(&mut buf, ticket);
       write_string(&mut buf, state);
     }
