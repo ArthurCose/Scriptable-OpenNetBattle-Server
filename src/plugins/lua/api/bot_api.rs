@@ -76,7 +76,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     let net = api_ctx.net_ref.borrow_mut();
 
     if let Some(bot) = net.get_bot(&id) {
-      lua_ctx.pack_multi(bot.area_id.clone())
+      lua_ctx.pack_multi(bot.area_id.as_str())
     } else {
       Err(create_bot_error(&id))
     }
@@ -87,7 +87,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     let net = api_ctx.net_ref.borrow_mut();
 
     if let Some(bot) = net.get_bot(&id) {
-      lua_ctx.pack_multi(bot.name.clone())
+      lua_ctx.pack_multi(bot.name.as_str())
     } else {
       Err(create_bot_error(&id))
     }

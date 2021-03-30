@@ -116,7 +116,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     let net = api_ctx.net_ref.borrow();
 
     if let Some(area) = net.get_area(&area_id) {
-      lua_ctx.pack_multi(area.get_map().get_name().clone())
+      lua_ctx.pack_multi(area.get_map().get_name().as_str())
     } else {
       Err(create_area_error(&area_id))
     }
@@ -142,7 +142,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     let net = api_ctx.net_ref.borrow();
 
     if let Some(area) = net.get_area(&area_id) {
-      lua_ctx.pack_multi(area.get_map().get_song_path().clone())
+      lua_ctx.pack_multi(area.get_map().get_song_path().as_str())
     } else {
       Err(create_area_error(&area_id))
     }
@@ -168,7 +168,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     let net = api_ctx.net_ref.borrow();
 
     if let Some(area) = net.get_area(&area_id) {
-      lua_ctx.pack_multi(area.get_map().get_background_name().clone())
+      lua_ctx.pack_multi(area.get_map().get_background_name().as_str())
     } else {
       Err(create_area_error(&area_id))
     }
@@ -203,12 +203,12 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
 
         table.set(
           "texture_path",
-          map.get_custom_background_texture_path().clone(),
+          map.get_custom_background_texture_path().as_str(),
         )?;
 
         table.set(
           "animation_path",
-          map.get_custom_background_animation_path().clone(),
+          map.get_custom_background_animation_path().as_str(),
         )?;
 
         lua_ctx.pack_multi(table)
@@ -361,7 +361,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
 
       if let Some(tileset) = optional_tileset {
         let table = lua_ctx.create_table()?;
-        table.set("path", tileset.path.clone())?;
+        table.set("path", tileset.path.as_str())?;
         table.set("first_gid", tileset.first_gid)?;
 
         return lua_ctx.pack_multi(Some(table));
@@ -387,7 +387,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
 
       if let Some(tileset) = optional_tileset {
         let table = lua_ctx.create_table()?;
-        table.set("path", tileset.path.clone())?;
+        table.set("path", tileset.path.as_str())?;
         table.set("first_gid", tileset.first_gid)?;
 
         return lua_ctx.pack_multi(Some(table));

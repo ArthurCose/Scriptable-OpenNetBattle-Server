@@ -253,8 +253,8 @@ fn map_optional_object_to_table<'a>(
   let object = optional_object?;
 
   table.set("id", object.id).ok()?;
-  table.set("name", object.name.clone()).ok()?;
-  table.set("type", object.object_type.clone()).ok()?;
+  table.set("name", object.name.as_str()).ok()?;
+  table.set("type", object.object_type.as_str()).ok()?;
   table.set("visible", object.visible).ok()?;
   table.set("x", object.x).ok()?;
   table.set("y", object.y).ok()?;
@@ -304,7 +304,7 @@ fn map_optional_object_to_table<'a>(
 
   for (name, value) in &object.custom_properties {
     custom_properties_table
-      .set(name.as_str(), value.clone())
+      .set(name.as_str(), value.as_str())
       .ok()?
   }
 

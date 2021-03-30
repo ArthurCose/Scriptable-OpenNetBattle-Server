@@ -30,7 +30,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     let net = api_ctx.net_ref.borrow_mut();
 
     if let Some(player) = net.get_player(&id) {
-      lua_ctx.pack_multi(player.area_id.clone())
+      lua_ctx.pack_multi(player.area_id.as_str())
     } else {
       Err(create_player_error(&id))
     }
@@ -41,7 +41,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     let net = api_ctx.net_ref.borrow_mut();
 
     if let Some(player) = net.get_player(&id) {
-      lua_ctx.pack_multi(player.name.clone())
+      lua_ctx.pack_multi(player.name.as_str())
     } else {
       Err(create_player_error(&id))
     }
@@ -78,8 +78,8 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
 
     if let Some(player) = net.get_player(&id) {
       let table = lua_ctx.create_table()?;
-      table.set("texture_path", player.mugshot_texture_path.clone())?;
-      table.set("animation_path", player.mugshot_animation_path.clone())?;
+      table.set("texture_path", player.mugshot_texture_path.as_str())?;
+      table.set("animation_path", player.mugshot_animation_path.as_str())?;
 
       lua_ctx.pack_multi(table)
     } else {
@@ -93,8 +93,8 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
 
     if let Some(player) = net.get_player(&id) {
       let table = lua_ctx.create_table()?;
-      table.set("texture_path", player.texture_path.clone())?;
-      table.set("animation_path", player.animation_path.clone())?;
+      table.set("texture_path", player.texture_path.as_str())?;
+      table.set("animation_path", player.animation_path.as_str())?;
 
       lua_ctx.pack_multi(table)
     } else {

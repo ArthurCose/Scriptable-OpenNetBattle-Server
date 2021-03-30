@@ -148,7 +148,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
             let headers_table = lua_ctx.create_table()?;
 
             for (key, value) in &response_data.headers {
-              headers_table.set(key.as_str(), value.clone())?;
+              headers_table.set(key.as_str(), value.as_str())?;
             }
 
             table.set("headers", headers_table)?;
