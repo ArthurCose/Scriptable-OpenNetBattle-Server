@@ -708,7 +708,7 @@ impl Net {
     );
 
     self.set_asset(
-      mugshot_texture_path.clone(),
+      mugshot_texture_path,
       Asset {
         data: AssetData::Texture(mugshot_texture_data),
         dependencies: Vec::new(),
@@ -718,7 +718,7 @@ impl Net {
     );
 
     self.set_asset(
-      mugshot_animation_path.clone(),
+      mugshot_animation_path,
       Asset {
         data: AssetData::Text(mugshot_animation_data),
         dependencies: Vec::new(),
