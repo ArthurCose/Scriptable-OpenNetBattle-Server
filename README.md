@@ -259,7 +259,7 @@ Net.resize_object(area_id, object_id, width, height)
 Net.set_object_rotation(area_id, object_id, rotation)
 Net.set_object_visibility(area_id, object_id, visibility)
 Net.move_object(area_id, object_id, x, y, layer)
--- Net.set_object_data(area_id, object_id, data)
+Net.set_object_data(area_id, object_id, data)
 ```
 
 #### Bot API

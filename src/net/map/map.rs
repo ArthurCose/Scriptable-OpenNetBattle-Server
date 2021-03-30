@@ -461,6 +461,14 @@ impl Map {
     }
   }
 
+  pub fn set_object_data(&mut self, id: u32, data: MapObjectData) {
+    if let Some(object) = self.objects.iter_mut().find(|object| object.id == id) {
+      object.data = data;
+
+      self.mark_dirty();
+    }
+  }
+
   pub fn render(&mut self) -> String {
     if !self.cached {
       let mut text = vec![format!(

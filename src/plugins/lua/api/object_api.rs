@@ -65,35 +65,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     if let Some(area) = net.get_area_mut(&area_id) {
       let map = area.get_map_mut();
 
-      let data = if data_table.contains_key("gid")? {
-        let flipped_horizontally: Option<bool> = data_table.get("flipped_horizontally")?;
-        let flipped_vertically: Option<bool> = data_table.get("flipped_vertically")?;
-
-        let tile = Tile {
-          gid: data_table.get("gid")?,
-          flipped_horizontally: flipped_horizontally.unwrap_or_default(),
-          flipped_vertically: flipped_vertically.unwrap_or_default(),
-          flipped_anti_diagonally: false,
-        };
-
-        MapObjectData::TileObject { tile }
-      } else if data_table.contains_key("points")? {
-        let point_tables: Vec<rlua::Table> = data_table.get("points")?;
-        let mut points = Vec::new();
-        points.reserve(point_tables.len());
-
-        for point_table in point_tables {
-          let x = point_table.get("x")?;
-          let y = point_table.get("y")?;
-
-          points.push((x, y));
-        }
-
-        MapObjectData::Polygon { points }
-      } else {
-        // no ellipse or point support
-        MapObjectData::Rect
-      };
+      let data = parse_object_data(data_table)?;
 
       let id = map.create_object(
         name,
@@ -242,6 +214,55 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
       Err(create_area_error(&area_id))
     }
   });
+
+  lua_api.add_dynamic_function("Net", "set_object_data", |api_ctx, lua_ctx, params| {
+    let (area_id, id, data_table): (String, u32, rlua::Table) = lua_ctx.unpack_multi(params)?;
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    if let Some(area) = net.get_area_mut(&area_id) {
+      let map = area.get_map_mut();
+
+      map.set_object_data(id, parse_object_data(data_table)?);
+
+      lua_ctx.pack_multi(())
+    } else {
+      Err(create_area_error(&area_id))
+    }
+  });
+}
+
+fn parse_object_data(data_table: rlua::Table) -> rlua::Result<MapObjectData> {
+  let data = if data_table.contains_key("gid")? {
+    let flipped_horizontally: Option<bool> = data_table.get("flipped_horizontally")?;
+    let flipped_vertically: Option<bool> = data_table.get("flipped_vertically")?;
+
+    let tile = Tile {
+      gid: data_table.get("gid")?,
+      flipped_horizontally: flipped_horizontally.unwrap_or_default(),
+      flipped_vertically: flipped_vertically.unwrap_or_default(),
+      flipped_anti_diagonally: false,
+    };
+
+    MapObjectData::TileObject { tile }
+  } else if data_table.contains_key("points")? {
+    let point_tables: Vec<rlua::Table> = data_table.get("points")?;
+    let mut points = Vec::new();
+    points.reserve(point_tables.len());
+
+    for point_table in point_tables {
+      let x = point_table.get("x")?;
+      let y = point_table.get("y")?;
+
+      points.push((x, y));
+    }
+
+    MapObjectData::Polygon { points }
+  } else {
+    // no ellipse or point support
+    MapObjectData::Rect
+  };
+
+  Ok(data)
 }
 
 fn map_optional_object_to_table<'a>(
