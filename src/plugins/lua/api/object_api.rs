@@ -232,37 +232,57 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
 }
 
 fn parse_object_data(data_table: rlua::Table) -> rlua::Result<MapObjectData> {
-  let data = if data_table.contains_key("gid")? {
-    let flipped_horizontally: Option<bool> = data_table.get("flipped_horizontally")?;
-    let flipped_vertically: Option<bool> = data_table.get("flipped_vertically")?;
+  let object_type: String = data_table.get("type")?;
 
-    let tile = Tile {
-      gid: data_table.get("gid")?,
-      flipped_horizontally: flipped_horizontally.unwrap_or_default(),
-      flipped_vertically: flipped_vertically.unwrap_or_default(),
-      flipped_anti_diagonally: false,
-    };
+  let data = match object_type.as_str() {
+    "point" => MapObjectData::Point,
+    "rect" => MapObjectData::Rect,
+    "ellipse" => MapObjectData::Ellipse,
+    "polyline" => {
+      let points = extract_points_from_table(data_table)?;
 
-    MapObjectData::TileObject { tile }
-  } else if data_table.contains_key("points")? {
-    let point_tables: Vec<rlua::Table> = data_table.get("points")?;
-    let mut points = Vec::new();
-    points.reserve(point_tables.len());
-
-    for point_table in point_tables {
-      let x = point_table.get("x")?;
-      let y = point_table.get("y")?;
-
-      points.push((x, y));
+      MapObjectData::Polyline { points }
     }
+    "polygon" => {
+      let points = extract_points_from_table(data_table)?;
 
-    MapObjectData::Polygon { points }
-  } else {
-    // no ellipse or point support
-    MapObjectData::Rect
+      MapObjectData::Polygon { points }
+    }
+    "tile" => {
+      let flipped_horizontally: Option<bool> = data_table.get("flipped_horizontally")?;
+      let flipped_vertically: Option<bool> = data_table.get("flipped_vertically")?;
+
+      let tile = Tile {
+        gid: data_table.get("gid")?,
+        flipped_horizontally: flipped_horizontally.unwrap_or_default(),
+        flipped_vertically: flipped_vertically.unwrap_or_default(),
+        flipped_anti_diagonally: false,
+      };
+
+      MapObjectData::TileObject { tile }
+    }
+    _ => Err(rlua::Error::RuntimeError(String::from(
+      "Invalid or missing type in data param. Accepted values: \"point\", \"rect\", \"ellipse\", \"polyline\", \"polygon\", \"tile\"",
+    )))?,
   };
 
   Ok(data)
+}
+
+fn extract_points_from_table(data_table: rlua::Table) -> rlua::Result<Vec<(f32, f32)>> {
+  let points_table: Vec<rlua::Table> = data_table.get("points")?;
+
+  let mut points = Vec::new();
+  points.reserve(points_table.len());
+
+  for point_table in points_table {
+    let x = point_table.get("x")?;
+    let y = point_table.get("y")?;
+
+    points.push((x, y));
+  }
+
+  Ok(points)
 }
 
 fn map_optional_object_to_table<'a>(
@@ -287,25 +307,31 @@ fn map_optional_object_to_table<'a>(
   let data_table = lua_ctx.create_table().ok()?;
 
   match &object.data {
-    MapObjectData::Polygon { points } => {
-      let points_table = lua_ctx.create_table().ok()?;
+    MapObjectData::Point => {
+      data_table.set("type", "point").ok()?;
+    }
+    MapObjectData::Rect => {
+      data_table.set("type", "rect").ok()?;
+    }
+    MapObjectData::Ellipse => {
+      data_table.set("type", "ellipse").ok()?;
+    }
+    MapObjectData::Polyline { points } => {
+      data_table.set("type", "polyline").ok()?;
 
-      // lua lists start at 1
-      let mut i = 1;
-
-      for point in points {
-        let point_table = lua_ctx.create_table().ok()?;
-        point_table.set("x", point.0).ok()?;
-        point_table.set("y", point.1).ok()?;
-
-        points_table.set(i, point_table).ok()?;
-        i += 1;
-      }
+      let points_table = points_to_table(lua_ctx, points).ok()?;
 
       data_table.set("points", points_table).ok()?;
-      Some(())
+    }
+    MapObjectData::Polygon { points } => {
+      data_table.set("type", "polygon").ok()?;
+
+      let points_table = points_to_table(lua_ctx, points).ok()?;
+
+      data_table.set("points", points_table).ok()?;
     }
     MapObjectData::TileObject { tile } => {
+      data_table.set("type", "tile").ok()?;
       data_table.set("gid", tile.gid).ok()?;
       data_table
         .set("flipped_horizontally", tile.flipped_horizontally)
@@ -314,10 +340,8 @@ fn map_optional_object_to_table<'a>(
         .set("flipped_vertically", tile.flipped_vertically)
         .ok()?;
       data_table.set("rotated", false).ok()?;
-      Some(())
     }
-    _ => Some(()),
-  }?;
+  };
 
   table.set("data", data_table).ok()?;
 
@@ -334,4 +358,25 @@ fn map_optional_object_to_table<'a>(
     .ok()?;
 
   Some(table)
+}
+
+fn points_to_table<'a>(
+  lua_ctx: &rlua::Context<'a>,
+  points: &Vec<(f32, f32)>,
+) -> rlua::Result<rlua::Table<'a>> {
+  let points_table = lua_ctx.create_table()?;
+
+  // lua lists start at 1
+  let mut i = 1;
+
+  for point in points {
+    let point_table = lua_ctx.create_table()?;
+    point_table.set("x", point.0)?;
+    point_table.set("y", point.1)?;
+
+    points_table.set(i, point_table)?;
+    i += 1;
+  }
+
+  Ok(points_table)
 }
