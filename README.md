@@ -297,6 +297,7 @@ Net.get_player_avatar(player_id) -- { texture_path, animation_path }
 Net.set_player_avatar(player_id, texture_path, animation_path)
 Net.is_player_in_widget(player_id)
 -- Net.is_player_battling(player_id)
+Net.is_player_busy(player_id)
 Net.exclude_object_for_player(player_id, object_id)
 Net.include_object_for_player(player_id, object_id)
 Net.move_player_camera(player_id, x, y, z, holdTimeInSeconds?)

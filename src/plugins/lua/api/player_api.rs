@@ -134,6 +134,15 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     lua_ctx.pack_multi(is_in_widget)
   });
 
+  lua_api.add_dynamic_function("Net", "is_player_busy", |api_ctx, lua_ctx, params| {
+    let id: String = lua_ctx.unpack_multi(params)?;
+    let net = api_ctx.net_ref.borrow();
+
+    let is_in_widget = net.is_player_in_widget(&id);
+
+    lua_ctx.pack_multi(is_in_widget)
+  });
+
   lua_api.add_dynamic_function(
     "Net",
     "exclude_object_for_player",
