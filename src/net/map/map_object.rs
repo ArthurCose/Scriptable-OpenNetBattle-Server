@@ -21,8 +21,9 @@ pub struct MapObject {
 #[derive(Clone)]
 pub enum MapObjectData {
   Point,
-  Ellipse,
   Rect,
+  Ellipse,
+  Polyline { points: Vec<(f32, f32)> },
   Polygon { points: Vec<(f32, f32)> },
   TileObject { tile: Tile },
 }
@@ -59,30 +60,30 @@ impl MapObject {
       MapObjectData::TileObject {
         tile: Tile::from(gid),
       }
+    } else if element.has_child("polyline", minidom::NSChoice::Any) {
+      let points_element = element
+        .get_child("polyline", minidom::NSChoice::Any)
+        .unwrap();
+
+      let points_str = points_element.attr("points").unwrap_or_default();
+
+      MapObjectData::Polyline {
+        points: read_points(points_str),
+      }
     } else if element.has_child("polygon", minidom::NSChoice::Any) {
       let points_element = element
         .get_child("polygon", minidom::NSChoice::Any)
         .unwrap();
+
       let points_str = points_element.attr("points").unwrap_or_default();
 
-      let points = points_str
-        .split(' ')
-        .map(|point_str| {
-          let comma_index = point_str.find(',')?;
-
-          Some((
-            point_str[0..comma_index].parse::<f32>().unwrap_or(0.0),
-            point_str[comma_index + 1..].parse::<f32>().unwrap_or(0.0),
-          ))
-        })
-        .filter_map(|point| point)
-        .collect::<Vec<(f32, f32)>>();
-
-      MapObjectData::Polygon { points }
-    } else if width == 0.0 && height == 0.0 {
-      MapObjectData::Point
+      MapObjectData::Polygon {
+        points: read_points(points_str),
+      }
     } else if element.has_child("ellipse", minidom::NSChoice::Any) {
       MapObjectData::Ellipse
+    } else if width == 0.0 && height == 0.0 {
+      MapObjectData::Point
     } else {
       MapObjectData::Rect
     };
@@ -149,14 +150,11 @@ impl MapObject {
       MapObjectData::Ellipse => {
         data_string = String::from("<ellipse/>");
       }
+      MapObjectData::Polyline { points } => {
+        data_string = format!("<polyline points=\"{}\"/>", render_points(points));
+      }
       MapObjectData::Polygon { points } => {
-        let points_string = points
-          .iter()
-          .map(|point| format!("{},{}", point.0, point.1))
-          .collect::<Vec<String>>()
-          .join(" ");
-
-        data_string = format!("<polygon points=\"{}\"/>", points_string);
+        data_string = format!("<polygon points=\"{}\"/>", render_points(points));
       }
       MapObjectData::TileObject { tile } => {
         gid_string = format!(" gid=\"{}\"", tile.compress());
@@ -189,4 +187,27 @@ impl MapObject {
       data_string,
     )
   }
+}
+
+fn read_points(points_str: &str) -> Vec<(f32, f32)> {
+  points_str
+    .split(' ')
+    .map(|point_str| {
+      let comma_index = point_str.find(',')?;
+
+      Some((
+        point_str[0..comma_index].parse::<f32>().unwrap_or(0.0),
+        point_str[comma_index + 1..].parse::<f32>().unwrap_or(0.0),
+      ))
+    })
+    .filter_map(|point| point)
+    .collect::<Vec<(f32, f32)>>()
+}
+
+fn render_points(points: &Vec<(f32, f32)>) -> String {
+  points
+    .iter()
+    .map(|point| format!("{},{}", point.0, point.1))
+    .collect::<Vec<String>>()
+    .join(" ")
 }
