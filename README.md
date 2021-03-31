@@ -242,6 +242,8 @@ Net.get_tileset(area_id, tileset_path) -- { path, first_gid }?
 Net.get_tileset_for_tile(area_id, tile_gid) -- { path, first_gid }?
 Net.get_tile(area_id, x, y, z) -- { gid, flipped_horizontally, flipped_vertically, rotated }
 Net.set_tile(area_id, x, y, z, tile_gid, flip_h?, flip_v?, rotate?)
+Net.provide_asset(area_id, path)
+Net.play_sound(area_id, path)
 ```
 
 #### Object API
@@ -298,6 +300,8 @@ Net.set_player_avatar(player_id, texture_path, animation_path)
 Net.is_player_in_widget(player_id)
 -- Net.is_player_battling(player_id)
 Net.is_player_busy(player_id)
+Net.provide_asset_for_player(player_id, path)
+Net.play_sound_for_player(player_id, path)
 Net.exclude_object_for_player(player_id, object_id)
 Net.include_object_for_player(player_id, object_id)
 Net.move_player_camera(player_id, x, y, z, holdTimeInSeconds?)

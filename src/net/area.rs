@@ -3,6 +3,7 @@ use super::map::Map;
 pub struct Area {
   id: String,
   map: Map,
+  required_assets: Vec<String>,
   // cache
   connected_players: Vec<String>,
   connected_bots: Vec<String>,
@@ -13,6 +14,7 @@ impl Area {
     Area {
       id,
       map,
+      required_assets: Vec::new(),
       connected_players: Vec::new(),
       connected_bots: Vec::new(),
     }
@@ -32,6 +34,14 @@ impl Area {
 
   pub fn get_map_mut(&mut self) -> &mut Map {
     &mut self.map
+  }
+
+  pub fn require_asset(&mut self, asset_path: String) {
+    self.required_assets.push(asset_path);
+  }
+
+  pub fn get_required_assets(&self) -> &Vec<String> {
+    &self.required_assets
   }
 
   pub fn get_connected_players(&self) -> &Vec<String> {

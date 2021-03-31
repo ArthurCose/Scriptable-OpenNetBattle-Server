@@ -464,4 +464,22 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
       Err(create_area_error(&area_id))
     }
   });
+
+  lua_api.add_dynamic_function("Net", "provide_asset", |api_ctx, lua_ctx, params| {
+    let (area_id, asset_path): (String, String) = lua_ctx.unpack_multi(params)?;
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    net.require_asset(&area_id, &asset_path);
+
+    lua_ctx.pack_multi(())
+  });
+
+  lua_api.add_dynamic_function("Net", "play_sound", |api_ctx, lua_ctx, params| {
+    let (area_id, asset_path): (String, String) = lua_ctx.unpack_multi(params)?;
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    net.play_sound(&area_id, &asset_path);
+
+    lua_ctx.pack_multi(())
+  });
 }

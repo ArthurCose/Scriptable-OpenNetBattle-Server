@@ -145,6 +145,32 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
 
   lua_api.add_dynamic_function(
     "Net",
+    "provide_asset_for_player",
+    |api_ctx, lua_ctx, params| {
+      let (id, asset_path): (String, String) = lua_ctx.unpack_multi(params)?;
+      let mut net = api_ctx.net_ref.borrow_mut();
+
+      net.preload_asset_for_player(&id, &asset_path);
+
+      lua_ctx.pack_multi(())
+    },
+  );
+
+  lua_api.add_dynamic_function(
+    "Net",
+    "play_sound_for_player",
+    |api_ctx, lua_ctx, params| {
+      let (id, asset_path): (String, String) = lua_ctx.unpack_multi(params)?;
+      let mut net = api_ctx.net_ref.borrow_mut();
+
+      net.play_sound_for_player(&id, &asset_path);
+
+      lua_ctx.pack_multi(())
+    },
+  );
+
+  lua_api.add_dynamic_function(
+    "Net",
     "exclude_object_for_player",
     |api_ctx, lua_ctx, params| {
       let (id, object_id): (String, u32) = lua_ctx.unpack_multi(params)?;

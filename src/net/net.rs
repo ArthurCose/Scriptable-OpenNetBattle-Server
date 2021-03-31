@@ -167,6 +167,44 @@ impl Net {
     self.clients.get_mut(id)
   }
 
+  pub fn require_asset(&mut self, area_id: &str, asset_path: &str) {
+    if let Some(area) = self.areas.get_mut(area_id) {
+      assert_asset(
+        &self.socket,
+        self.max_payload_size,
+        &self.assets,
+        &mut self.clients,
+        &area.get_connected_players(),
+        asset_path,
+      );
+
+      area.require_asset(asset_path.to_string());
+    }
+  }
+
+  pub fn play_sound(&mut self, area_id: &str, path: &str) {
+    if let Some(area) = self.areas.get(area_id) {
+      assert_asset(
+        &self.socket,
+        self.max_payload_size,
+        &self.assets,
+        &mut self.clients,
+        &area.get_connected_players(),
+        path,
+      );
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.clients,
+        area,
+        Reliability::Reliable,
+        ServerPacket::PlaySound {
+          path: path.to_string(),
+        },
+      )
+    }
+  }
+
   pub fn set_player_name(&mut self, id: &str, name: String) {
     if let Some(client) = self.clients.get_mut(id) {
       client.actor.name = name.clone();
@@ -259,6 +297,39 @@ impl Net {
     }
 
     false
+  }
+
+  pub fn preload_asset_for_player(&mut self, id: &str, asset_path: &str) {
+    assert_asset(
+      &self.socket,
+      self.max_payload_size,
+      &self.assets,
+      &mut self.clients,
+      &[String::from(id)],
+      asset_path,
+    );
+
+    if let Some(client) = self.clients.get_mut(id) {
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::Preload {
+          asset_path: asset_path.to_string(),
+        },
+      );
+    }
+  }
+
+  pub fn play_sound_for_player(&mut self, id: &str, path: &str) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::PlaySound {
+          path: path.to_string(),
+        },
+      );
+    }
   }
 
   pub fn exclude_object_for_player(&mut self, id: &str, object_id: u32) {
@@ -780,15 +851,15 @@ impl Net {
   fn send_area(&mut self, player_id: &str, area_id: &str) {
     use super::asset::get_map_path;
 
+    let area = self.areas.get(area_id).unwrap();
+
     let mut packets: Vec<ServerPacket> = Vec::new();
-    let mut asset_paths: Vec<String> = Vec::new();
+    let mut asset_paths: Vec<String> = area.get_required_assets().clone();
 
     // send map
     let map_path = get_map_path(area_id);
     asset_paths.push(map_path.clone());
     packets.push(ServerPacket::MapUpdate { map_path });
-
-    let area = self.areas.get(area_id).unwrap();
 
     // send clients
     for other_player_id in area.get_connected_players() {
