@@ -112,7 +112,7 @@ Home Warp:
 
 - Tile Objects only
 - Visible in minimap
-- Players will be warped home if walking into the tile this object is centered on
+- Players will be warped home if they walk into the tile this object is centered on
 - Custom properties:
   - Direction: string
     - Left
@@ -128,7 +128,7 @@ Position Warp:
 
 - Tile Objects only
 - Visible in minimap
-- Players will be warped to the set position if walking into the tile this object is centered on
+- Players will be warped to the set position if they walk into the tile this object is centered on
 - Custom properties:
   - X: float
   - Y: float
@@ -142,6 +142,22 @@ Position Warp:
     - Up Right
     - Down Left
     - Down Right
+
+Server Warp:
+
+- Tile Objects only
+- Visible in minimap
+- Players will be transferred to a different server if they walk into the tile this object is centered on
+- Custom properties:
+  - Address: string
+  - Port: number
+  - Data: string
+    - Custom data to pass to the other server (can be read through handle_player_request on the other server)
+
+Custom Server Warp:
+
+- Tile Objects only
+- Visible in minimap
 
 Custom Warp:
 
