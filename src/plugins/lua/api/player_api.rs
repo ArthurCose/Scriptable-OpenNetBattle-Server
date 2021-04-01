@@ -361,11 +361,34 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     lua_ctx.pack_multi(())
   });
 
-  lua_api.add_dynamic_function("Net", "kick_player", |api_ctx, lua_ctx, params| {
-    let (id, reason): (String, String) = lua_ctx.unpack_multi(params)?;
+  lua_api.add_dynamic_function("Net", "transfer_server", |api_ctx, lua_ctx, params| {
+    let (id, address, port, warp_out_option, data_option): (
+      String,
+      String,
+      u16,
+      Option<bool>,
+      Option<String>,
+    ) = lua_ctx.unpack_multi(params)?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.kick_player(&id, &reason);
+    let warp = warp_out_option.unwrap_or_default();
+    let data = data_option.unwrap_or_default();
+
+    net.transfer_server(&id, &address, port, &data, warp);
+
+    lua_ctx.pack_multi(())
+  });
+
+  lua_api.add_dynamic_function("Net", "kick_player", |api_ctx, lua_ctx, params| {
+    let (id, reason, warp_out_option): (String, String, Option<bool>) =
+      lua_ctx.unpack_multi(params)?;
+
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    let warp_out = warp_out_option.unwrap_or(true);
+
+    net.kick_player(&id, &reason, warp_out);
 
     lua_ctx.pack_multi(())
   });

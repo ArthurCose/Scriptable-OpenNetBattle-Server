@@ -50,6 +50,12 @@ impl PluginInterface for PluginWrapper {
     });
   }
 
+  fn handle_player_request(&mut self, net: &mut Net, player_id: &str, data: &str) {
+    self.wrap_calls(net, |plugin_interface, net| {
+      plugin_interface.handle_player_request(net, player_id, data)
+    });
+  }
+
   fn handle_player_connect(&mut self, net: &mut Net, player_id: &str) {
     self.wrap_calls(net, |plugin_interface, net| {
       plugin_interface.handle_player_connect(net, player_id)

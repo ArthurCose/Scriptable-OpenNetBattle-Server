@@ -145,7 +145,7 @@ impl Net {
       let player_ids = area.get_connected_players();
 
       for player_id in player_ids {
-        self.kick_player(player_id, "Area destroyed");
+        self.kick_player(player_id, "Area destroyed", true);
       }
     }
   }
@@ -682,11 +682,36 @@ impl Net {
     );
   }
 
-  pub fn kick_player(&mut self, id: &str, reason: &str) {
+  pub fn transfer_server(
+    &mut self,
+    id: &str,
+    address: &str,
+    port: u16,
+    data: &str,
+    warp_out: bool,
+  ) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::TransferServer {
+          address: address.to_string(),
+          port,
+          data: data.to_string(),
+          warp_out,
+        },
+      );
+
+      self.kick_player(id, "Transferred", false);
+    }
+  }
+
+  pub fn kick_player(&mut self, id: &str, reason: &str, warp_out: bool) {
     if let Some(client) = self.clients.get(id) {
       self.kick_list.push(Boot {
         socket_address: client.socket_address,
         reason: reason.to_string(),
+        warp_out,
       });
     }
   }
@@ -749,7 +774,7 @@ impl Net {
         self.avatar_dimensions_limit, self.avatar_dimensions_limit
       );
 
-      self.kick_player(player_id, &reason);
+      self.kick_player(player_id, &reason, true);
 
       return None;
     }
@@ -965,13 +990,12 @@ impl Net {
     }
   }
 
-  pub(super) fn remove_player(&mut self, id: &str) {
+  pub(super) fn remove_player(&mut self, id: &str, warp_out: bool) {
     use super::asset;
-
-    self.assets.remove(&asset::get_player_texture_path(id));
-    self.assets.remove(&asset::get_player_animation_path(id));
-
     if let Some(client) = self.clients.remove(id) {
+      self.assets.remove(&asset::get_player_texture_path(id));
+      self.assets.remove(&asset::get_player_animation_path(id));
+
       let area = self
         .areas
         .get_mut(&client.actor.area_id)
@@ -981,7 +1005,7 @@ impl Net {
 
       let packet = ServerPacket::ActorDisconnected {
         ticket: id.to_string(),
-        warp_out: true,
+        warp_out,
       };
 
       broadcast_to_area(

@@ -3,6 +3,7 @@ use crate::net::Net;
 pub trait PluginInterface {
   fn init(&mut self, net: &mut Net);
   fn tick(&mut self, net: &mut Net, delta_time: f32);
+  fn handle_player_request(&mut self, net: &mut Net, player_id: &str, data: &str);
   fn handle_player_connect(&mut self, net: &mut Net, player_id: &str);
   fn handle_player_join(&mut self, net: &mut Net, player_id: &str);
   fn handle_player_transfer(&mut self, net: &mut Net, player_id: &str);

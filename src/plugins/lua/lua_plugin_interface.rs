@@ -10,6 +10,7 @@ use std::collections::HashMap;
 pub struct LuaPluginInterface {
   scripts: HashMap<std::path::PathBuf, Lua>,
   tick_listeners: Vec<std::path::PathBuf>,
+  player_request_listeners: Vec<std::path::PathBuf>,
   player_connect_listeners: Vec<std::path::PathBuf>,
   player_join_listeners: Vec<std::path::PathBuf>,
   player_transfer_listeners: Vec<std::path::PathBuf>,
@@ -31,6 +32,7 @@ impl LuaPluginInterface {
     LuaPluginInterface {
       scripts: HashMap::new(),
       tick_listeners: Vec::new(),
+      player_request_listeners: Vec::new(),
       player_connect_listeners: Vec::new(),
       player_join_listeners: Vec::new(),
       player_transfer_listeners: Vec::new(),
@@ -102,6 +104,13 @@ impl LuaPluginInterface {
 
       if globals.get::<_, rlua::Function>("tick").is_ok() {
         self.tick_listeners.push(script_dir.clone());
+      }
+
+      if globals
+        .get::<_, rlua::Function>("handle_player_request")
+        .is_ok()
+      {
+        self.player_request_listeners.push(script_dir.clone());
       }
 
       if globals
@@ -207,6 +216,19 @@ impl PluginInterface for LuaPluginInterface {
       net,
       "tick",
       |callback| callback.call(delta_time),
+    );
+  }
+
+  fn handle_player_request(&mut self, net: &mut Net, player_id: &str, data: &str) {
+    handle_event(
+      &mut self.scripts,
+      &self.player_request_listeners,
+      &mut self.message_tracker,
+      &mut self.promise_manager,
+      &mut self.lua_api,
+      net,
+      "handle_player_request",
+      |callback| callback.call((player_id, data)),
     );
   }
 

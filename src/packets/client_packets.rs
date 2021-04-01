@@ -22,7 +22,7 @@ pub enum ClientPacket {
   },
   Login {
     username: String,
-    password: String,
+    data: String,
   },
   Logout,
   RequestJoin,
@@ -93,7 +93,7 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
     }
     4 => Some(ClientPacket::Login {
       username: read_string(work_buf)?,
-      password: read_string(work_buf)?,
+      data: read_string(work_buf)?,
     }),
     5 => Some(ClientPacket::Logout),
     6 => Some(ClientPacket::RequestJoin),

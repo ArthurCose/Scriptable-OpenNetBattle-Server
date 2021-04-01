@@ -181,6 +181,7 @@ Commented functions are in development and require changes to the client (specif
 
 ```Lua
 function tick(delta_time)
+function handle_player_request(player_id, data) -- player requests connection to server (transfers will change initial area)
 function handle_player_connect(player_id) -- player connects to the server (transfers will change initial area)
 function handle_player_join(player_id) -- player enters their first area after connecting
 function handle_player_transfer(player_id) -- player changes area
@@ -317,8 +318,8 @@ Net.quiz_player(player_id, option_a?, option_b?, option_c?, mug_texture_path?, m
 -- Net.initiate_encounter(player_id, data)
 -- Net.initiate_pvp(player_1_id, player_2_id, data)
 Net.transfer_player(player_id, area_id, warp_in?, x?, y?, z?, direction?)
--- Net.transfer_server(player_id, server)
-Net.kick_player(player_id, reason)
+Net.transfer_server(player_id, address, port, warp_out?, data?) -- data = string
+Net.kick_player(player_id, reason, warp_out?)
 ```
 
 #### Asset API

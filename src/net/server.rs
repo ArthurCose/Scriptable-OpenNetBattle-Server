@@ -94,6 +94,7 @@ impl Server {
               kick_list.push(Boot {
                 socket_address: *socket_address,
                 reason: String::from("packet silence"),
+                warp_out: true,
               });
             }
           }
@@ -103,7 +104,7 @@ impl Server {
 
           // actually kick clients
           for boot in kick_list {
-            self.disconnect_client(&mut net, &boot.socket_address, &boot.reason);
+            self.disconnect_client(&mut net, &boot.socket_address, &boot.reason, boot.warp_out);
 
             // send reason
             let buf = build_unreliable_packet(&ServerPacket::Kick {
@@ -215,7 +216,7 @@ impl Server {
                 self.config.player_asset_limit / 1024
               );
 
-              net.kick_player(player_id, &reason);
+              net.kick_player(player_id, &reason, true);
             }
           }
         }
@@ -232,7 +233,7 @@ impl Server {
         }
         ClientPacket::Login {
           username: _,
-          password: _,
+          data: _,
         } => {
           if self.config.log_packets {
             println!("Received bad Login packet from {}", socket_address);
@@ -256,7 +257,7 @@ impl Server {
             println!("Received Logout packet from {}", socket_address);
           }
 
-          self.disconnect_client(net, &socket_address, "leaving");
+          self.disconnect_client(net, &socket_address, "Leaving", true);
         }
         ClientPacket::Position { x, y, z, direction } => {
           if self.config.log_packets {
@@ -374,17 +375,18 @@ impl Server {
           });
           let _ = socket.send_to(&buf, socket_address);
         }
-        ClientPacket::Login {
-          username,
-          password: _,
-        } => {
+        ClientPacket::Login { username, data } => {
           if self.config.log_packets {
             println!("Received Login packet from {}", socket_address);
           }
 
           let player_id = net.add_client(socket_address, username);
 
-          self.player_id_map.insert(socket_address, player_id);
+          self.player_id_map.insert(socket_address, player_id.clone());
+
+          self
+            .plugin_wrapper
+            .handle_player_request(net, &player_id, &data);
         }
         _ => {
           if self.config.log_packets {
@@ -402,13 +404,14 @@ impl Server {
     net: &mut Net,
     socket_address: &std::net::SocketAddr,
     reason: &str,
+    warp_out: bool,
   ) {
     if let Some(player_id) = self.player_id_map.remove(&socket_address) {
       self
         .plugin_wrapper
         .handle_player_disconnect(net, &player_id);
 
-      net.remove_player(&player_id);
+      net.remove_player(&player_id, warp_out);
 
       if self.config.log_connections {
         println!("{} disconnected for {}", player_id, reason);
