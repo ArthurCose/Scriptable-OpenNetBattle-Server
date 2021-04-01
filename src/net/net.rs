@@ -240,19 +240,21 @@ impl Net {
       // but for this we want to make sure the player sees this and updates their avatar
       // if the other players receive this, they'll just ignore it
 
-      update_cached_clients(
+      assert_asset(
         &self.socket,
         self.max_payload_size,
         &self.assets,
         &mut self.clients,
+        area.get_connected_players(),
         &texture_path,
       );
 
-      update_cached_clients(
+      assert_asset(
         &self.socket,
         self.max_payload_size,
         &self.assets,
         &mut self.clients,
+        area.get_connected_players(),
         &animation_path,
       );
 
