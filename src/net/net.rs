@@ -131,15 +131,23 @@ impl Net {
   }
 
   pub fn add_area(&mut self, id: String, map: Map) {
+    use super::asset::get_map_path;
+
+    let mut map = map;
+
     if let Some(area) = self.areas.get_mut(&id) {
       area.set_map(map);
     } else {
+      self.assets.insert(get_map_path(&id), map.generate_asset());
       self.areas.insert(id.clone(), Area::new(id, map));
     }
   }
 
   pub fn remove_area(&mut self, id: &str) {
+    use super::asset::get_map_path;
+
     let area_optional = self.areas.remove(id);
+    self.assets.remove(&get_map_path(id));
 
     if let Some(area) = area_optional {
       let player_ids = area.get_connected_players();
@@ -639,7 +647,6 @@ impl Net {
     }
 
     let area = self.areas.get_mut(area_id).unwrap();
-    area.add_player(id.to_string());
 
     assert_asset(
       &self.socket,
@@ -659,6 +666,7 @@ impl Net {
       &animation_path,
     );
 
+    area.add_player(id.to_string());
     self.send_area(id, &area_id);
 
     let mut client = self.clients.get_mut(id).unwrap();
