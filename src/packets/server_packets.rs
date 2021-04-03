@@ -15,6 +15,7 @@ pub enum ServerPacket<'a> {
   },
   Login {
     ticket: String,
+    warp_in: bool,
     spawn_x: f32,
     spawn_y: f32,
     spawn_z: f32,
@@ -163,6 +164,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     }
     ServerPacket::Login {
       ticket,
+      warp_in,
       spawn_x,
       spawn_y,
       spawn_z,
@@ -170,6 +172,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     } => {
       write_u16(&mut buf, 2);
       write_string(&mut buf, ticket);
+      write_bool(&mut buf, *warp_in);
       write_f32(&mut buf, *spawn_x);
       write_f32(&mut buf, *spawn_y);
       write_f32(&mut buf, *spawn_z);

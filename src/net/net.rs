@@ -634,6 +634,11 @@ impl Net {
         // client has not been added to any area yet
         // assume client was transferred on initial connection by a plugin
         client.actor.area_id = area_id.to_string();
+        client.warp_in = warp_in;
+        client.warp_x = x;
+        client.warp_y = y;
+        client.warp_z = z;
+        client.warp_direction = direction;
         return;
       }
 
@@ -893,6 +898,7 @@ impl Net {
 
     let packet = ServerPacket::Login {
       ticket: player_id.to_string(),
+      warp_in: client.warp_in,
       spawn_x: client.warp_x,
       spawn_y: client.warp_y,
       spawn_z: client.warp_z,
