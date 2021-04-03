@@ -295,7 +295,7 @@ impl Server {
 
           let client = net.get_client_mut(player_id).unwrap();
 
-          client.area_join_time = UNIX_EPOCH.elapsed().unwrap().as_secs();
+          client.area_join_time = UNIX_EPOCH.elapsed().unwrap().as_millis() as u64;
           client.actor.x = client.warp_x;
           client.actor.y = client.warp_y;
           client.actor.z = client.warp_z;
