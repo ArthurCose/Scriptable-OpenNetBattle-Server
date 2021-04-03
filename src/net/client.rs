@@ -12,6 +12,7 @@ pub(super) struct Client {
   pub warp_x: f32,
   pub warp_y: f32,
   pub warp_z: f32,
+  pub warp_direction: Direction,
   pub ready: bool,
   pub transferring: bool,
   pub cached_assets: HashSet<String>,
@@ -30,6 +31,7 @@ impl Client {
     spawn_x: f32,
     spawn_y: f32,
     spawn_z: f32,
+    spawn_direction: Direction,
     resend_budget: usize,
   ) -> Client {
     use super::asset;
@@ -48,7 +50,7 @@ impl Client {
         animation_path: asset::get_player_animation_path(&id),
         mugshot_texture_path: asset::get_player_mugshot_texture_path(&id),
         mugshot_animation_path: asset::get_player_mugshot_animation_path(&id),
-        direction: Direction::None,
+        direction: spawn_direction,
         x: spawn_x,
         y: spawn_y,
         z: spawn_z,
@@ -58,6 +60,7 @@ impl Client {
       warp_x: spawn_x,
       warp_y: spawn_y,
       warp_z: spawn_z,
+      warp_direction: spawn_direction,
       ready: false,
       transferring: false,
       cached_assets: HashSet::new(),

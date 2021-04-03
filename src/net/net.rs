@@ -420,6 +420,12 @@ impl Net {
         &ServerPacket::Move { x, y, z },
       );
 
+      // set their warp position
+      // useful for moving players requesting/connecting
+      client.warp_x = x;
+      client.warp_y = y;
+      client.warp_z = z;
+
       // don't update internal position, allow the client to update this
     }
   }
@@ -676,6 +682,7 @@ impl Net {
     client.warp_x = x;
     client.warp_y = y;
     client.warp_z = z;
+    client.warp_direction = direction;
     client.transferring = true;
     client.ready = false;
 
@@ -741,7 +748,9 @@ impl Net {
   ) -> String {
     let area_id = String::from("default");
     let area = self.get_area_mut(&area_id).unwrap();
-    let (spawn_x, spawn_y, spawn_z) = area.get_map().get_spawn();
+    let map = area.get_map();
+    let (spawn_x, spawn_y, spawn_z) = map.get_spawn();
+    let spawn_direction = map.get_spawn_direction();
 
     let client = Client::new(
       socket_address,
@@ -750,6 +759,7 @@ impl Net {
       spawn_x,
       spawn_y,
       spawn_z,
+      spawn_direction,
       self.resend_budget,
     );
 
@@ -844,8 +854,6 @@ impl Net {
     let animation_path = client.actor.animation_path.clone();
 
     let area = self.areas.get_mut(&area_id).unwrap();
-    let spawn_direction = area.get_map().get_spawn_direction();
-
     area.add_player(client.actor.id.clone());
 
     assert_asset(
@@ -875,7 +883,7 @@ impl Net {
       spawn_x: client.warp_x,
       spawn_y: client.warp_y,
       spawn_z: client.warp_z,
-      spawn_direction,
+      spawn_direction: client.warp_direction,
     };
 
     client
