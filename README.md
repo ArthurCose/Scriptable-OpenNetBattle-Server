@@ -315,7 +315,7 @@ Net.get_player_mugshot(player_id) -- { texture_path, animation_path }
 Net.get_player_avatar(player_id) -- { texture_path, animation_path }
 Net.set_player_avatar(player_id, texture_path, animation_path)
 Net.set_player_emote(player_id, emote_id)
-Net.exclusive_player_emote(player_id, other_player_id, emote_id)
+Net.exclusive_player_emote(player_id, emoter_id, emote_id)
 Net.is_player_in_widget(player_id)
 -- Net.is_player_battling(player_id)
 Net.is_player_busy(player_id)
