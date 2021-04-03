@@ -102,6 +102,28 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     lua_ctx.pack_multi(())
   });
 
+  lua_api.add_dynamic_function("Net", "get_bot_direction", |api_ctx, lua_ctx, params| {
+    let id: String = lua_ctx.unpack_multi(params)?;
+    let net = api_ctx.net_ref.borrow();
+
+    if let Some(bot) = net.get_bot(&id) {
+      let direction_str = bot.direction.as_str();
+
+      lua_ctx.pack_multi(direction_str)
+    } else {
+      Err(create_bot_error(&id))
+    }
+  });
+
+  lua_api.add_dynamic_function("Net", "set_bot_direction", |api_ctx, lua_ctx, params| {
+    let (id, direction_string): (String, String) = lua_ctx.unpack_multi(params)?;
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    net.set_bot_direction(&id, Direction::from(&direction_string));
+
+    lua_ctx.pack_multi(())
+  });
+
   lua_api.add_dynamic_function("Net", "get_bot_position", |api_ctx, lua_ctx, params| {
     let id: String = lua_ctx.unpack_multi(params)?;
     let net = api_ctx.net_ref.borrow();
@@ -118,33 +140,11 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     }
   });
 
-  lua_api.add_dynamic_function("Net", "get_bot_direction", |api_ctx, lua_ctx, params| {
-    let id: String = lua_ctx.unpack_multi(params)?;
-    let net = api_ctx.net_ref.borrow();
-
-    if let Some(bot) = net.get_bot(&id) {
-      let direction_str = bot.direction.as_str();
-
-      lua_ctx.pack_multi(direction_str)
-    } else {
-      Err(create_bot_error(&id))
-    }
-  });
-
   lua_api.add_dynamic_function("Net", "move_bot", |api_ctx, lua_ctx, params| {
     let (id, x, y, z): (String, f32, f32, f32) = lua_ctx.unpack_multi(params)?;
     let mut net = api_ctx.net_ref.borrow_mut();
 
     net.move_bot(&id, x, y, z);
-
-    lua_ctx.pack_multi(())
-  });
-
-  lua_api.add_dynamic_function("Net", "set_bot_direction", |api_ctx, lua_ctx, params| {
-    let (id, direction_string): (String, String) = lua_ctx.unpack_multi(params)?;
-    let mut net = api_ctx.net_ref.borrow_mut();
-
-    net.set_bot_direction(&id, Direction::from(&direction_string));
 
     lua_ctx.pack_multi(())
   });
