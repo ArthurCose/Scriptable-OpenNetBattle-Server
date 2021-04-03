@@ -362,7 +362,7 @@ fn map_optional_object_to_table<'a>(
 
 fn points_to_table<'a>(
   lua_ctx: &rlua::Context<'a>,
-  points: &Vec<(f32, f32)>,
+  points: &[(f32, f32)],
 ) -> rlua::Result<rlua::Table<'a>> {
   let points_table = lua_ctx.create_table()?;
 

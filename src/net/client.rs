@@ -24,6 +24,7 @@ pub(super) struct Client {
 }
 
 impl Client {
+  #[allow(clippy::too_many_arguments)]
   pub(super) fn new(
     socket_address: SocketAddr,
     name: String,

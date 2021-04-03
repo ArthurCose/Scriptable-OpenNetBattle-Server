@@ -204,7 +204,7 @@ fn read_points(points_str: &str) -> Vec<(f32, f32)> {
     .collect::<Vec<(f32, f32)>>()
 }
 
-fn render_points(points: &Vec<(f32, f32)>) -> String {
+fn render_points(points: &[(f32, f32)]) -> String {
   points
     .iter()
     .map(|point| format!("{},{}", point.0, point.1))
