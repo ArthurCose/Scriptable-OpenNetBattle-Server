@@ -1155,7 +1155,7 @@ impl Net {
     if let Some(bot) = self.bots.get_mut(id) {
       let updated_direction = Direction::from_offset(x - bot.x, y - bot.y);
 
-      if matches!(updated_direction, Direction::None) {
+      if !matches!(updated_direction, Direction::None) {
         bot.direction = updated_direction;
       }
 
