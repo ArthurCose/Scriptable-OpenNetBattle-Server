@@ -310,7 +310,7 @@ Net.get_player_area(player_id) -- area_id
 Net.get_player_name(player_id) -- name
 Net.set_player_name(player_id)
 Net.get_player_position(player_id) -- { x, y, z }
-Net.get_player_direction(bot_id)
+Net.get_player_direction(player_id)
 Net.get_player_mugshot(player_id) -- { texture_path, animation_path }
 Net.get_player_avatar(player_id) -- { texture_path, animation_path }
 Net.set_player_avatar(player_id, texture_path, animation_path)
