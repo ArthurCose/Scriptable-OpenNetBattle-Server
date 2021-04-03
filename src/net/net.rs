@@ -282,7 +282,7 @@ impl Net {
     }
   }
 
-  pub fn player_emote(&mut self, id: &str, emote_id: u8) {
+  pub fn set_player_emote(&mut self, id: &str, emote_id: u8) {
     if let Some(client) = self.clients.get(id) {
       let packet = ServerPacket::ActorEmote {
         ticket: id.to_string(),
@@ -298,6 +298,19 @@ impl Net {
         Reliability::Reliable,
         packet,
       );
+    }
+  }
+
+  pub fn exclusive_player_emote(&mut self, target_id: &str, emoter_id: &str, emote_id: u8) {
+    if let Some(client) = self.clients.get_mut(target_id) {
+      let packet = ServerPacket::ActorEmote {
+        ticket: emoter_id.to_string(),
+        emote_id,
+      };
+
+      client
+        .packet_shipper
+        .send(&self.socket, &Reliability::Reliable, &packet);
     }
   }
 

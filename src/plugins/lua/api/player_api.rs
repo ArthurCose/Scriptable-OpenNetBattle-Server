@@ -125,6 +125,28 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     lua_ctx.pack_multi(())
   });
 
+  lua_api.add_dynamic_function("Net", "set_player_emote", |api_ctx, lua_ctx, params| {
+    let (id, emote_id): (String, u8) = lua_ctx.unpack_multi(params)?;
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    net.set_player_emote(&id, emote_id);
+
+    lua_ctx.pack_multi(())
+  });
+
+  lua_api.add_dynamic_function(
+    "Net",
+    "exclusive_player_emote",
+    |api_ctx, lua_ctx, params| {
+      let (target_id, emoter_id, emote_id): (String, String, u8) = lua_ctx.unpack_multi(params)?;
+      let mut net = api_ctx.net_ref.borrow_mut();
+
+      net.exclusive_player_emote(&target_id, &emoter_id, emote_id);
+
+      lua_ctx.pack_multi(())
+    },
+  );
+
   lua_api.add_dynamic_function("Net", "is_player_in_widget", |api_ctx, lua_ctx, params| {
     let id: String = lua_ctx.unpack_multi(params)?;
     let net = api_ctx.net_ref.borrow();

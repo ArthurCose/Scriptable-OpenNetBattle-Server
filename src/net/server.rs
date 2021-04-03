@@ -323,7 +323,7 @@ impl Server {
             .handle_player_emote(net, player_id, emote_id);
 
           if !prevent_default {
-            net.player_emote(player_id, emote_id);
+            net.set_player_emote(player_id, emote_id);
           }
         }
         ClientPacket::ObjectInteraction { tile_object_id } => {
