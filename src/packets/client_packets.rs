@@ -28,6 +28,7 @@ pub enum ClientPacket {
   RequestJoin,
   Ready,
   Position {
+    creation_time: u64,
     x: f32,
     y: f32,
     z: f32,
@@ -99,6 +100,7 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
     6 => Some(ClientPacket::RequestJoin),
     7 => Some(ClientPacket::Ready),
     8 => Some(ClientPacket::Position {
+      creation_time: read_u64(work_buf)?,
       x: read_f32(work_buf)?,
       y: read_f32(work_buf)?,
       z: read_f32(work_buf)?,

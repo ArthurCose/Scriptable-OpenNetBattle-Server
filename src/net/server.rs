@@ -259,14 +259,20 @@ impl Server {
 
           self.disconnect_client(net, &socket_address, "Leaving", true);
         }
-        ClientPacket::Position { x, y, z, direction } => {
+        ClientPacket::Position {
+          creation_time,
+          x,
+          y,
+          z,
+          direction,
+        } => {
           if self.config.log_packets {
             println!("Received Position packet from {}", socket_address);
           }
 
-          let client = net.get_client(player_id).unwrap();
+          let client = net.get_client_mut(player_id).unwrap();
 
-          if client.ready {
+          if client.ready && creation_time > client.area_join_time {
             #[allow(clippy::float_cmp)]
             let position_changed =
               client.actor.x != x || client.actor.y != y || client.actor.z != z;
@@ -285,7 +291,14 @@ impl Server {
             println!("Received Ready packet from {}", socket_address);
           }
 
-          let client = net.get_client(player_id).unwrap();
+          use std::time::UNIX_EPOCH;
+
+          let client = net.get_client_mut(player_id).unwrap();
+
+          client.area_join_time = UNIX_EPOCH.elapsed().unwrap().as_secs();
+          client.actor.x = client.warp_x;
+          client.actor.y = client.warp_y;
+          client.actor.z = client.warp_z;
 
           if client.transferring {
             self.plugin_wrapper.handle_player_transfer(net, &player_id);

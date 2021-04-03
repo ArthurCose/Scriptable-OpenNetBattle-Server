@@ -15,4 +15,4 @@ pub struct PacketHeaders {
 }
 
 const VERSION_ID: &str = "https://github.com/ArthurCose/Scriptable-OpenNetBattle-Server";
-const VERSION_ITERATION: u64 = 7;
+const VERSION_ITERATION: u64 = 8;

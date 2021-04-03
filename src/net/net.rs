@@ -167,6 +167,7 @@ impl Net {
     self.clients.get(id).map(|client| &client.actor)
   }
 
+  #[allow(dead_code)]
   pub(super) fn get_client(&self, id: &str) -> Option<&Client> {
     self.clients.get(id)
   }
