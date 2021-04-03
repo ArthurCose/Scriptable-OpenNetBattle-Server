@@ -634,7 +634,7 @@ impl Net {
         &self.socket,
         &mut self.clients,
         previous_area,
-        Reliability::Reliable,
+        Reliability::ReliableOrdered,
         ServerPacket::ActorDisconnected {
           ticket: id.to_string(),
           warp_out: warp_in,
