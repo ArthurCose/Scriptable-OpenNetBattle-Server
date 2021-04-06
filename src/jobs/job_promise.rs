@@ -5,6 +5,7 @@ pub enum PromiseValue {
   HttpResponse(HttpResponse),
   Bytes(Vec<u8>),
   Success(bool),
+  ServerInfo { max_message_size: u16 },
   None,
 }
 
@@ -38,7 +39,7 @@ impl JobPromise {
     None
   }
 
-  pub(super) fn set_value(&mut self, value: PromiseValue) {
+  pub fn set_value(&mut self, value: PromiseValue) {
     let mut lock = self.internal_promise.lock().unwrap();
 
     *lock = Some(value);

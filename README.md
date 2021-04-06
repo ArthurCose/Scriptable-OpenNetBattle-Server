@@ -366,6 +366,7 @@ Async.request(url, { method?, headers?, body? }?) -- promise, value = { status, 
 Async.download(path, url, { method?, headers?, body? }?) -- promise, value = bool
 Async.read_file(path) -- promise, value = string
 Async.write_file(path, content) -- promise, value = bool
+Async.poll_server(address, port) -- promise, value = { max_message_size }?
 ```
 
 ## Building
