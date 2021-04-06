@@ -9,6 +9,7 @@ pub fn poll_server(address: std::net::SocketAddr) -> (Job, JobPromise) {
     use crate::packets::bytes::*;
     use crate::packets::{VERSION_ID, VERSION_ITERATION};
     use std::net::UdpSocket;
+    use std::time::Duration;
 
     let socket = if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
       socket
@@ -16,6 +17,8 @@ pub fn poll_server(address: std::net::SocketAddr) -> (Job, JobPromise) {
       thread_promise.set_value(PromiseValue::None);
       return;
     };
+
+    let _ = socket.set_read_timeout(Some(Duration::from_millis(500)));
 
     // only send + recieve to this address
     if socket.connect(address).is_err() {
@@ -29,7 +32,7 @@ pub fn poll_server(address: std::net::SocketAddr) -> (Job, JobPromise) {
     // max size defined by NetPlayConfig::MAX_BUFFER_LEN
     let mut buf = [0; 10240];
 
-    while attempts < 5 {
+    while attempts < 10 {
       // send &[unreliable, ping_part, ping_part]
       let _ = socket.send(&[0, 0, 0]);
 
