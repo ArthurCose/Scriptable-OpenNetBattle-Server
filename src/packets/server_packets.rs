@@ -40,12 +40,12 @@ pub enum ServerPacket<'a> {
   RemoveAsset {
     path: String,
   },
-  AssetStream {
-    data: &'a [u8],
-  },
-  AssetStreamComplete {
+  AssetStreamStart {
     name: String,
     asset: &'a Asset,
+  },
+  AssetStream {
+    data: &'a [u8],
   },
   Preload {
     asset_path: String,
@@ -207,13 +207,8 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_u16(&mut buf, 7);
       write_string(&mut buf, path);
     }
-    ServerPacket::AssetStream { data } => {
+    ServerPacket::AssetStreamStart { name, asset } => {
       write_u16(&mut buf, 8);
-      write_u16(&mut buf, data.len() as u16);
-      write_data(&mut buf, data);
-    }
-    ServerPacket::AssetStreamComplete { name, asset } => {
-      write_u16(&mut buf, 9);
       write_string(&mut buf, name);
       write_u64(&mut buf, asset.last_modified);
       write_bool(&mut buf, asset.cachable);
@@ -229,6 +224,13 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
           buf.push(2);
         }
       }
+
+      write_u64(&mut buf, asset.len() as u64);
+    }
+    ServerPacket::AssetStream { data } => {
+      write_u16(&mut buf, 9);
+      write_u16(&mut buf, data.len() as u16);
+      write_data(&mut buf, data);
     }
     ServerPacket::Preload { asset_path } => {
       write_u16(&mut buf, 10);
@@ -396,6 +398,11 @@ pub fn create_asset_stream<'a>(
 
   let mut packets = Vec::new();
 
+  packets.push(ServerPacket::AssetStreamStart {
+    name: name.to_string(),
+    asset,
+  });
+
   let mut bytes = match &asset.data {
     AssetData::Text(data) => data.as_bytes(),
     AssetData::Texture(data) => &data,
@@ -420,11 +427,6 @@ pub fn create_asset_stream<'a>(
 
     remaining_bytes -= size;
   }
-
-  packets.push(ServerPacket::AssetStreamComplete {
-    name: name.to_string(),
-    asset,
-  });
 
   packets
 }
