@@ -1,4 +1,4 @@
-local Direction = require("scripts/helpers/direction")
+local Direction = require("scripts/libs/direction")
 local create_custom_bot = require('scripts/bot/create_custom_bot')
 
 local area_id = "default"
