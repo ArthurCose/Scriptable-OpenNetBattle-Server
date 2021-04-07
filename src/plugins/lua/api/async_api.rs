@@ -303,32 +303,15 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
 
     use crate::jobs::poll_server::poll_server;
 
-    let promise = if let Some(socket_addr) = resolve_socket_addr(address.as_str(), port) {
-      let mut net = api_ctx.net_ref.borrow_mut();
+    let mut net = api_ctx.net_ref.borrow_mut();
 
-      let (job, promise) = poll_server(socket_addr);
-      net.add_job(job);
-
-      promise
-    } else {
-      // failed to find a socket_addr
-      let mut promise = JobPromise::new();
-      promise.set_value(PromiseValue::None);
-      promise
-    };
+    let (job, promise) = poll_server(address, port);
+    net.add_job(job);
 
     let lua_promise = create_lua_promise(&lua_ctx, api_ctx.promise_manager_ref, promise);
 
     lua_ctx.pack_multi(lua_promise)
   });
-}
-
-fn resolve_socket_addr(address: &str, port: u16) -> Option<std::net::SocketAddr> {
-  use std::net::ToSocketAddrs;
-  let address_port_pair = (address, port);
-  let mut socket_addrs = address_port_pair.to_socket_addrs().ok()?;
-
-  socket_addrs.next()
 }
 
 fn create_lua_promise<'a>(

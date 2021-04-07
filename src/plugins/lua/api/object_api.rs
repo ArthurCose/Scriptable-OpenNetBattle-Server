@@ -261,9 +261,9 @@ fn parse_object_data(data_table: rlua::Table) -> rlua::Result<MapObjectData> {
 
       MapObjectData::TileObject { tile }
     }
-    _ => Err(rlua::Error::RuntimeError(String::from(
+    _ => return Err(rlua::Error::RuntimeError(String::from(
       "Invalid or missing type in data param. Accepted values: \"point\", \"rect\", \"ellipse\", \"polyline\", \"polygon\", \"tile\"",
-    )))?,
+    ))),
   };
 
   Ok(data)

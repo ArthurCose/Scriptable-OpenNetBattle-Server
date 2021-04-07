@@ -1,7 +1,7 @@
 use super::job_promise::{JobPromise, PromiseValue};
 use super::Job;
 
-pub fn poll_server(address: std::net::SocketAddr) -> (Job, JobPromise) {
+pub fn poll_server(address: String, port: u16) -> (Job, JobPromise) {
   let promise = JobPromise::new();
   let mut thread_promise = promise.clone();
 
@@ -10,6 +10,13 @@ pub fn poll_server(address: std::net::SocketAddr) -> (Job, JobPromise) {
     use crate::packets::{VERSION_ID, VERSION_ITERATION};
     use std::net::UdpSocket;
     use std::time::Duration;
+
+    let socket_addr = if let Some(socket_addr) = resolve_socket_addr(address.as_str(), port) {
+      socket_addr
+    } else {
+      thread_promise.set_value(PromiseValue::None);
+      return;
+    };
 
     let socket = if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
       socket
@@ -21,7 +28,7 @@ pub fn poll_server(address: std::net::SocketAddr) -> (Job, JobPromise) {
     let _ = socket.set_read_timeout(Some(Duration::from_millis(500)));
 
     // only send + recieve to this address
-    if socket.connect(address).is_err() {
+    if socket.connect(socket_addr).is_err() {
       // invalid address
       thread_promise.set_value(PromiseValue::None);
       return;
@@ -88,4 +95,12 @@ pub fn poll_server(address: std::net::SocketAddr) -> (Job, JobPromise) {
   });
 
   (job, promise)
+}
+
+fn resolve_socket_addr(address: &str, port: u16) -> Option<std::net::SocketAddr> {
+  use std::net::ToSocketAddrs;
+  let address_port_pair = (address, port);
+  let mut socket_addrs = address_port_pair.to_socket_addrs().ok()?;
+
+  socket_addrs.next()
 }
