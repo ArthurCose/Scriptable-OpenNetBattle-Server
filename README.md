@@ -290,7 +290,7 @@ Net.is_bot(bot_id)
 Net.remove_bot(bot_id)
 Net.get_bot_area(bot_id) -- area_id
 Net.get_bot_name(bot_id) -- name
-Net.set_bot_name(bot_id)
+Net.set_bot_name(bot_id, name)
 Net.get_bot_direction(bot_id)
 Net.set_bot_direction(bot_id, direction)
 Net.get_bot_position(bot_id) -- { x, y, z }
