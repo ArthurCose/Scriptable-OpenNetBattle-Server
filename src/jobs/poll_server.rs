@@ -6,6 +6,7 @@ pub fn poll_server(address: String, port: u16) -> (Job, JobPromise) {
   let mut thread_promise = promise.clone();
 
   let job = Box::new(move || {
+    use super::helpers::*;
     use crate::packets::bytes::*;
     use crate::packets::{VERSION_ID, VERSION_ITERATION};
     use std::net::UdpSocket;
@@ -95,12 +96,4 @@ pub fn poll_server(address: String, port: u16) -> (Job, JobPromise) {
   });
 
   (job, promise)
-}
-
-fn resolve_socket_addr(address: &str, port: u16) -> Option<std::net::SocketAddr> {
-  use std::net::ToSocketAddrs;
-  let address_port_pair = (address, port);
-  let mut socket_addrs = address_port_pair.to_socket_addrs().ok()?;
-
-  socket_addrs.next()
 }

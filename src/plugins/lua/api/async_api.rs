@@ -312,6 +312,16 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
 
     lua_ctx.pack_multi(lua_promise)
   });
+
+  lua_api.add_dynamic_function("Async", "message_server", |api_ctx, lua_ctx, params| {
+    let (address, port, data): (String, u16, rlua::String) = lua_ctx.unpack_multi(params)?;
+
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    net.message_server(address, port, data.as_bytes().to_vec());
+
+    lua_ctx.pack_multi(())
+  });
 }
 
 fn create_lua_promise<'a>(

@@ -206,6 +206,7 @@ function handle_actor_interaction(player_id, actor_id) -- actor_id is a player o
 function handle_tile_interaction(player_id, x, y, z)
 function handle_player_response(player_id, response) -- response is an index
 -- function handle_battle_completion(player_id, results) -- results = { status: "won" | "loss" | "ran", rank? }
+function handle_server_message(ip, port, data)
 
 -- For the following functions:
 --  default action is not taken until after execution
@@ -367,6 +368,7 @@ Async.download(path, url, { method?, headers?, body? }?) -- promise, value = boo
 Async.read_file(path) -- promise, value = string
 Async.write_file(path, content) -- promise, value = bool
 Async.poll_server(address, port) -- promise, value = { max_message_size }?
+Async.message_server(address, port, data) -- you will not know if this succeeds, the other server will need to reply
 ```
 
 ## Building

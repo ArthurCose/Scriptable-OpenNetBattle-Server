@@ -145,4 +145,15 @@ impl PluginInterface for PluginWrapper {
       });
     }
   }
+
+  fn handle_server_message(
+    &mut self,
+    net: &mut Net,
+    socket_address: std::net::SocketAddr,
+    data: &[u8],
+  ) {
+    self.wrap_calls(net, |plugin_interface, net| {
+      plugin_interface.handle_server_message(net, socket_address, data)
+    });
+  }
 }

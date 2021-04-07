@@ -1315,6 +1315,15 @@ impl Net {
     }
   }
 
+  pub fn message_server(&mut self, address: String, port: u16, data: Vec<u8>) {
+    use crate::jobs::message_server::message_server;
+
+    if let Ok(socket) = self.socket.try_clone() {
+      let job = message_server(socket, address, port, data);
+      self.add_job(job);
+    }
+  }
+
   pub fn add_job(&mut self, job: Job) {
     self.job_giver.give_job(job);
   }

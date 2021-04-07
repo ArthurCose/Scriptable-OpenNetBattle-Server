@@ -52,6 +52,9 @@ pub enum ClientPacket {
   DialogResponse {
     response: u8,
   },
+  ServerMessage {
+    data: Vec<u8>,
+  },
 }
 
 pub fn parse_client_packet(buf: &[u8]) -> Option<(PacketHeaders, ClientPacket)> {
@@ -76,6 +79,7 @@ fn parse_headers(work_buf: &mut &[u8]) -> Option<PacketHeaders> {
 
 fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
   match read_u16(work_buf)? {
+    // if this moves, check out poll_server
     0 => Some(ClientPacket::Ping),
     1 => Some(ClientPacket::Ack {
       reliability: get_reliability(read_byte(work_buf)?),
@@ -123,6 +127,10 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
     }),
     14 => Some(ClientPacket::DialogResponse {
       response: read_byte(work_buf)?,
+    }),
+    // if this moves, check out message_server
+    15 => Some(ClientPacket::ServerMessage {
+      data: work_buf.to_vec(),
     }),
     _ => None,
   }

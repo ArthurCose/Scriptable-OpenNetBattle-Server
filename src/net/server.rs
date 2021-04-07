@@ -375,6 +375,13 @@ impl Server {
             .plugin_wrapper
             .handle_dialog_response(net, player_id, response);
         }
+        ClientPacket::ServerMessage { data } => {
+          // this should never happen but 🤷‍♂️
+
+          self
+            .plugin_wrapper
+            .handle_server_message(net, socket_address, &data);
+        }
       }
     } else {
       match client_packet {
@@ -400,6 +407,11 @@ impl Server {
           self
             .plugin_wrapper
             .handle_player_request(net, &player_id, &data);
+        }
+        ClientPacket::ServerMessage { data } => {
+          self
+            .plugin_wrapper
+            .handle_server_message(net, socket_address, &data);
         }
         _ => {
           if self.config.log_packets {

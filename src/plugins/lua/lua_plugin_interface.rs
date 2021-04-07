@@ -22,6 +22,7 @@ pub struct LuaPluginInterface {
   actor_interaction_listeners: Vec<std::path::PathBuf>,
   tile_interaction_listeners: Vec<std::path::PathBuf>,
   dialog_response_listeners: Vec<std::path::PathBuf>,
+  server_message_listeners: Vec<std::path::PathBuf>,
   message_tracker: MessageTracker<std::path::PathBuf>,
   promise_manager: JobPromiseManager,
   lua_api: LuaAPI,
@@ -44,6 +45,7 @@ impl LuaPluginInterface {
       actor_interaction_listeners: Vec::new(),
       tile_interaction_listeners: Vec::new(),
       dialog_response_listeners: Vec::new(),
+      server_message_listeners: Vec::new(),
       message_tracker: MessageTracker::new(),
       promise_manager: JobPromiseManager::new(),
       lua_api: LuaAPI::new(),
@@ -190,6 +192,13 @@ impl LuaPluginInterface {
         self.dialog_response_listeners.push(script_dir.clone());
       }
 
+      if globals
+        .get::<_, rlua::Function>("handle_server_message")
+        .is_ok()
+      {
+        self.server_message_listeners.push(script_dir.clone());
+      }
+
       Ok(())
     })?;
 
@@ -215,7 +224,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.lua_api,
       net,
       "tick",
-      |callback| callback.call(delta_time),
+      |_, callback| callback.call(delta_time),
     );
   }
 
@@ -228,7 +237,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.lua_api,
       net,
       "handle_player_request",
-      |callback| callback.call((player_id, data)),
+      |_, callback| callback.call((player_id, data)),
     );
   }
 
@@ -241,7 +250,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.lua_api,
       net,
       "handle_player_connect",
-      |callback| callback.call(player_id),
+      |_, callback| callback.call(player_id),
     );
   }
 
@@ -254,7 +263,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.lua_api,
       net,
       "handle_player_join",
-      |callback| callback.call(player_id),
+      |_, callback| callback.call(player_id),
     );
   }
 
@@ -267,7 +276,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.lua_api,
       net,
       "handle_player_transfer",
-      |callback| callback.call(player_id),
+      |_, callback| callback.call(player_id),
     );
   }
 
@@ -280,7 +289,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.lua_api,
       net,
       "handle_player_disconnect",
-      |callback| callback.call(player_id),
+      |_, callback| callback.call(player_id),
     );
 
     self.message_tracker.remove_tracking(player_id);
@@ -295,7 +304,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.lua_api,
       net,
       "handle_player_move",
-      |callback| callback.call((player_id, x, y, z)),
+      |_, callback| callback.call((player_id, x, y, z)),
     );
   }
 
@@ -316,7 +325,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.lua_api,
       net,
       "handle_player_avatar_change",
-      |callback| {
+      |_, callback| {
         let return_value: Option<bool> =
           callback.call((player_id, texture_path, animation_path))?;
 
@@ -340,7 +349,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.lua_api,
       net,
       "handle_player_emote",
-      |callback| {
+      |_, callback| {
         let return_value: Option<bool> = callback.call((player_id, emote_id))?;
 
         prevent_default |= return_value.unwrap_or_default();
@@ -361,7 +370,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.lua_api,
       net,
       "handle_object_interaction",
-      |callback| callback.call((player_id, tile_object_id)),
+      |_, callback| callback.call((player_id, tile_object_id)),
     );
   }
 
@@ -374,7 +383,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.lua_api,
       net,
       "handle_actor_interaction",
-      |callback| callback.call((player_id, actor_id)),
+      |_, callback| callback.call((player_id, actor_id)),
     );
   }
 
@@ -387,7 +396,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.lua_api,
       net,
       "handle_tile_interaction",
-      |callback| callback.call((player_id, x, y, z)),
+      |_, callback| callback.call((player_id, x, y, z)),
     );
   }
 
@@ -402,7 +411,31 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.lua_api,
       net,
       "handle_player_response",
-      |callback| callback.call((player_id, response)),
+      |_, callback| callback.call((player_id, response)),
+    );
+  }
+
+  fn handle_server_message(
+    &mut self,
+    net: &mut Net,
+    socket_address: std::net::SocketAddr,
+    data: &[u8],
+  ) {
+    handle_event(
+      &mut self.scripts,
+      &self.server_message_listeners,
+      &mut self.message_tracker,
+      &mut self.promise_manager,
+      &mut self.lua_api,
+      net,
+      "handle_server_message",
+      |lua_ctx, callback| {
+        let lua_data_string = lua_ctx.create_string(data)?;
+        let ip_string = socket_address.ip().to_string();
+        let port = socket_address.port();
+
+        callback.call((ip_string, port, lua_data_string))
+      },
     );
   }
 }
@@ -418,7 +451,7 @@ fn handle_event<F>(
   event_fn_name: &str,
   fn_caller: F,
 ) where
-  F: for<'lua> FnMut(rlua::Function<'lua>) -> rlua::Result<()>,
+  F: for<'lua> FnMut(rlua::Context<'lua>, rlua::Function<'lua>) -> rlua::Result<()>,
 {
   let mut fn_caller = fn_caller;
 
@@ -444,7 +477,7 @@ fn handle_event<F>(
             let globals = lua_ctx.globals();
 
             if let Ok(func) = globals.get::<_, rlua::Function>(event_fn_name) {
-              if let Err(err) = fn_caller(func) {
+              if let Err(err) = fn_caller(lua_ctx, func) {
                 println!("{}", err);
               }
             }
