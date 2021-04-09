@@ -38,15 +38,15 @@ impl Direction {
     }
 
     let x_direction = if x < 0.0 {
-      Direction::Left
+      Direction::UpLeft
     } else {
-      Direction::Right
+      Direction::DownRight
     };
 
     let y_direction = if y < 0.0 {
-      Direction::Up
+      Direction::UpRight
     } else {
-      Direction::Down
+      Direction::DownLeft
     };
 
     // using slope to calculate direction, graph if you want to take a look
@@ -58,11 +58,11 @@ impl Direction {
       return y_direction;
     }
 
-    match (y_direction, x_direction) {
-      (Direction::Up, Direction::Left) => Direction::UpLeft,
-      (Direction::Up, Direction::Right) => Direction::UpRight,
-      (Direction::Down, Direction::Left) => Direction::DownLeft,
-      (Direction::Down, Direction::Right) => Direction::DownRight,
+    match (x_direction, y_direction) {
+      (Direction::UpLeft, Direction::UpRight) => Direction::Up,
+      (Direction::UpLeft, Direction::DownLeft) => Direction::Left,
+      (Direction::DownRight, Direction::UpRight) => Direction::Right,
+      (Direction::DownRight, Direction::DownLeft) => Direction::Down,
       _ => Direction::None,
     }
   }
