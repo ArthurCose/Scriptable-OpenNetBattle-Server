@@ -280,6 +280,24 @@ Net.set_object_rotation(area_id, object_id, rotation)
 Net.set_object_visibility(area_id, object_id, visibility)
 Net.move_object(area_id, object_id, x, y, layer)
 Net.set_object_data(area_id, object_id, data)
+
+-- possible values for data:
+{
+  type = "point" | "rect" | "ellipse"
+}
+
+{
+  type = "polygon" | "polyline"
+  points = { x, y }[],
+}
+
+{
+  type = "tile",
+  gid, -- int
+  flipped_horizontally, -- bool
+  flipped_vertically, -- bool
+  rotated?, -- always false
+}
 ```
 
 #### Bot API
@@ -298,7 +316,7 @@ Net.get_bot_position(bot_id) -- { x, y, z }
 Net.move_bot(bot_id, x, y, z)
 Net.set_bot_avatar(bot_id, texture_path, animation_path)
 Net.set_bot_emote(bot_id, emote_id)
--- Net.play_bot_animation(bot_id, state_name);
+-- Net.play_bot_animation(bot_id, state_name)
 Net.transfer_bot(bot_id, area_id, warp_in?, x?, y?, z?)
 ```
 
