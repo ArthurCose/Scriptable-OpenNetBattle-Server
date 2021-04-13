@@ -77,10 +77,12 @@ pub enum ServerPacket<'a> {
   UnlockCamera,
   LockInput,
   UnlockInput,
-  Move {
+  Teleport {
+    warp: bool,
     x: f32,
     y: f32,
     z: f32,
+    direction: Direction,
   },
   Message {
     message: String,
@@ -296,11 +298,19 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     ServerPacket::UnlockInput => {
       write_u16(&mut buf, 19);
     }
-    ServerPacket::Move { x, y, z } => {
+    ServerPacket::Teleport {
+      warp,
+      x,
+      y,
+      z,
+      direction,
+    } => {
       write_u16(&mut buf, 20);
+      write_bool(&mut buf, *warp);
       write_f32(&mut buf, *x);
       write_f32(&mut buf, *y);
       write_f32(&mut buf, *z);
+      buf.push(translate_direction(*direction));
     }
     ServerPacket::Message {
       message,

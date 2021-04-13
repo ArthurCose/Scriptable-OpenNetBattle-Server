@@ -263,11 +263,14 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     lua_ctx.pack_multi(())
   });
 
-  lua_api.add_dynamic_function("Net", "move_player", |api_ctx, lua_ctx, params| {
-    let (id, x, y, z): (String, f32, f32, f32) = lua_ctx.unpack_multi(params)?;
+  lua_api.add_dynamic_function("Net", "teleport_player", |api_ctx, lua_ctx, params| {
+    let (id, warp, x, y, z, direction_option): (String, bool, f32, f32, f32, Option<String>) =
+      lua_ctx.unpack_multi(params)?;
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.move_player(&id, x, y, z);
+    let direction = Direction::from(direction_option.unwrap_or_default().as_str());
+
+    net.teleport_player(&id, warp, x, y, z, direction);
 
     lua_ctx.pack_multi(())
   });

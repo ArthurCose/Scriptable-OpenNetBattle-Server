@@ -426,12 +426,26 @@ impl Net {
     }
   }
 
-  pub fn move_player(&mut self, id: &str, x: f32, y: f32, z: f32) {
+  pub fn teleport_player(
+    &mut self,
+    id: &str,
+    warp: bool,
+    x: f32,
+    y: f32,
+    z: f32,
+    direction: Direction,
+  ) {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
         &self.socket,
         &Reliability::ReliableOrdered,
-        &ServerPacket::Move { x, y, z },
+        &ServerPacket::Teleport {
+          warp,
+          x,
+          y,
+          z,
+          direction,
+        },
       );
 
       // set their warp position
@@ -439,6 +453,7 @@ impl Net {
       client.warp_x = x;
       client.warp_y = y;
       client.warp_z = z;
+      client.warp_direction = direction;
 
       // don't update internal position, allow the client to update this
     }
@@ -905,7 +920,13 @@ impl Net {
     client.packet_shipper.send(
       &self.socket,
       &Reliability::ReliableOrdered,
-      &ServerPacket::Move { x, y, z },
+      &ServerPacket::Teleport {
+        warp: false,
+        x,
+        y,
+        z,
+        direction,
+      },
     );
 
     client.packet_shipper.send(
