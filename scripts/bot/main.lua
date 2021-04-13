@@ -1,8 +1,16 @@
 local Direction = require("scripts/libs/direction")
 local create_custom_bot = require('scripts/bot/create_custom_bot')
 
-local area_id = "default"
-local bot = create_custom_bot("test", "", area_id, "/server/assets/prog.png", "/server/assets/prog.animation", 1.5, 1.5, 0, true)
+local bot = create_custom_bot("test", {
+  name = "",
+  area_id = "default",
+  texture_path = "/server/assets/prog.png",
+  animation_path = "/server/assets/prog.animation",
+  x = 1.5,
+  y = 1.5,
+  z = 0,
+  solid = true
+})
 
 bot.mug_texture_path = "resources/ow/prog/prog_mug.png"
 bot.mug_animation_path = "resources/ow/prog/prog_mug.animation"

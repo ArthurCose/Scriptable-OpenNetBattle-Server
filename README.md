@@ -274,7 +274,7 @@ Net.play_sound(area_id, path)
 Net.list_objects(area_id) -- object_id[]
 Net.get_object_by_id(area_id, object_id) -- { id, name, type, visible, x, y, z, width, height, rotation, data, custom_properties }?
 Net.get_object_by_name(area_id, name) -- { id, name, type, visible, x, y, z, width, height, rotation, data, custom_properties }?
-Net.create_object(area_id, name, x, y, layer, width, height, rotation, data) -- object_id
+Net.create_object(area_id, { name?, type?, visible?, x?, y?, z?, width?, height?, rotation?, data, custom_properties? }) -- object_id
 Net.remove_object(area_id, object_id)
 Net.set_object_name(area_id, object_id, name)
 Net.set_object_type(area_id, object_id, type)
@@ -308,7 +308,7 @@ Net.set_object_data(area_id, object_id, data)
 
 ```lua
 Net.list_bots(area_id) -- bot_id[]
-Net.create_bot(bot_id, name, area_id, texture_path, animation_path, x, y, z, solid?)
+Net.create_bot(bot_id, { name?, area_id?, texture_path?, animation_path?, x?, y?, z?, direction?, solid? })
 Net.is_bot(bot_id)
 Net.remove_bot(bot_id)
 Net.get_bot_area(bot_id) -- area_id

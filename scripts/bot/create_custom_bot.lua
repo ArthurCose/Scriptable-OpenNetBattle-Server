@@ -1,15 +1,14 @@
-local function create_custom_bot(id, name, area_id, texture_path, animation_path, x, y, z, solid)
+local function create_custom_bot(id, initial_data)
   local bot = {
     _id = id,
-    x = x,
-    y = y,
-    z = z,
+    x = initial_data.x,
+    y = initial_data.y,
+    z = initial_data.z,
     path = {},
     _path_target_index = 1,
     talking_to = nil,
     speed = 1.2,
     size = .35,
-    _solid = solid,
     mug_texture_path = nil,
     mug_animation_path = nil,
     on_interact = nil,
@@ -89,7 +88,7 @@ local function create_custom_bot(id, name, area_id, texture_path, animation_path
     end
   end
 
-  Net.create_bot(id, name, area_id, texture_path, animation_path, x, y, z, solid)
+  Net.create_bot(id, initial_data)
 
   return bot
 end

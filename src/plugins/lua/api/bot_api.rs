@@ -18,32 +18,43 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
   });
 
   lua_api.add_dynamic_function("Net", "create_bot", |api_ctx, lua_ctx, params| {
-    let (id, name, area_id, texture_path, animation_path, x, y, z, solid): (
-      String,
-      String,
-      String,
-      String,
-      String,
-      f32,
-      f32,
-      f32,
-      Option<bool>,
-    ) = lua_ctx.unpack_multi(params)?;
+    let (id, table): (String, rlua::Table) = lua_ctx.unpack_multi(params)?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    if net.get_area_mut(&area_id).is_some() {
+    let name: Option<String> = table.get("name")?;
+    let area_id: Option<String> = table.get("area_id")?;
+    let texture_path: Option<String> = table.get("texture_path")?;
+    let animation_path: Option<String> = table.get("animation_path")?;
+    let x: Option<f32> = table.get("x")?;
+    let y: Option<f32> = table.get("y")?;
+    let z: Option<f32> = table.get("z")?;
+    let direction: Option<String> = table.get("direction")?;
+    let solid: Option<bool> = table.get("solid")?;
+
+    let area_id = area_id.unwrap_or_else(|| String::from("default"));
+
+    if let Some(area) = net.get_area(&area_id) {
+      let map = area.get_map();
+      let spawn = map.get_spawn();
+      let spawn_direction = map.get_spawn_direction();
+
+      let direction = direction
+        .map(|string| Direction::from(&string))
+        .unwrap_or(spawn_direction);
+
       let bot = Actor {
         id,
-        name,
+        name: name.unwrap_or_default(),
         area_id,
-        texture_path,
-        animation_path,
+        texture_path: texture_path.unwrap_or_default(),
+        animation_path: animation_path.unwrap_or_default(),
         mugshot_texture_path: String::default(),
         mugshot_animation_path: String::default(),
-        direction: Direction::None,
-        x,
-        y,
-        z,
+        direction,
+        x: x.unwrap_or(spawn.0),
+        y: y.unwrap_or(spawn.1),
+        z: z.unwrap_or(spawn.2),
         solid: solid.unwrap_or_default(),
       };
 

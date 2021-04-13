@@ -1,6 +1,6 @@
 use super::super::{Asset, Direction};
 use super::map_layer::MapLayer;
-use super::map_object::{MapObject, MapObjectData};
+use super::map_object::{MapObject, MapObjectData, MapObjectSpecification};
 use super::Tile;
 use crate::helpers::unwrap_and_parse_or_default;
 
@@ -350,35 +350,22 @@ impl Map {
     self.objects.iter().find(|&o| o.name == name)
   }
 
-  #[allow(clippy::too_many_arguments)]
-  pub fn create_object(
-    &mut self,
-    name: String,
-    object_type: String,
-    x: f32,
-    y: f32,
-    layer: usize,
-    width: f32,
-    height: f32,
-    rotation: f32,
-    data: MapObjectData,
-  ) -> u32 {
-    use std::collections::HashMap;
-
+  pub fn create_object(&mut self, specification: MapObjectSpecification) -> u32 {
     let id = self.next_object_id;
+
     let map_object = MapObject {
       id,
-      name,
-      object_type,
-      x,
-      y,
-      visible: true,
-      layer,
-      width,
-      height,
-      rotation,
-      data,
-      custom_properties: HashMap::new(),
+      name: specification.name,
+      object_type: specification.object_type,
+      x: specification.x,
+      y: specification.y,
+      visible: specification.visible,
+      layer: specification.layer,
+      width: specification.width,
+      height: specification.height,
+      rotation: specification.rotation,
+      data: specification.data,
+      custom_properties: specification.custom_properties,
     };
 
     self.objects.push(map_object);

@@ -1,6 +1,6 @@
 use super::lua_errors::create_area_error;
 use super::LuaAPI;
-use crate::net::map::{MapObject, MapObjectData, Tile};
+use crate::net::map::{MapObject, MapObjectData, MapObjectSpecification, Tile};
 
 pub fn inject_dynamic(lua_api: &mut LuaAPI) {
   lua_api.add_dynamic_function("Net", "list_objects", |api_ctx, lua_ctx, params| {
@@ -48,41 +48,49 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
   });
 
   lua_api.add_dynamic_function("Net", "create_object", |api_ctx, lua_ctx, params| {
-    let (area_id, name, object_type, x, y, layer, width, height, rotation, data_table): (
-      String,
-      String,
-      String,
-      f32,
-      f32,
-      usize,
-      f32,
-      f32,
-      f32,
-      rlua::Table,
-    ) = lua_ctx.unpack_multi(params)?;
+    let (area_id, table): (String, rlua::Table) = lua_ctx.unpack_multi(params)?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    if let Some(area) = net.get_area_mut(&area_id) {
-      let map = area.get_map_mut();
-
-      let data = parse_object_data(data_table)?;
-
-      let id = map.create_object(
-        name,
-        object_type,
-        x,
-        y,
-        layer,
-        width,
-        height,
-        rotation,
-        data,
-      );
-
-      lua_ctx.pack_multi(id)
+    let area = if let Some(area) = net.get_area_mut(&area_id) {
+      area
     } else {
-      Err(create_area_error(&area_id))
-    }
+      return Err(create_area_error(&area_id));
+    };
+
+    use std::collections::HashMap;
+
+    let name: Option<String> = table.get("name")?;
+    let object_type: Option<String> = table.get("object_type")?;
+    let visible: Option<bool> = table.get("visible")?;
+    let x: Option<f32> = table.get("x")?;
+    let y: Option<f32> = table.get("y")?;
+    let layer: Option<usize> = table.get("layer")?;
+    let width: Option<f32> = table.get("width")?;
+    let height: Option<f32> = table.get("height")?;
+    let rotation: Option<f32> = table.get("rotation")?;
+    let data_table: rlua::Table = table.get("data")?;
+    let custom_properties: Option<HashMap<String, String>> = table.get("custom_properties")?;
+
+    let map = area.get_map_mut();
+
+    let data = parse_object_data(data_table)?;
+
+    let id = map.create_object(MapObjectSpecification {
+      name: name.unwrap_or_default(),
+      object_type: object_type.unwrap_or_default(),
+      visible: visible.unwrap_or_default(),
+      x: x.unwrap_or_default(),
+      y: y.unwrap_or_default(),
+      layer: layer.unwrap_or_default(),
+      width: width.unwrap_or_default(),
+      height: height.unwrap_or_default(),
+      rotation: rotation.unwrap_or_default(),
+      data,
+      custom_properties: custom_properties.unwrap_or_default(),
+    });
+
+    lua_ctx.pack_multi(id)
   });
 
   lua_api.add_dynamic_function("Net", "remove_object", |api_ctx, lua_ctx, params| {

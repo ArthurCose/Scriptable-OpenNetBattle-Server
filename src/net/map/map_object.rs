@@ -2,6 +2,20 @@ use super::Tile;
 use crate::helpers::unwrap_and_parse_or_default;
 use std::collections::HashMap;
 
+pub struct MapObjectSpecification {
+  pub name: String,
+  pub object_type: String,
+  pub visible: bool,
+  pub x: f32,
+  pub y: f32,
+  pub layer: usize,
+  pub width: f32,
+  pub height: f32,
+  pub rotation: f32,
+  pub custom_properties: HashMap<String, String>,
+  pub data: MapObjectData,
+}
+
 #[derive(Clone)]
 pub struct MapObject {
   pub id: u32,
