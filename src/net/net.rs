@@ -621,8 +621,6 @@ impl Net {
       return;
     };
 
-    client.widget_tracker.track_board(self.active_script);
-
     // reliability + id + type
     let header_size = 1 + 8 + 2;
 
@@ -636,11 +634,14 @@ impl Net {
       &self.socket,
       &Reliability::ReliableOrdered,
       &ServerPacket::OpenBoard {
+        current_depth: client.widget_tracker.get_board_count() as u8,
         name,
         color,
         posts: &posts[..fit_post_count],
       },
     );
+
+    client.widget_tracker.track_board(self.active_script);
 
     let mut last_id = &posts[fit_post_count - 1].id;
     let mut start_index = 0;
@@ -648,7 +649,7 @@ impl Net {
 
     while start_index < posts.len() {
       let mut packet_size = header_size;
-      packet_size += 1; // hasReference
+      packet_size += 2; // currentDepth + hasReference
       packet_size += last_id.len() + 1; // reference
 
       let fit_post_count =
@@ -665,6 +666,7 @@ impl Net {
         &self.socket,
         &Reliability::ReliableOrdered,
         &ServerPacket::AppendPosts {
+          current_depth: client.widget_tracker.get_board_count() as u8,
           reference: Some(last_id.clone()),
           posts: &posts[start_index..end_index + 1],
         },
@@ -688,7 +690,7 @@ impl Net {
     let header_size = 1 + 8 + 2;
 
     let mut packet_size = header_size;
-    packet_size += 1; // hasReference
+    packet_size += 2; // currentDepth + hasReference
 
     if let Some(reference) = reference.as_ref() {
       packet_size += reference.len() + 1; // reference
@@ -700,6 +702,7 @@ impl Net {
       &self.socket,
       &Reliability::ReliableOrdered,
       &ServerPacket::PrependPosts {
+        current_depth: client.widget_tracker.get_board_count() as u8,
         reference,
         posts: &posts[..fit_post_count],
       },
@@ -711,7 +714,7 @@ impl Net {
 
     while start_index < posts.len() {
       let mut packet_size = header_size;
-      packet_size += 1; // hasReference
+      packet_size += 2; // currentDepth + hasReference
       packet_size += last_id.len() + 1; // reference
 
       let fit_post_count =
@@ -728,6 +731,7 @@ impl Net {
         &self.socket,
         &Reliability::ReliableOrdered,
         &ServerPacket::AppendPosts {
+          current_depth: client.widget_tracker.get_board_count() as u8,
           reference: Some(last_id.clone()),
           posts: &posts[start_index..end_index + 1],
         },
@@ -755,7 +759,7 @@ impl Net {
 
     while start_index < posts.len() {
       let mut packet_size = header_size;
-      packet_size += 1; // hasReference
+      packet_size += 2; // currentDepth + hasReference
 
       if let Some(last_id) = last_id.as_ref() {
         packet_size += last_id.len() + 1; // reference
@@ -775,6 +779,7 @@ impl Net {
         &self.socket,
         &Reliability::ReliableOrdered,
         &ServerPacket::AppendPosts {
+          current_depth: client.widget_tracker.get_board_count() as u8,
           reference: last_id,
           posts: &posts[start_index..end_index + 1],
         },
@@ -791,6 +796,7 @@ impl Net {
         &self.socket,
         &Reliability::ReliableOrdered,
         &ServerPacket::RemovePost {
+          current_depth: client.widget_tracker.get_board_count() as u8,
           id: post_id.to_string(),
         },
       );

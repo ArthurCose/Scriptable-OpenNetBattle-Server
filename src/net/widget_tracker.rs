@@ -19,6 +19,10 @@ impl<T> WidgetTracker<T> {
     self.textbox_queue.is_empty() && self.active_bbs.is_empty() && self.bbs_queue.is_empty()
   }
 
+  pub(super) fn get_board_count(&self) -> usize {
+    self.active_bbs.len() + self.bbs_queue.len()
+  }
+
   pub fn track_textbox(&mut self, owner: T) {
     self.textbox_queue.push_back(owner);
   }

@@ -100,19 +100,23 @@ pub enum ServerPacket<'a> {
     mug_animation_path: String,
   },
   OpenBoard {
+    current_depth: u8,
     name: String,
     color: (u8, u8, u8),
     posts: &'a [BBSPost],
   },
   PrependPosts {
+    current_depth: u8,
     reference: Option<String>,
     posts: &'a [BBSPost],
   },
   AppendPosts {
+    current_depth: u8,
     reference: Option<String>,
     posts: &'a [BBSPost],
   },
   RemovePost {
+    current_depth: u8,
     id: String,
   },
   PostSelectionAck,
@@ -332,8 +336,14 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_string(&mut buf, mug_texture_path);
       write_string(&mut buf, mug_animation_path);
     }
-    ServerPacket::OpenBoard { name, color, posts } => {
+    ServerPacket::OpenBoard {
+      current_depth,
+      name,
+      color,
+      posts,
+    } => {
       write_u16(&mut buf, 24);
+      buf.push(*current_depth);
       write_string(&mut buf, name);
       buf.push(color.0);
       buf.push(color.1);
@@ -348,8 +358,13 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
         write_string(&mut buf, &post.author);
       }
     }
-    ServerPacket::PrependPosts { reference, posts } => {
+    ServerPacket::PrependPosts {
+      current_depth,
+      reference,
+      posts,
+    } => {
       write_u16(&mut buf, 25);
+      buf.push(*current_depth);
       write_bool(&mut buf, reference.is_some());
 
       if reference.is_some() {
@@ -365,8 +380,13 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
         write_string(&mut buf, &post.author);
       }
     }
-    ServerPacket::AppendPosts { reference, posts } => {
+    ServerPacket::AppendPosts {
+      current_depth,
+      reference,
+      posts,
+    } => {
       write_u16(&mut buf, 26);
+      buf.push(*current_depth);
       write_bool(&mut buf, reference.is_some());
 
       if reference.is_some() {
@@ -382,8 +402,9 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
         write_string(&mut buf, &post.author);
       }
     }
-    ServerPacket::RemovePost { id } => {
+    ServerPacket::RemovePost { current_depth, id } => {
       write_u16(&mut buf, 27);
+      buf.push(*current_depth);
       write_string(&mut buf, id);
     }
     ServerPacket::PostSelectionAck => {
