@@ -2,7 +2,7 @@
 
 use super::bytes::*;
 use super::{VERSION_ID, VERSION_ITERATION};
-use crate::net::{Asset, AssetData, Direction};
+use crate::net::{Asset, AssetData, BBSPost, Direction};
 
 #[derive(Debug)]
 pub enum ServerPacket<'a> {
@@ -99,6 +99,23 @@ pub enum ServerPacket<'a> {
     mug_texture_path: String,
     mug_animation_path: String,
   },
+  OpenBoard {
+    name: String,
+    color: (u8, u8, u8),
+    posts: &'a [BBSPost],
+  },
+  PrependPosts {
+    reference: Option<String>,
+    posts: &'a [BBSPost],
+  },
+  AppendPosts {
+    reference: Option<String>,
+    posts: &'a [BBSPost],
+  },
+  RemovePost {
+    id: String,
+  },
+  PostSelectionAck,
   ActorConnected {
     ticket: String,
     name: String,
@@ -315,6 +332,63 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_string(&mut buf, mug_texture_path);
       write_string(&mut buf, mug_animation_path);
     }
+    ServerPacket::OpenBoard { name, color, posts } => {
+      write_u16(&mut buf, 24);
+      write_string(&mut buf, name);
+      buf.push(color.0);
+      buf.push(color.1);
+      buf.push(color.2);
+
+      write_u16(&mut buf, posts.len() as u16);
+
+      for post in *posts {
+        write_string(&mut buf, &post.id);
+        write_bool(&mut buf, post.read);
+        write_string(&mut buf, &post.title);
+        write_string(&mut buf, &post.author);
+      }
+    }
+    ServerPacket::PrependPosts { reference, posts } => {
+      write_u16(&mut buf, 25);
+      write_bool(&mut buf, reference.is_some());
+
+      if reference.is_some() {
+        write_string(&mut buf, reference.as_ref().unwrap());
+      }
+
+      write_u16(&mut buf, posts.len() as u16);
+
+      for post in *posts {
+        write_string(&mut buf, &post.id);
+        write_bool(&mut buf, post.read);
+        write_string(&mut buf, &post.title);
+        write_string(&mut buf, &post.author);
+      }
+    }
+    ServerPacket::AppendPosts { reference, posts } => {
+      write_u16(&mut buf, 26);
+      write_bool(&mut buf, reference.is_some());
+
+      if reference.is_some() {
+        write_string(&mut buf, reference.as_ref().unwrap());
+      }
+
+      write_u16(&mut buf, posts.len() as u16);
+
+      for post in *posts {
+        write_string(&mut buf, &post.id);
+        write_bool(&mut buf, post.read);
+        write_string(&mut buf, &post.title);
+        write_string(&mut buf, &post.author);
+      }
+    }
+    ServerPacket::RemovePost { id } => {
+      write_u16(&mut buf, 27);
+      write_string(&mut buf, id);
+    }
+    ServerPacket::PostSelectionAck => {
+      write_u16(&mut buf, 28);
+    }
     ServerPacket::ActorConnected {
       ticket,
       name,
@@ -327,7 +401,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       solid,
       warp_in,
     } => {
-      write_u16(&mut buf, 24);
+      write_u16(&mut buf, 29);
       write_string(&mut buf, ticket);
       write_string(&mut buf, name);
       write_string(&mut buf, texture_path);
@@ -340,12 +414,12 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_bool(&mut buf, *warp_in);
     }
     ServerPacket::ActorDisconnected { ticket, warp_out } => {
-      write_u16(&mut buf, 25);
+      write_u16(&mut buf, 30);
       write_string(&mut buf, ticket);
       write_bool(&mut buf, *warp_out);
     }
     ServerPacket::ActorSetName { ticket, name } => {
-      write_u16(&mut buf, 26);
+      write_u16(&mut buf, 31);
       write_string(&mut buf, ticket);
       write_string(&mut buf, name);
     }
@@ -356,7 +430,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       z,
       direction,
     } => {
-      write_u16(&mut buf, 27);
+      write_u16(&mut buf, 32);
       write_string(&mut buf, ticket);
       write_f32(&mut buf, *x);
       write_f32(&mut buf, *y);
@@ -368,18 +442,18 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       texture_path,
       animation_path,
     } => {
-      write_u16(&mut buf, 28);
+      write_u16(&mut buf, 33);
       write_string(&mut buf, ticket);
       write_string(&mut buf, texture_path);
       write_string(&mut buf, animation_path);
     }
     ServerPacket::ActorEmote { ticket, emote_id } => {
-      write_u16(&mut buf, 29);
+      write_u16(&mut buf, 34);
       buf.push(*emote_id);
       write_string(&mut buf, ticket);
     }
     ServerPacket::ActorAnimate { ticket, state } => {
-      write_u16(&mut buf, 30);
+      write_u16(&mut buf, 35);
       write_string(&mut buf, ticket);
       write_string(&mut buf, state);
     }

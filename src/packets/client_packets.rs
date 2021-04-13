@@ -12,6 +12,9 @@ pub enum ClientPacket {
     reliability: Reliability,
     id: u64,
   },
+  ServerMessage {
+    data: Vec<u8>,
+  },
   AssetFound {
     path: String,
     last_modified: u64,
@@ -49,11 +52,14 @@ pub enum ClientPacket {
     y: f32,
     z: f32,
   },
-  DialogResponse {
+  TextBoxResponse {
     response: u8,
   },
-  ServerMessage {
-    data: Vec<u8>,
+  BoardOpen,
+  BoardClose,
+  PostRequest,
+  PostSelection {
+    post_id: String,
   },
 }
 
@@ -85,52 +91,58 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
       reliability: get_reliability(read_byte(work_buf)?),
       id: read_u64(work_buf)?,
     }),
-    2 => Some(ClientPacket::AssetFound {
+    // if this moves, check out message_server
+    2 => Some(ClientPacket::ServerMessage {
+      data: work_buf.to_vec(),
+    }),
+    3 => Some(ClientPacket::AssetFound {
       path: read_string(work_buf)?,
       last_modified: read_u64(work_buf)?,
     }),
-    3 => {
+    4 => {
       let asset_type = read_byte(work_buf)?;
       let size = read_u16(work_buf)? as usize;
       let data = read_data(work_buf, size)?;
 
       Some(ClientPacket::AssetStream { asset_type, data })
     }
-    4 => Some(ClientPacket::Login {
+    5 => Some(ClientPacket::Login {
       username: read_string(work_buf)?,
       data: read_string(work_buf)?,
     }),
-    5 => Some(ClientPacket::Logout),
-    6 => Some(ClientPacket::RequestJoin),
-    7 => Some(ClientPacket::Ready),
-    8 => Some(ClientPacket::Position {
+    6 => Some(ClientPacket::Logout),
+    7 => Some(ClientPacket::RequestJoin),
+    8 => Some(ClientPacket::Ready),
+    9 => Some(ClientPacket::Position {
       creation_time: read_u64(work_buf)?,
       x: read_f32(work_buf)?,
       y: read_f32(work_buf)?,
       z: read_f32(work_buf)?,
       direction: read_direction(read_byte(work_buf)?),
     }),
-    9 => Some(ClientPacket::AvatarChange),
-    10 => Some(ClientPacket::Emote {
+    10 => Some(ClientPacket::AvatarChange),
+    11 => Some(ClientPacket::Emote {
       emote_id: read_byte(work_buf)?,
     }),
-    11 => Some(ClientPacket::ObjectInteraction {
+    12 => Some(ClientPacket::ObjectInteraction {
       tile_object_id: read_u32(work_buf)?,
     }),
-    12 => Some(ClientPacket::ActorInteraction {
+    13 => Some(ClientPacket::ActorInteraction {
       actor_id: read_string(work_buf)?,
     }),
-    13 => Some(ClientPacket::TileInteraction {
+    14 => Some(ClientPacket::TileInteraction {
       x: read_f32(work_buf)?,
       y: read_f32(work_buf)?,
       z: read_f32(work_buf)?,
     }),
-    14 => Some(ClientPacket::DialogResponse {
+    15 => Some(ClientPacket::TextBoxResponse {
       response: read_byte(work_buf)?,
     }),
-    // if this moves, check out message_server
-    15 => Some(ClientPacket::ServerMessage {
-      data: work_buf.to_vec(),
+    16 => Some(ClientPacket::BoardOpen),
+    17 => Some(ClientPacket::BoardClose),
+    18 => Some(ClientPacket::PostRequest),
+    19 => Some(ClientPacket::PostSelection {
+      post_id: read_string(work_buf)?,
     }),
     _ => None,
   }

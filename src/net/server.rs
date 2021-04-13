@@ -366,17 +366,58 @@ impl Server {
             .plugin_wrapper
             .handle_tile_interaction(net, player_id, x, y, z);
         }
-        ClientPacket::DialogResponse { response } => {
+        ClientPacket::TextBoxResponse { response } => {
           if self.config.log_packets {
-            println!("Received DialogResponse packet from {}", socket_address);
+            println!("Received TextBoxResponse packet from {}", socket_address);
           }
 
           self
             .plugin_wrapper
-            .handle_dialog_response(net, player_id, response);
+            .handle_textbox_response(net, player_id, response);
+        }
+        ClientPacket::BoardOpen => {
+          if self.config.log_packets {
+            println!("Received BoardOpen packet from {}", socket_address);
+          }
+
+          self.plugin_wrapper.handle_board_open(net, player_id);
+        }
+        ClientPacket::BoardClose => {
+          if self.config.log_packets {
+            println!("Received BoardClose packet from {}", socket_address);
+          }
+
+          self.plugin_wrapper.handle_board_close(net, player_id);
+        }
+        ClientPacket::PostRequest => {
+          if self.config.log_packets {
+            println!("Received PostRequest packet from {}", socket_address);
+          }
+
+          self.plugin_wrapper.handle_post_request(net, player_id);
+        }
+        ClientPacket::PostSelection { post_id } => {
+          if self.config.log_packets {
+            println!("Received PostSelection packet from {}", socket_address);
+          }
+
+          self
+            .plugin_wrapper
+            .handle_post_selection(net, player_id, &post_id);
+
+          let client = net.get_client_mut(player_id).unwrap();
+
+          client.packet_shipper.send(
+            &socket,
+            &Reliability::ReliableOrdered,
+            &ServerPacket::PostSelectionAck,
+          );
         }
         ClientPacket::ServerMessage { data } => {
           // this should never happen but 🤷‍♂️
+          if self.config.log_packets {
+            println!("Received ServerMessage packet from {}", socket_address);
+          }
 
           self
             .plugin_wrapper

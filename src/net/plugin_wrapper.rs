@@ -131,7 +131,7 @@ impl PluginInterface for PluginWrapper {
     });
   }
 
-  fn handle_dialog_response(&mut self, net: &mut Net, player_id: &str, response: u8) {
+  fn handle_textbox_response(&mut self, net: &mut Net, player_id: &str, response: u8) {
     let client = net
       .get_client_mut(player_id)
       .expect("An internal author should understand how to handle this better");
@@ -139,9 +139,71 @@ impl PluginInterface for PluginWrapper {
     // expect the above to be correct
     // don't expect the client to be correct
     // otherwise someone can read the source and force a crash :p
-    if let Some(i) = client.pop_message() {
+    if let Some(i) = client.widget_tracker.pop_textbox() {
       self.wrap_call(i, net, |plugin_interface, net| {
-        plugin_interface.handle_dialog_response(net, player_id, response)
+        plugin_interface.handle_textbox_response(net, player_id, response)
+      });
+    }
+  }
+
+  fn handle_board_open(&mut self, net: &mut Net, player_id: &str) {
+    let client = net
+      .get_client_mut(player_id)
+      .expect("An internal author should understand how to handle this better");
+
+    client.widget_tracker.open_board();
+
+    // expect the above to be correct
+    // don't expect the client to be correct
+    // otherwise someone can read the source and force a crash :p
+    if let Some(i) = client.widget_tracker.current_board() {
+      self.wrap_call(*i, net, |plugin_interface, net| {
+        plugin_interface.handle_board_open(net, player_id)
+      });
+    }
+  }
+
+  fn handle_board_close(&mut self, net: &mut Net, player_id: &str) {
+    let client = net
+      .get_client_mut(player_id)
+      .expect("An internal author should understand how to handle this better");
+
+    // expect the above to be correct
+    // don't expect the client to be correct
+    // otherwise someone can read the source and force a crash :p
+    if let Some(i) = client.widget_tracker.close_board() {
+      self.wrap_call(i, net, |plugin_interface, net| {
+        plugin_interface.handle_board_close(net, player_id)
+      });
+    }
+  }
+
+  fn handle_post_request(&mut self, net: &mut Net, player_id: &str) {
+    let client = net
+      .get_client_mut(player_id)
+      .expect("An internal author should understand how to handle this better");
+
+    // expect the above to be correct
+    // don't expect the client to be correct
+    // otherwise someone can read the source and force a crash :p
+    if let Some(i) = client.widget_tracker.current_board() {
+      self.wrap_call(*i, net, |plugin_interface, net| {
+        plugin_interface.handle_post_request(net, player_id)
+      });
+    }
+  }
+
+  fn handle_post_selection(&mut self, net: &mut Net, player_id: &str, post_id: &str) {
+    let client = net
+      .get_client_mut(player_id)
+      .expect("An internal author should understand how to handle this better");
+
+    // expect the above to be correct
+    // don't expect the client to be correct
+    // otherwise someone can read the source and force a crash :p
+    if let Some(i) = client.widget_tracker.current_board() {
+      self.wrap_call(*i, net, |plugin_interface, net| {
+        plugin_interface.handle_post_selection(net, player_id, post_id)
       });
     }
   }

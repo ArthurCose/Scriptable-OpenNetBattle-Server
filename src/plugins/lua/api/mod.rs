@@ -6,8 +6,7 @@ mod lua_errors;
 mod object_api;
 mod player_api;
 
-use super::super::MessageTracker;
-use crate::net::Net;
+use crate::net::{Net, WidgetTracker};
 use std::cell::RefCell;
 
 use crate::jobs::JobPromiseManager;
@@ -16,7 +15,8 @@ use std::collections::HashMap;
 pub struct APIContext<'lua_scope, 'a> {
   pub script_dir: &'lua_scope std::path::PathBuf,
   pub net_ref: &'lua_scope RefCell<&'a mut Net>,
-  pub message_tracker_ref: &'lua_scope RefCell<&'a mut MessageTracker<std::path::PathBuf>>,
+  pub widget_tracker_ref:
+    &'lua_scope RefCell<&'a mut HashMap<String, WidgetTracker<std::path::PathBuf>>>,
   pub promise_manager_ref: &'lua_scope RefCell<&'a mut JobPromiseManager>,
 }
 

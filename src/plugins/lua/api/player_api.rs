@@ -282,17 +282,16 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    api_ctx
-      .message_tracker_ref
-      .borrow_mut()
-      .track_message(&id, api_ctx.script_dir.clone());
+    if let Some(tracker) = api_ctx.widget_tracker_ref.borrow_mut().get_mut(&id) {
+      tracker.track_textbox(api_ctx.script_dir.clone());
 
-    net.message_player(
-      &id,
-      &message,
-      &mug_texture_path.unwrap_or_default(),
-      &mug_animation_path.unwrap_or_default(),
-    );
+      net.message_player(
+        &id,
+        &message,
+        &mug_texture_path.unwrap_or_default(),
+        &mug_animation_path.unwrap_or_default(),
+      );
+    }
 
     lua_ctx.pack_multi(())
   });
@@ -307,17 +306,16 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    api_ctx
-      .message_tracker_ref
-      .borrow_mut()
-      .track_message(&id, api_ctx.script_dir.clone());
+    if let Some(tracker) = api_ctx.widget_tracker_ref.borrow_mut().get_mut(&id) {
+      tracker.track_textbox(api_ctx.script_dir.clone());
 
-    net.question_player(
-      &id,
-      &message,
-      &mug_texture_path.unwrap_or_default(),
-      &mug_animation_path.unwrap_or_default(),
-    );
+      net.question_player(
+        &id,
+        &message,
+        &mug_texture_path.unwrap_or_default(),
+        &mug_animation_path.unwrap_or_default(),
+      );
+    }
 
     lua_ctx.pack_multi(())
   });
@@ -334,19 +332,125 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    api_ctx
-      .message_tracker_ref
-      .borrow_mut()
-      .track_message(&id, api_ctx.script_dir.clone());
+    if let Some(tracker) = api_ctx.widget_tracker_ref.borrow_mut().get_mut(&id) {
+      tracker.track_textbox(api_ctx.script_dir.clone());
 
-    net.quiz_player(
-      &id,
-      &option_a.unwrap_or_default(),
-      &option_b.unwrap_or_default(),
-      &option_c.unwrap_or_default(),
-      &mug_texture_path.unwrap_or_default(),
-      &mug_animation_path.unwrap_or_default(),
-    );
+      net.quiz_player(
+        &id,
+        &option_a.unwrap_or_default(),
+        &option_b.unwrap_or_default(),
+        &option_c.unwrap_or_default(),
+        &mug_texture_path.unwrap_or_default(),
+        &mug_animation_path.unwrap_or_default(),
+      );
+    }
+
+    lua_ctx.pack_multi(())
+  });
+
+  lua_api.add_dynamic_function("Net", "open_board", |api_ctx, lua_ctx, params| {
+    use crate::net::BBSPost;
+
+    let (id, name, color_table, post_tables): (String, String, rlua::Table, Vec<rlua::Table>) =
+      lua_ctx.unpack_multi(params)?;
+
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    if let Some(tracker) = api_ctx.widget_tracker_ref.borrow_mut().get_mut(&id) {
+      tracker.track_board(api_ctx.script_dir.clone());
+
+      let color = (
+        color_table.get("r")?,
+        color_table.get("g")?,
+        color_table.get("b")?,
+      );
+
+      let mut posts = Vec::new();
+      posts.reserve(post_tables.len());
+
+      for post_table in post_tables {
+        let read: Option<bool> = post_table.get("read")?;
+        let title: Option<String> = post_table.get("title")?;
+        let author: Option<String> = post_table.get("author")?;
+
+        posts.push(BBSPost {
+          id: post_table.get("id")?,
+          read: read.unwrap_or_default(),
+          title: title.unwrap_or_default(),
+          author: author.unwrap_or_default(),
+        });
+      }
+
+      net.open_board(&id, name, color, posts);
+    }
+
+    lua_ctx.pack_multi(())
+  });
+
+  lua_api.add_dynamic_function("Net", "prepend_posts", |api_ctx, lua_ctx, params| {
+    use crate::net::BBSPost;
+
+    let (id, post_tables, reference): (String, Vec<rlua::Table>, Option<String>) =
+      lua_ctx.unpack_multi(params)?;
+
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    let mut posts = Vec::new();
+    posts.reserve(post_tables.len());
+
+    for post_table in post_tables {
+      let read: Option<bool> = post_table.get("read")?;
+      let title: Option<String> = post_table.get("title")?;
+      let author: Option<String> = post_table.get("author")?;
+
+      posts.push(BBSPost {
+        id: post_table.get("id")?,
+        read: read.unwrap_or_default(),
+        title: title.unwrap_or_default(),
+        author: author.unwrap_or_default(),
+      });
+    }
+
+    net.prepend_posts(&id, reference, posts);
+
+    lua_ctx.pack_multi(())
+  });
+
+  lua_api.add_dynamic_function("Net", "append_posts", |api_ctx, lua_ctx, params| {
+    use crate::net::BBSPost;
+
+    let (id, post_tables, reference): (String, Vec<rlua::Table>, Option<String>) =
+      lua_ctx.unpack_multi(params)?;
+
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    let mut posts = Vec::new();
+    posts.reserve(post_tables.len());
+
+    for post_table in post_tables {
+      let read: Option<bool> = post_table.get("read")?;
+      let title: Option<String> = post_table.get("title")?;
+      let author: Option<String> = post_table.get("author")?;
+
+      posts.push(BBSPost {
+        id: post_table.get("id")?,
+        read: read.unwrap_or_default(),
+        title: title.unwrap_or_default(),
+        author: author.unwrap_or_default(),
+      });
+    }
+
+    net.append_posts(&id, reference, posts);
+
+    lua_ctx.pack_multi(())
+  });
+
+  lua_api.add_dynamic_function("Net", "remove_post", |api_ctx, lua_ctx, params| {
+    let (id, post_id): (String, String) = lua_ctx.unpack_multi(params)?;
+
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    net.remove_post(&id, &post_id);
 
     lua_ctx.pack_multi(())
   });

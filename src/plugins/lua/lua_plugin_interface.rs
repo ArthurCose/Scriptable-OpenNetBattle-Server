@@ -1,7 +1,6 @@
-use super::super::MessageTracker;
 use super::api::{APIContext, LuaAPI};
 use crate::jobs::JobPromiseManager;
-use crate::net::Net;
+use crate::net::{Net, WidgetTracker};
 use crate::plugins::PluginInterface;
 use rlua::Lua;
 use std::cell::RefCell;
@@ -21,9 +20,8 @@ pub struct LuaPluginInterface {
   object_interaction_listeners: Vec<std::path::PathBuf>,
   actor_interaction_listeners: Vec<std::path::PathBuf>,
   tile_interaction_listeners: Vec<std::path::PathBuf>,
-  dialog_response_listeners: Vec<std::path::PathBuf>,
   server_message_listeners: Vec<std::path::PathBuf>,
-  message_tracker: MessageTracker<std::path::PathBuf>,
+  widget_trackers: HashMap<String, WidgetTracker<std::path::PathBuf>>,
   promise_manager: JobPromiseManager,
   lua_api: LuaAPI,
 }
@@ -44,9 +42,8 @@ impl LuaPluginInterface {
       object_interaction_listeners: Vec::new(),
       actor_interaction_listeners: Vec::new(),
       tile_interaction_listeners: Vec::new(),
-      dialog_response_listeners: Vec::new(),
       server_message_listeners: Vec::new(),
-      message_tracker: MessageTracker::new(),
+      widget_trackers: HashMap::new(),
       promise_manager: JobPromiseManager::new(),
       lua_api: LuaAPI::new(),
     }
@@ -84,13 +81,13 @@ impl LuaPluginInterface {
     let lua_env = Lua::new();
 
     lua_env.context(|lua_ctx| {
-      let message_tracker_ref = RefCell::new(&mut self.message_tracker);
+      let widget_tracker_ref = RefCell::new(&mut self.widget_trackers);
       let promise_manager_ref = RefCell::new(&mut self.promise_manager);
 
       let api_ctx = APIContext {
         script_dir: &script_dir,
         net_ref: &net_ref,
-        message_tracker_ref: &message_tracker_ref,
+        widget_tracker_ref: &widget_tracker_ref,
         promise_manager_ref: &promise_manager_ref,
       };
 
@@ -186,13 +183,6 @@ impl LuaPluginInterface {
       }
 
       if globals
-        .get::<_, rlua::Function>("handle_player_response")
-        .is_ok()
-      {
-        self.dialog_response_listeners.push(script_dir.clone());
-      }
-
-      if globals
         .get::<_, rlua::Function>("handle_server_message")
         .is_ok()
       {
@@ -219,7 +209,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.tick_listeners,
-      &mut self.message_tracker,
+      &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -229,10 +219,14 @@ impl PluginInterface for LuaPluginInterface {
   }
 
   fn handle_player_request(&mut self, net: &mut Net, player_id: &str, data: &str) {
+    self
+      .widget_trackers
+      .insert(player_id.to_string(), WidgetTracker::new());
+
     handle_event(
       &mut self.scripts,
       &self.player_request_listeners,
-      &mut self.message_tracker,
+      &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -245,7 +239,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.player_connect_listeners,
-      &mut self.message_tracker,
+      &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -258,7 +252,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.player_join_listeners,
-      &mut self.message_tracker,
+      &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -271,7 +265,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.player_transfer_listeners,
-      &mut self.message_tracker,
+      &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -284,7 +278,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.player_disconnect_listeners,
-      &mut self.message_tracker,
+      &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -292,14 +286,14 @@ impl PluginInterface for LuaPluginInterface {
       |_, callback| callback.call(player_id),
     );
 
-    self.message_tracker.remove_tracking(player_id);
+    self.widget_trackers.remove(player_id);
   }
 
   fn handle_player_move(&mut self, net: &mut Net, player_id: &str, x: f32, y: f32, z: f32) {
     handle_event(
       &mut self.scripts,
       &self.player_move_listeners,
-      &mut self.message_tracker,
+      &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -320,7 +314,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.player_avatar_change_listeners,
-      &mut self.message_tracker,
+      &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -344,7 +338,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.player_emote_listeners,
-      &mut self.message_tracker,
+      &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -365,7 +359,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.object_interaction_listeners,
-      &mut self.message_tracker,
+      &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -378,7 +372,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.actor_interaction_listeners,
-      &mut self.message_tracker,
+      &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -391,7 +385,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.tile_interaction_listeners,
-      &mut self.message_tracker,
+      &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -400,18 +394,115 @@ impl PluginInterface for LuaPluginInterface {
     );
   }
 
-  fn handle_dialog_response(&mut self, net: &mut Net, player_id: &str, response: u8) {
-    let script_dir = self.message_tracker.pop_message(player_id).unwrap();
+  fn handle_textbox_response(&mut self, net: &mut Net, player_id: &str, response: u8) {
+    let tracker = self.widget_trackers.get_mut(player_id).unwrap();
+
+    let script_dir = if let Some(script_dir) = tracker.pop_textbox() {
+      script_dir
+    } else {
+      // protect against attackers
+      return;
+    };
 
     handle_event(
       &mut self.scripts,
       &[script_dir],
-      &mut self.message_tracker,
+      &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_player_response",
+      "handle_textbox_response",
       |_, callback| callback.call((player_id, response)),
+    );
+  }
+
+  fn handle_board_open(&mut self, net: &mut Net, player_id: &str) {
+    let tracker = self.widget_trackers.get_mut(player_id).unwrap();
+
+    tracker.open_board();
+
+    let script_dir = if let Some(script_dir) = tracker.current_board() {
+      script_dir.clone()
+    } else {
+      // protect against attackers
+      return;
+    };
+
+    handle_event(
+      &mut self.scripts,
+      &[script_dir],
+      &mut self.widget_trackers,
+      &mut self.promise_manager,
+      &mut self.lua_api,
+      net,
+      "handle_board_open",
+      |_, callback| callback.call(player_id),
+    );
+  }
+
+  fn handle_board_close(&mut self, net: &mut Net, player_id: &str) {
+    let tracker = self.widget_trackers.get_mut(player_id).unwrap();
+
+    let script_dir = if let Some(script_dir) = tracker.close_board() {
+      script_dir
+    } else {
+      // protect against attackers
+      return;
+    };
+
+    handle_event(
+      &mut self.scripts,
+      &[script_dir],
+      &mut self.widget_trackers,
+      &mut self.promise_manager,
+      &mut self.lua_api,
+      net,
+      "handle_board_close",
+      |_, callback| callback.call(player_id),
+    );
+  }
+
+  fn handle_post_request(&mut self, net: &mut Net, player_id: &str) {
+    let tracker = self.widget_trackers.get_mut(player_id).unwrap();
+
+    let script_dir = if let Some(script_dir) = tracker.current_board() {
+      script_dir.clone()
+    } else {
+      // protect against attackers
+      return;
+    };
+
+    handle_event(
+      &mut self.scripts,
+      &[script_dir],
+      &mut self.widget_trackers,
+      &mut self.promise_manager,
+      &mut self.lua_api,
+      net,
+      "handle_post_request",
+      |_, callback| callback.call(player_id),
+    );
+  }
+
+  fn handle_post_selection(&mut self, net: &mut Net, player_id: &str, post_id: &str) {
+    let tracker = self.widget_trackers.get_mut(player_id).unwrap();
+
+    let script_dir = if let Some(script_dir) = tracker.current_board() {
+      script_dir.clone()
+    } else {
+      // protect against attackers
+      return;
+    };
+
+    handle_event(
+      &mut self.scripts,
+      &[script_dir],
+      &mut self.widget_trackers,
+      &mut self.promise_manager,
+      &mut self.lua_api,
+      net,
+      "handle_post_selection",
+      |_, callback| callback.call((player_id, post_id)),
     );
   }
 
@@ -424,7 +515,7 @@ impl PluginInterface for LuaPluginInterface {
     handle_event(
       &mut self.scripts,
       &self.server_message_listeners,
-      &mut self.message_tracker,
+      &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -444,7 +535,7 @@ impl PluginInterface for LuaPluginInterface {
 fn handle_event<F>(
   scripts: &mut HashMap<std::path::PathBuf, Lua>,
   event_listeners: &[std::path::PathBuf],
-  message_tracker: &mut MessageTracker<std::path::PathBuf>,
+  widget_tracker: &mut HashMap<String, WidgetTracker<std::path::PathBuf>>,
   promise_manager: &mut JobPromiseManager,
   lua_api: &mut LuaAPI,
   net: &mut Net,
@@ -457,7 +548,7 @@ fn handle_event<F>(
 
   let call_lua = || -> rlua::Result<()> {
     let net_ref = RefCell::new(net);
-    let message_tracker_ref = RefCell::new(message_tracker);
+    let widget_tracker_ref = RefCell::new(widget_tracker);
     let promise_manager_ref = RefCell::new(promise_manager);
 
     // loop over scripts
@@ -468,7 +559,7 @@ fn handle_event<F>(
         let api_ctx = APIContext {
           script_dir,
           net_ref: &net_ref,
-          message_tracker_ref: &message_tracker_ref,
+          widget_tracker_ref: &widget_tracker_ref,
           promise_manager_ref: &promise_manager_ref,
         };
 

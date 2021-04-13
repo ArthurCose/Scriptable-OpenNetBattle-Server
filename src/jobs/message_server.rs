@@ -20,7 +20,7 @@ pub fn message_server(
 
     let mut packet = Vec::new();
     packet.push(0); // unreliable
-    write_u16(&mut packet, 15);
+    write_u16(&mut packet, 2);
     packet.append(&mut data);
 
     let _ = socket.send_to(&packet, socket_addr);

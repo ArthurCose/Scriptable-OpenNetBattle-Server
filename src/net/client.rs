@@ -1,7 +1,6 @@
-use super::{Actor, Direction};
+use super::{Actor, Direction, WidgetTracker};
 use crate::packets::PacketShipper;
 use std::collections::HashSet;
-use std::collections::VecDeque;
 use std::net::SocketAddr;
 
 pub(super) struct Client {
@@ -21,7 +20,7 @@ pub(super) struct Client {
   pub animation_buffer: Vec<u8>,
   pub mugshot_texture_buffer: Vec<u8>,
   pub mugshot_animation_buffer: Vec<u8>,
-  message_queue: VecDeque<usize>, // for tracking what plugin sent the message this response is for
+  pub widget_tracker: WidgetTracker<usize>,
 }
 
 impl Client {
@@ -71,20 +70,12 @@ impl Client {
       animation_buffer: Vec::new(),
       mugshot_texture_buffer: Vec::new(),
       mugshot_animation_buffer: Vec::new(),
-      message_queue: VecDeque::new(),
+      widget_tracker: WidgetTracker::new(),
     }
   }
 
   pub fn is_in_widget(&self) -> bool {
-    !self.message_queue.is_empty()
-  }
-
-  pub(super) fn track_message(&mut self, owner: usize) {
-    self.message_queue.push_back(owner);
-  }
-
-  pub(super) fn pop_message(&mut self) -> Option<usize> {
-    self.message_queue.pop_back()
+    !self.widget_tracker.is_empty()
   }
 }
 

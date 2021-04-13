@@ -77,7 +77,7 @@ local function create_custom_bot(id, name, area_id, texture_path, animation_path
     end
   end
 
-  function bot._handle_player_response(player_id, response)
+  function bot._handle_textbox_response(player_id, response)
     if bot.on_response then
       bot.on_response(player_id, response)
     end

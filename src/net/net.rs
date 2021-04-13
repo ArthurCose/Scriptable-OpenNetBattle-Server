@@ -2,7 +2,7 @@ use super::boot::Boot;
 use super::client::Client;
 use super::map::Map;
 use super::server::ServerConfig;
-use super::{Actor, Area, Asset, AssetData, Direction};
+use super::{Actor, Area, Asset, AssetData, BBSPost, Direction};
 use crate::packets::{create_asset_stream, Reliability, ServerPacket};
 use crate::threads::worker_threads::{Job, JobGiver};
 use std::collections::HashMap;
@@ -508,7 +508,7 @@ impl Net {
     );
 
     if let Some(client) = self.clients.get_mut(id) {
-      client.track_message(self.active_script);
+      client.widget_tracker.track_textbox(self.active_script);
 
       client.packet_shipper.send(
         &self.socket,
@@ -548,7 +548,7 @@ impl Net {
     );
 
     if let Some(client) = self.clients.get_mut(id) {
-      client.track_message(self.active_script);
+      client.widget_tracker.track_textbox(self.active_script);
 
       client.packet_shipper.send(
         &self.socket,
@@ -590,7 +590,7 @@ impl Net {
     );
 
     if let Some(client) = self.clients.get_mut(id) {
-      client.track_message(self.active_script);
+      client.widget_tracker.track_textbox(self.active_script);
 
       client.packet_shipper.send(
         &self.socket,
@@ -601,6 +601,194 @@ impl Net {
           option_c: option_c.to_string(),
           mug_texture_path: mug_texture_path.to_string(),
           mug_animation_path: mug_animation_path.to_string(),
+        },
+      );
+    }
+  }
+
+  pub fn open_board(
+    &mut self,
+    player_id: &str,
+    name: String,
+    color: (u8, u8, u8),
+    posts: Vec<BBSPost>,
+  ) {
+    use super::bbs_post::count_fit_posts;
+
+    let client = if let Some(client) = self.clients.get_mut(player_id) {
+      client
+    } else {
+      return;
+    };
+
+    client.widget_tracker.track_board(self.active_script);
+
+    // reliability + id + type
+    let header_size = 1 + 8 + 2;
+
+    let mut packet_size = header_size;
+    packet_size += name.len() + 1;
+    packet_size += 3; // color
+
+    let fit_post_count = count_fit_posts(self.max_payload_size - packet_size, 0, &posts);
+
+    client.packet_shipper.send(
+      &self.socket,
+      &Reliability::ReliableOrdered,
+      &ServerPacket::OpenBoard {
+        name,
+        color,
+        posts: &posts[..fit_post_count],
+      },
+    );
+
+    let mut last_id = &posts[fit_post_count - 1].id;
+    let mut start_index = 0;
+    start_index += fit_post_count;
+
+    while start_index < posts.len() {
+      let mut packet_size = header_size;
+      packet_size += 1; // hasReference
+      packet_size += last_id.len() + 1; // reference
+
+      let fit_post_count =
+        count_fit_posts(self.max_payload_size - packet_size, start_index, &posts);
+
+      if fit_post_count == 0 {
+        break;
+      }
+
+      let end_index = start_index + fit_post_count - 1;
+
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::AppendPosts {
+          reference: Some(last_id.clone()),
+          posts: &posts[start_index..end_index + 1],
+        },
+      );
+
+      last_id = &posts[end_index].id;
+      start_index = end_index + 1;
+    }
+  }
+
+  pub fn prepend_posts(&mut self, player_id: &str, reference: Option<String>, posts: Vec<BBSPost>) {
+    use super::bbs_post::count_fit_posts;
+
+    let client = if let Some(client) = self.clients.get_mut(player_id) {
+      client
+    } else {
+      return;
+    };
+
+    // reliability + id + type
+    let header_size = 1 + 8 + 2;
+
+    let mut packet_size = header_size;
+    packet_size += 1; // hasReference
+
+    if let Some(reference) = reference.as_ref() {
+      packet_size += reference.len() + 1; // reference
+    }
+
+    let fit_post_count = count_fit_posts(self.max_payload_size - packet_size, 0, &posts);
+
+    client.packet_shipper.send(
+      &self.socket,
+      &Reliability::ReliableOrdered,
+      &ServerPacket::PrependPosts {
+        reference,
+        posts: &posts[..fit_post_count],
+      },
+    );
+
+    let mut last_id = &posts[fit_post_count - 1].id;
+    let mut start_index = 0;
+    start_index += fit_post_count;
+
+    while start_index < posts.len() {
+      let mut packet_size = header_size;
+      packet_size += 1; // hasReference
+      packet_size += last_id.len() + 1; // reference
+
+      let fit_post_count =
+        count_fit_posts(self.max_payload_size - packet_size, start_index, &posts);
+
+      if fit_post_count == 0 {
+        break;
+      }
+
+      let end_index = start_index + fit_post_count - 1;
+
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::AppendPosts {
+          reference: Some(last_id.clone()),
+          posts: &posts[start_index..end_index + 1],
+        },
+      );
+
+      last_id = &posts[end_index].id;
+      start_index = end_index + 1;
+    }
+  }
+
+  pub fn append_posts(&mut self, player_id: &str, reference: Option<String>, posts: Vec<BBSPost>) {
+    use super::bbs_post::count_fit_posts;
+
+    let client = if let Some(client) = self.clients.get_mut(player_id) {
+      client
+    } else {
+      return;
+    };
+
+    // reliability + id + type
+    let header_size = 1 + 8 + 2;
+
+    let mut last_id = reference;
+    let mut start_index = 0;
+
+    while start_index < posts.len() {
+      let mut packet_size = header_size;
+      packet_size += 1; // hasReference
+
+      if let Some(last_id) = last_id.as_ref() {
+        packet_size += last_id.len() + 1; // reference
+      }
+
+      let fit_post_count =
+        count_fit_posts(self.max_payload_size - packet_size, start_index, &posts);
+
+      if fit_post_count == 0 {
+        break;
+      }
+
+      let end_index = start_index + fit_post_count - 1;
+
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::AppendPosts {
+          reference: last_id,
+          posts: &posts[start_index..end_index + 1],
+        },
+      );
+
+      last_id = Some(posts[end_index].id.clone());
+      start_index = end_index + 1;
+    }
+  }
+
+  pub fn remove_post(&mut self, player_id: &str, post_id: &str) {
+    if let Some(client) = self.clients.get_mut(player_id) {
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::RemovePost {
+          id: post_id.to_string(),
         },
       );
     }

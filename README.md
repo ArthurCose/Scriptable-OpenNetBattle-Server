@@ -204,7 +204,11 @@ function handle_player_transfer(player_id) -- player changes area
 function handle_object_interaction(player_id, object)
 function handle_actor_interaction(player_id, actor_id) -- actor_id is a player or bot id
 function handle_tile_interaction(player_id, x, y, z)
-function handle_player_response(player_id, response) -- response is an index
+function handle_textbox_response(player_id, response) -- response is an index
+function handle_board_open(player_id)
+function handle_board_close(player_id)
+function handle_post_selection(player_id, post_id)
+function handle_post_request(player_id) -- bbs post request for infinite scroll
 -- function handle_battle_completion(player_id, results) -- results = { status: "won" | "loss" | "ran", rank? }
 function handle_server_message(ip, port, data)
 
@@ -314,6 +318,7 @@ Net.get_bot_direction(bot_id)
 Net.set_bot_direction(bot_id, direction)
 Net.get_bot_position(bot_id) -- { x, y, z }
 Net.move_bot(bot_id, x, y, z)
+-- Net.set_bot_solid(bot_id, solid)
 Net.set_bot_avatar(bot_id, texture_path, animation_path)
 Net.set_bot_emote(bot_id, emote_id)
 -- Net.play_bot_animation(bot_id, state_name)
@@ -335,7 +340,6 @@ Net.get_player_avatar(player_id) -- { texture_path, animation_path }
 Net.set_player_avatar(player_id, texture_path, animation_path)
 Net.set_player_emote(player_id, emote_id)
 Net.exclusive_player_emote(player_id, emoter_id, emote_id)
-Net.is_player_in_widget(player_id)
 -- Net.is_player_battling(player_id)
 Net.is_player_busy(player_id)
 Net.provide_asset_for_player(player_id, path)
@@ -347,16 +351,26 @@ Net.slide_player_camera(player_id, x, y, z, durationInSeconds)
 Net.unlock_player_camera(player_id)
 Net.lock_player(player_id)
 Net.unlock_player(player_id)
-Net.move_player(player_id, x, y, z)
--- Net.warp_player(player_id, x, y, z, direction?)
-Net.message_player(player_id, message, mug_texture_path?, mug_animation_path?)
-Net.question_player(player_id, question, mug_texture_path?, mug_animation_path?)
-Net.quiz_player(player_id, option_a?, option_b?, option_c?, mug_texture_path?, mug_animation_path?)
+-- Net.move_player(player_id, x, y, z)
+-- Net.teleport_player(player_id, warp, x, y, z, direction?)
 -- Net.initiate_encounter(player_id, data)
 -- Net.initiate_pvp(player_1_id, player_2_id, data)
 Net.transfer_player(player_id, area_id, warp_in?, x?, y?, z?, direction?)
 Net.transfer_server(player_id, address, port, warp_out?, data?) -- data = string
 Net.kick_player(player_id, reason, warp_out?)
+```
+
+#### Widget API
+
+```lua
+Net.is_player_in_widget(player_id)
+Net.message_player(player_id, message, mug_texture_path?, mug_animation_path?)
+Net.question_player(player_id, question, mug_texture_path?, mug_animation_path?)
+Net.quiz_player(player_id, option_a?, option_b?, option_c?, mug_texture_path?, mug_animation_path?)
+Net.open_board(player_id, board_name, color, posts) -- color = { r: 0-255, g: 0-255, b: 0-255 }, posts = { id: string, read: bool?, title: string?, author: string? }[]
+Net.prepend_posts(player_id, posts, post_id?)
+Net.append_posts(player_id, posts, post_id?)
+Net.remove_post(player_id, post_id)
 ```
 
 #### Asset API

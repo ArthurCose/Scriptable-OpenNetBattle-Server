@@ -55,8 +55,8 @@ function handle_actor_interaction(player_id, other_id)
   bot._handle_actor_interaction(player_id, other_id)
 end
 
-function handle_player_response(player_id, response)
-  bot._handle_player_response(player_id, response)
+function handle_textbox_response(player_id, response)
+  bot._handle_textbox_response(player_id, response)
 end
 
 function handle_player_disconnect(player_id)
