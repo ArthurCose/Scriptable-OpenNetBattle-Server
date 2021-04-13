@@ -16,7 +16,7 @@ impl<T> WidgetTracker<T> {
   }
 
   pub fn is_empty(&self) -> bool {
-    self.textbox_queue.is_empty() && self.bbs_queue.is_empty()
+    self.textbox_queue.is_empty() && self.active_bbs.is_empty() && self.bbs_queue.is_empty()
   }
 
   pub fn track_textbox(&mut self, owner: T) {
