@@ -22,7 +22,7 @@ pub fn count_fit_posts(available_room: usize, start_index: usize, posts: &[BBSPo
     let post_size = calc_size(post) as isize;
 
     if available_room - post_size < 0 {
-      return i - start_index;
+      return i;
     }
 
     available_room -= post_size;
