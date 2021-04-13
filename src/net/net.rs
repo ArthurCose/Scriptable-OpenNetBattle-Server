@@ -655,6 +655,7 @@ impl Net {
         count_fit_posts(self.max_payload_size - packet_size, start_index, &posts);
 
       if fit_post_count == 0 {
+        println!("open_board failed! (Contains a post too large to send)");
         break;
       }
 
@@ -717,6 +718,7 @@ impl Net {
         count_fit_posts(self.max_payload_size - packet_size, start_index, &posts);
 
       if fit_post_count == 0 {
+        println!("prepend_posts failed! (Contains a post too large to send)");
         break;
       }
 
@@ -763,6 +765,7 @@ impl Net {
         count_fit_posts(self.max_payload_size - packet_size, start_index, &posts);
 
       if fit_post_count == 0 {
+        println!("append_posts failed! (Contains a post too large to send)");
         break;
       }
 
