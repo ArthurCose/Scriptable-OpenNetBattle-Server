@@ -201,7 +201,7 @@ function handle_player_request(player_id, data) -- player requests connection to
 function handle_player_connect(player_id) -- player connects to the server (transfers will change initial area)
 function handle_player_join(player_id) -- player enters their first area after connecting
 function handle_player_transfer(player_id) -- player changes area
-function handle_object_interaction(player_id, object)
+function handle_object_interaction(player_id, object_id)
 function handle_actor_interaction(player_id, actor_id) -- actor_id is a player or bot id
 function handle_tile_interaction(player_id, x, y, z)
 function handle_textbox_response(player_id, response) -- response is an index
