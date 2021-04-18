@@ -78,7 +78,7 @@ impl LuaPluginInterface {
   ) -> rlua::Result<()> {
     let net_ref = RefCell::new(net_ref);
 
-    let lua_env = Lua::new();
+    let lua_env = unsafe { Lua::new_with_debug() };
 
     lua_env.context(|lua_ctx| {
       let widget_tracker_ref = RefCell::new(&mut self.widget_trackers);
