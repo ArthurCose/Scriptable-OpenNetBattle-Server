@@ -389,13 +389,12 @@ Note: paths in this section use system paths and not asset paths.
 
 ```Lua
 -- promise objects returned by most async functions
-promise.is_ready()
-promise.is_pending()
-promise.get_value() -- future get_value() calls will return nil
+promise.and_then(function(value))
 
 Async.await(promise) -- value -- for coroutines
 Async.await_all(promises) -- values[] -- for coroutines
 Async.promisify(coroutine) -- promise
+Async.create_promise(function(resolve)) -- promise -- resolve = function(value)
 Async.request(url, { method?, headers?, body? }?) -- promise, value = { status, headers, body }?
 Async.download(path, url, { method?, headers?, body? }?) -- promise, value = bool
 Async.read_file(path) -- promise, value = string

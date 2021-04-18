@@ -101,9 +101,7 @@ impl LuaPluginInterface {
         Ok(())
       })?;
 
-      if globals.get::<_, rlua::Function>("tick").is_ok() {
-        self.tick_listeners.push(script_dir.clone());
-      }
+      self.tick_listeners.push(script_dir.clone());
 
       if globals
         .get::<_, rlua::Function>("handle_player_request")
@@ -206,6 +204,7 @@ impl PluginInterface for LuaPluginInterface {
   }
 
   fn tick(&mut self, net: &mut Net, delta_time: f32) {
+    // async_api.lua
     handle_event(
       &mut self.scripts,
       &self.tick_listeners,
@@ -213,7 +212,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "tick",
+      "_server_internal_tick",
       |_, callback| callback.call(delta_time),
     );
   }
