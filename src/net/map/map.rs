@@ -3,6 +3,7 @@ use super::map_layer::MapLayer;
 use super::map_object::{MapObject, MapObjectData, MapObjectSpecification};
 use super::Tile;
 use crate::helpers::unwrap_and_parse_or_default;
+use std::collections::HashMap;
 
 #[derive(Clone)]
 pub struct TilesetInfo {
@@ -19,6 +20,7 @@ pub struct Map {
   background_vel_x: f32,
   background_vel_y: f32,
   song_path: String,
+  custom_properties: HashMap<String, String>,
   width: usize,
   height: usize,
   tile_width: u32,
@@ -47,6 +49,7 @@ impl Map {
       background_vel_x: 0.0,
       background_vel_y: 0.0,
       song_path: String::new(),
+      custom_properties: HashMap::new(),
       width: 0,
       height: 0,
       tile_width: 0,
@@ -87,30 +90,7 @@ impl Map {
             let name = property.attr("name").unwrap_or_default();
             let value = property.attr("value").unwrap_or_default().to_string();
 
-            match name {
-              "Name" => {
-                map.name = value;
-              }
-              "Background" => {
-                map.background_name = value;
-              }
-              "Background Texture" => {
-                map.background_texture_path = value;
-              }
-              "Background Animation" => {
-                map.background_animation_path = value;
-              }
-              "Background Vel X" => {
-                map.background_vel_x = value.parse().unwrap_or_default();
-              }
-              "Background Vel Y" => {
-                map.background_vel_y = value.parse().unwrap_or_default();
-              }
-              "Song" => {
-                map.song_path = value;
-              }
-              _ => {}
-            }
+            map.set_custom_property(name, value);
           }
         }
         "tileset" => {
@@ -281,6 +261,45 @@ impl Map {
     self.background_vel_x = x;
     self.background_vel_y = y;
     self.mark_dirty();
+  }
+
+  pub fn get_custom_properties(&self) -> &HashMap<String, String> {
+    &self.custom_properties
+  }
+
+  pub fn get_custom_property(&self, name: &str) -> Option<&String> {
+    self.custom_properties.get(name)
+  }
+
+  pub fn set_custom_property(&mut self, name: &str, value: String) {
+    self
+      .custom_properties
+      .insert(name.to_string(), value.clone());
+
+    match name {
+      "Name" => {
+        self.name = value;
+      }
+      "Background" => {
+        self.background_name = value;
+      }
+      "Background Texture" => {
+        self.background_texture_path = value;
+      }
+      "Background Animation" => {
+        self.background_animation_path = value;
+      }
+      "Background Vel X" => {
+        self.background_vel_x = value.parse().unwrap_or_default();
+      }
+      "Background Vel Y" => {
+        self.background_vel_y = value.parse().unwrap_or_default();
+      }
+      "Song" => {
+        self.song_path = value;
+      }
+      _ => {}
+    }
   }
 
   pub fn get_width(&self) -> usize {

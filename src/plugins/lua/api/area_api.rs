@@ -111,6 +111,56 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
     }
   });
 
+  lua_api.add_dynamic_function(
+    "Net",
+    "get_area_custom_properties",
+    |api_ctx, lua_ctx, params| {
+      let area_id: String = lua_ctx.unpack_multi(params)?;
+      let net = api_ctx.net_ref.borrow();
+
+      if let Some(area) = net.get_area(&area_id) {
+        lua_ctx.pack_multi(area.get_map().get_custom_properties().clone())
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    },
+  );
+
+  lua_api.add_dynamic_function(
+    "Net",
+    "get_area_custom_properties",
+    |api_ctx, lua_ctx, params| {
+      let (area_id, name): (String, String) = lua_ctx.unpack_multi(params)?;
+      let net = api_ctx.net_ref.borrow();
+
+      if let Some(area) = net.get_area(&area_id) {
+        let map = area.get_map();
+        let value = map.get_custom_property(&name).cloned();
+
+        lua_ctx.pack_multi(value)
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    },
+  );
+
+  lua_api.add_dynamic_function(
+    "Net",
+    "set_area_custom_property",
+    |api_ctx, lua_ctx, params| {
+      let (area_id, name, value): (String, String, String) = lua_ctx.unpack_multi(params)?;
+      let mut net = api_ctx.net_ref.borrow_mut();
+
+      if let Some(area) = net.get_area_mut(&area_id) {
+        area.get_map_mut().set_custom_property(&name, value);
+
+        lua_ctx.pack_multi(())
+      } else {
+        Err(create_area_error(&area_id))
+      }
+    },
+  );
+
   lua_api.add_dynamic_function("Net", "get_area_name", |api_ctx, lua_ctx, params| {
     let area_id: String = lua_ctx.unpack_multi(params)?;
     let net = api_ctx.net_ref.borrow();
