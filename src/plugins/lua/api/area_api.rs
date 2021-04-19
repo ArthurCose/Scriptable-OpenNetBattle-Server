@@ -128,7 +128,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
   lua_api.add_dynamic_function(
     "Net",
-    "get_area_custom_properties",
+    "get_area_custom_property",
     |api_ctx, lua_ctx, params| {
       let (area_id, name): (String, String) = lua_ctx.unpack_multi(params)?;
       let net = api_ctx.net_ref.borrow();
