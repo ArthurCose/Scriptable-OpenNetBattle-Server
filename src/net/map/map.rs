@@ -300,6 +300,8 @@ impl Map {
       }
       _ => {}
     }
+
+    self.mark_dirty();
   }
 
   pub fn get_width(&self) -> usize {
