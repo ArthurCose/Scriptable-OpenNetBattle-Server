@@ -119,6 +119,8 @@ impl MapObject {
   }
 
   pub fn render(&mut self, scale_x: f32, scale_y: f32) -> String {
+    use super::render_helpers::render_custom_properties;
+
     let name_string = if !self.name.is_empty() {
       format!(" name=\"{}\"", self.name)
     } else {
@@ -143,18 +145,7 @@ impl MapObject {
       String::default()
     };
 
-    let properties_string = if self.custom_properties.is_empty() {
-      String::default()
-    } else {
-      let mut property_strings: Vec<String> = vec![];
-
-      for (name, value) in &self.custom_properties {
-        let property_string = format!("<property name=\"{}\" value=\"{}\"/>", name, value);
-        property_strings.push(property_string);
-      }
-
-      format!("<properties>{}</properties>", property_strings.join(""))
-    };
+    let properties_string = render_custom_properties(&self.custom_properties);
 
     let mut data_string = String::new();
     let mut gid_string = String::new();

@@ -213,6 +213,10 @@ impl Map {
   }
 
   pub fn set_name(&mut self, name: String) {
+    self
+      .custom_properties
+      .insert(String::from("Name"), name.clone());
+
     self.name = name;
     self.mark_dirty();
   }
@@ -222,6 +226,10 @@ impl Map {
   }
 
   pub fn set_song_path(&mut self, path: String) {
+    self
+      .custom_properties
+      .insert(String::from("Song"), path.clone());
+
     self.song_path = path;
     self.mark_dirty();
   }
@@ -231,6 +239,10 @@ impl Map {
   }
 
   pub fn set_background_name(&mut self, name: String) {
+    self
+      .custom_properties
+      .insert(String::from("Background"), name.clone());
+
     self.background_name = name;
     self.mark_dirty();
   }
@@ -240,6 +252,10 @@ impl Map {
   }
 
   pub fn set_custom_background_texture_path(&mut self, path: String) {
+    self
+      .custom_properties
+      .insert(String::from("Background Texture"), path.clone());
+
     self.background_texture_path = path;
     self.mark_dirty();
   }
@@ -249,6 +265,10 @@ impl Map {
   }
 
   pub fn set_custom_background_animation_path(&mut self, path: String) {
+    self
+      .custom_properties
+      .insert(String::from("Background Animation"), path.clone());
+
     self.background_animation_path = path;
     self.mark_dirty();
   }
@@ -258,6 +278,13 @@ impl Map {
   }
 
   pub fn set_custom_background_velocity(&mut self, x: f32, y: f32) {
+    self
+      .custom_properties
+      .insert(String::from("Background Vel X"), x.to_string());
+    self
+      .custom_properties
+      .insert(String::from("Background Vel Y"), x.to_string());
+
     self.background_vel_x = x;
     self.background_vel_y = y;
     self.mark_dirty();
@@ -478,6 +505,8 @@ impl Map {
   }
 
   pub fn render(&mut self) -> String {
+    use super::render_helpers::render_custom_properties;
+
     if !self.cached {
       let mut text = vec![format!(
         "\
@@ -486,15 +515,7 @@ impl Map {
                renderorder=\"right-down\" compressionlevel=\"0\" \
                width=\"{}\" height=\"{}\" tilewidth=\"{}\" tileheight=\"{}\" \
                infinite=\"0\" nextlayerid=\"{}\" nextobjectid=\"{}\">\
-            <properties>\
-              <property name=\"Name\" value=\"{}\"/>\
-              <property name=\"Background\" value=\"{}\"/>\
-              <property name=\"Background Texture\" value=\"{}\"/>\
-              <property name=\"Background Animation\" value=\"{}\"/>\
-              <property name=\"Background Vel X\" value=\"{}\"/>\
-              <property name=\"Background Vel Y\" value=\"{}\"/>\
-              <property name=\"Song\" value=\"{}\"/>\
-            </properties>\
+            {}
         ",
         self.width,
         self.height,
@@ -502,13 +523,7 @@ impl Map {
         self.tile_height,
         self.next_layer_id,
         self.next_object_id,
-        self.name,
-        self.background_name,
-        self.background_texture_path,
-        self.background_animation_path,
-        self.background_vel_x,
-        self.background_vel_y,
-        self.song_path
+        render_custom_properties(&self.custom_properties)
       )];
 
       for tileset in &self.tilesets {

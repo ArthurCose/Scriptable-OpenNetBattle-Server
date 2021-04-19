@@ -2,6 +2,7 @@
 mod map;
 mod map_layer;
 mod map_object;
+mod render_helpers;
 mod tile;
 
 pub use map::Map;
