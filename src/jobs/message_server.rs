@@ -18,8 +18,7 @@ pub fn message_server(
 
     let mut data = data;
 
-    let mut packet = Vec::new();
-    packet.push(0); // unreliable
+    let mut packet = vec![0]; // unreliable
     write_u16(&mut packet, 2);
     packet.append(&mut data);
 

@@ -1,4 +1,4 @@
-use super::api::{APIContext, LuaAPI};
+use super::api::{ApiContext, LuaApi};
 use crate::jobs::JobPromiseManager;
 use crate::net::{Net, WidgetTracker};
 use crate::plugins::PluginInterface;
@@ -23,7 +23,7 @@ pub struct LuaPluginInterface {
   server_message_listeners: Vec<std::path::PathBuf>,
   widget_trackers: HashMap<String, WidgetTracker<std::path::PathBuf>>,
   promise_manager: JobPromiseManager,
-  lua_api: LuaAPI,
+  lua_api: LuaApi,
 }
 
 impl LuaPluginInterface {
@@ -45,7 +45,7 @@ impl LuaPluginInterface {
       server_message_listeners: Vec::new(),
       widget_trackers: HashMap::new(),
       promise_manager: JobPromiseManager::new(),
-      lua_api: LuaAPI::new(),
+      lua_api: LuaApi::new(),
     }
   }
 
@@ -84,7 +84,7 @@ impl LuaPluginInterface {
       let widget_tracker_ref = RefCell::new(&mut self.widget_trackers);
       let promise_manager_ref = RefCell::new(&mut self.promise_manager);
 
-      let api_ctx = APIContext {
+      let api_ctx = ApiContext {
         script_dir: &script_dir,
         net_ref: &net_ref,
         widget_tracker_ref: &widget_tracker_ref,
@@ -536,7 +536,7 @@ fn handle_event<F>(
   event_listeners: &[std::path::PathBuf],
   widget_tracker: &mut HashMap<String, WidgetTracker<std::path::PathBuf>>,
   promise_manager: &mut JobPromiseManager,
-  lua_api: &mut LuaAPI,
+  lua_api: &mut LuaApi,
   net: &mut Net,
   event_fn_name: &str,
   fn_caller: F,
@@ -555,7 +555,7 @@ fn handle_event<F>(
       // grab the lua_env (should always be true)
       if let Some(lua_env) = scripts.get_mut(script_dir) {
         // enter the lua context
-        let api_ctx = APIContext {
+        let api_ctx = ApiContext {
           script_dir,
           net_ref: &net_ref,
           widget_tracker_ref: &widget_tracker_ref,

@@ -5,7 +5,7 @@ where
   option.unwrap_or_default().parse().unwrap_or_default()
 }
 
-pub fn normalize_path(path: &std::path::PathBuf) -> std::path::PathBuf {
+pub fn normalize_path(path: &std::path::Path) -> std::path::PathBuf {
   let mut normalized_path: std::path::PathBuf = std::path::PathBuf::new();
 
   for component in path.components() {

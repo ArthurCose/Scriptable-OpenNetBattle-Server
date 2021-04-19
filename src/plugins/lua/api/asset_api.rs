@@ -1,7 +1,7 @@
-use super::LuaAPI;
+use super::LuaApi;
 use crate::net::{Asset, AssetData};
 
-pub fn inject_dynamic(lua_api: &mut LuaAPI) {
+pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Net", "update_asset", |api_ctx, lua_ctx, params| {
     let (path, data): (String, rlua::String) = lua_ctx.unpack_multi(params)?;
     use crate::net::asset::{resolve_asset_data, resolve_dependencies};

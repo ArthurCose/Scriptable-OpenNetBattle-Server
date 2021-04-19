@@ -1,20 +1,18 @@
-use super::LuaAPI;
+use super::LuaApi;
 use crate::jobs::{JobPromise, JobPromiseManager, PromiseValue};
 use std::cell::RefCell;
 
-pub fn inject_static(lua_api: &mut LuaAPI) {
+pub fn inject_static(lua_api: &mut LuaApi) {
   lua_api.add_global_table("Async");
 
   lua_api.add_static_injector(|lua_ctx| {
-    lua_ctx
-      .load(include_str!("async_api.lua"))
-      .exec()?;
+    lua_ctx.load(include_str!("async_api.lua")).exec()?;
 
     Ok(())
   });
 }
 
-pub fn inject_dynamic(lua_api: &mut LuaAPI) {
+pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function(
     "Async",
     "_is_promise_pending",

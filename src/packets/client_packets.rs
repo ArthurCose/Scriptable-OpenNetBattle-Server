@@ -64,7 +64,7 @@ pub enum ClientPacket {
 }
 
 pub fn parse_client_packet(buf: &[u8]) -> Option<(PacketHeaders, ClientPacket)> {
-  let mut work_buf = &buf[..];
+  let mut work_buf = buf;
   Some((parse_headers(&mut work_buf)?, parse_body(&mut work_buf)?))
 }
 

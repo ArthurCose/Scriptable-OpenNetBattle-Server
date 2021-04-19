@@ -2,7 +2,7 @@ use super::boot::Boot;
 use super::client::Client;
 use super::map::Map;
 use super::server::ServerConfig;
-use super::{Actor, Area, Asset, AssetData, BBSPost, Direction};
+use super::{Actor, Area, Asset, AssetData, BbsPost, Direction};
 use crate::packets::{create_asset_stream, Reliability, ServerPacket};
 use crate::threads::worker_threads::{Job, JobGiver};
 use std::collections::HashMap;
@@ -626,7 +626,7 @@ impl Net {
     player_id: &str,
     name: String,
     color: (u8, u8, u8),
-    posts: Vec<BBSPost>,
+    posts: Vec<BbsPost>,
   ) {
     use super::bbs_post::count_fit_posts;
 
@@ -692,7 +692,7 @@ impl Net {
     }
   }
 
-  pub fn prepend_posts(&mut self, player_id: &str, reference: Option<String>, posts: Vec<BBSPost>) {
+  pub fn prepend_posts(&mut self, player_id: &str, reference: Option<String>, posts: Vec<BbsPost>) {
     use super::bbs_post::count_fit_posts;
 
     let client = if let Some(client) = self.clients.get_mut(player_id) {
@@ -757,7 +757,7 @@ impl Net {
     }
   }
 
-  pub fn append_posts(&mut self, player_id: &str, reference: Option<String>, posts: Vec<BBSPost>) {
+  pub fn append_posts(&mut self, player_id: &str, reference: Option<String>, posts: Vec<BbsPost>) {
     use super::bbs_post::count_fit_posts;
 
     let client = if let Some(client) = self.clients.get_mut(player_id) {

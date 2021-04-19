@@ -2,7 +2,7 @@
 
 use super::bytes::*;
 use super::{VERSION_ID, VERSION_ITERATION};
-use crate::net::{Asset, AssetData, BBSPost, Direction};
+use crate::net::{Asset, AssetData, BbsPost, Direction};
 
 #[derive(Debug)]
 pub enum ServerPacket<'a> {
@@ -105,17 +105,17 @@ pub enum ServerPacket<'a> {
     current_depth: u8,
     name: String,
     color: (u8, u8, u8),
-    posts: &'a [BBSPost],
+    posts: &'a [BbsPost],
   },
   PrependPosts {
     current_depth: u8,
     reference: Option<String>,
-    posts: &'a [BBSPost],
+    posts: &'a [BbsPost],
   },
   AppendPosts {
     current_depth: u8,
     reference: Option<String>,
-    posts: &'a [BBSPost],
+    posts: &'a [BbsPost],
   },
   RemovePost {
     current_depth: u8,
@@ -501,12 +501,10 @@ pub fn create_asset_stream<'a>(
   // reliability type + id + packet type + data size
   const HEADER_SIZE: usize = 1 + 8 + 2 + 2 + 16;
 
-  let mut packets = Vec::new();
-
-  packets.push(ServerPacket::AssetStreamStart {
+  let mut packets = vec![ServerPacket::AssetStreamStart {
     name: name.to_string(),
     asset,
-  });
+  }];
 
   let mut bytes = match &asset.data {
     AssetData::Text(data) => data.as_bytes(),

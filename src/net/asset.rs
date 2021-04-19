@@ -96,7 +96,7 @@ pub(super) fn load_asset(path: std::path::PathBuf) -> Asset {
   }
 }
 
-pub fn resolve_asset_data(path: &std::path::PathBuf, data: &[u8]) -> AssetData {
+pub fn resolve_asset_data(path: &std::path::Path, data: &[u8]) -> AssetData {
   let extension = path
     .extension()
     .unwrap_or_default()
@@ -120,7 +120,7 @@ pub fn resolve_asset_data(path: &std::path::PathBuf, data: &[u8]) -> AssetData {
   }
 }
 
-pub(super) fn translate_tsx(path: &std::path::PathBuf, data: &str) -> Option<String> {
+pub(super) fn translate_tsx(path: &std::path::Path, data: &str) -> Option<String> {
   use crate::helpers::normalize_path;
 
   let root_path = std::path::Path::new("/server");
@@ -153,7 +153,7 @@ pub(super) fn translate_tsx(path: &std::path::PathBuf, data: &str) -> Option<Str
   Some(String::from_utf8_lossy(&output[..]).into_owned())
 }
 
-pub fn resolve_dependencies(path: &std::path::PathBuf, asset_data: &AssetData) -> Vec<String> {
+pub fn resolve_dependencies(path: &std::path::Path, asset_data: &AssetData) -> Vec<String> {
   let extension = path
     .extension()
     .unwrap_or_default()

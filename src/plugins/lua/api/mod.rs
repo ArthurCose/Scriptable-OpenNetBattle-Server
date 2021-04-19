@@ -12,7 +12,7 @@ use std::cell::RefCell;
 use crate::jobs::JobPromiseManager;
 use std::collections::HashMap;
 
-pub struct APIContext<'lua_scope, 'a> {
+pub struct ApiContext<'lua_scope, 'a> {
   pub script_dir: &'lua_scope std::path::PathBuf,
   pub net_ref: &'lua_scope RefCell<&'a mut Net>,
   pub widget_tracker_ref:
@@ -21,21 +21,21 @@ pub struct APIContext<'lua_scope, 'a> {
 }
 
 type RustLuaFunction = dyn for<'lua> FnMut(
-  &APIContext,
+  &ApiContext,
   rlua::Context<'lua>,
   rlua::MultiValue<'lua>,
 ) -> rlua::Result<rlua::MultiValue<'lua>>;
 
-pub struct LuaAPI {
+pub struct LuaApi {
   static_function_injectors: Vec<Box<dyn Fn(&rlua::Context) -> rlua::Result<()>>>,
   dynamic_function_table_and_name_pairs: Vec<(String, String)>,
   dynamic_functions: HashMap<String, Box<RustLuaFunction>>,
   table_names: Vec<String>,
 }
 
-impl LuaAPI {
-  pub fn new() -> LuaAPI {
-    let mut lua_api = LuaAPI {
+impl LuaApi {
+  pub fn new() -> LuaApi {
+    let mut lua_api = LuaApi {
       static_function_injectors: Vec::new(),
       dynamic_function_table_and_name_pairs: Vec::new(),
       dynamic_functions: HashMap::new(),
@@ -70,7 +70,7 @@ impl LuaAPI {
   where
     F: 'static
       + for<'lua> Fn(
-        &APIContext,
+        &ApiContext,
         rlua::Context<'lua>,
         rlua::MultiValue<'lua>,
       ) -> rlua::Result<rlua::MultiValue<'lua>>,
@@ -122,7 +122,7 @@ impl LuaAPI {
   pub fn inject_dynamic<'lua, F>(
     &mut self,
     lua_ctx: rlua::Context<'lua>,
-    api_ctx: APIContext,
+    api_ctx: ApiContext,
     wrapped_fn: F,
   ) -> rlua::Result<()>
   where

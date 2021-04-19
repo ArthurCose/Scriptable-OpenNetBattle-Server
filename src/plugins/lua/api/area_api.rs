@@ -1,10 +1,10 @@
 use super::lua_errors::create_area_error;
-use super::LuaAPI;
+use super::LuaApi;
 use crate::net::map::{Map, Tile};
 use crate::net::Direction;
 
 #[allow(clippy::type_complexity)]
-pub fn inject_dynamic(lua_api: &mut LuaAPI) {
+pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Net", "list_areas", |api_ctx, lua_ctx, _| {
     let net = api_ctx.net_ref.borrow();
 

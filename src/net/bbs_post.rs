@@ -1,12 +1,12 @@
 #[derive(Debug)]
-pub struct BBSPost {
+pub struct BbsPost {
   pub id: String,
   pub read: bool,
   pub title: String,
   pub author: String,
 }
 
-fn calc_size(post: &BBSPost) -> usize {
+fn calc_size(post: &BbsPost) -> usize {
   let id_size = post.id.len() + 1;
   let read_size = 1;
   let title_size = post.title.len() + 1;
@@ -15,7 +15,7 @@ fn calc_size(post: &BBSPost) -> usize {
   id_size + read_size + title_size + author_size
 }
 
-pub fn count_fit_posts(available_room: usize, start_index: usize, posts: &[BBSPost]) -> usize {
+pub fn count_fit_posts(available_room: usize, start_index: usize, posts: &[BbsPost]) -> usize {
   let mut available_room = available_room as isize;
 
   for (i, post) in posts[start_index..].iter().enumerate() {

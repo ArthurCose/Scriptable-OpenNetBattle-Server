@@ -1,8 +1,8 @@
 use super::lua_errors::{create_area_error, create_bot_error};
-use super::LuaAPI;
+use super::LuaApi;
 use crate::net::{Actor, Direction};
 
-pub fn inject_dynamic(lua_api: &mut LuaAPI) {
+pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Net", "list_bots", |api_ctx, lua_ctx, params| {
     let area_id: String = lua_ctx.unpack_multi(params)?;
     let mut net = api_ctx.net_ref.borrow_mut();

@@ -16,7 +16,7 @@ mod widget_tracker;
 pub use actor::Actor;
 pub use area::Area;
 pub use asset::*;
-pub use bbs_post::BBSPost;
+pub use bbs_post::BbsPost;
 pub use direction::Direction;
 pub use net::Net;
 pub use server::*;

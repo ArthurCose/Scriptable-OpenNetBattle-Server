@@ -1,9 +1,9 @@
 use super::lua_errors::{create_area_error, create_player_error};
-use super::LuaAPI;
+use super::LuaApi;
 use crate::net::Direction;
 
 #[allow(clippy::type_complexity)]
-pub fn inject_dynamic(lua_api: &mut LuaAPI) {
+pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Net", "list_players", |api_ctx, lua_ctx, params| {
     let area_id: String = lua_ctx.unpack_multi(params)?;
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -352,7 +352,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
   });
 
   lua_api.add_dynamic_function("Net", "open_board", |api_ctx, lua_ctx, params| {
-    use crate::net::BBSPost;
+    use crate::net::BbsPost;
 
     let (id, name, color_table, post_tables): (String, String, rlua::Table, Vec<rlua::Table>) =
       lua_ctx.unpack_multi(params)?;
@@ -376,7 +376,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
         let title: Option<String> = post_table.get("title")?;
         let author: Option<String> = post_table.get("author")?;
 
-        posts.push(BBSPost {
+        posts.push(BbsPost {
           id: post_table.get("id")?,
           read: read.unwrap_or_default(),
           title: title.unwrap_or_default(),
@@ -391,7 +391,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
   });
 
   lua_api.add_dynamic_function("Net", "prepend_posts", |api_ctx, lua_ctx, params| {
-    use crate::net::BBSPost;
+    use crate::net::BbsPost;
 
     let (id, post_tables, reference): (String, Vec<rlua::Table>, Option<String>) =
       lua_ctx.unpack_multi(params)?;
@@ -406,7 +406,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
       let title: Option<String> = post_table.get("title")?;
       let author: Option<String> = post_table.get("author")?;
 
-      posts.push(BBSPost {
+      posts.push(BbsPost {
         id: post_table.get("id")?,
         read: read.unwrap_or_default(),
         title: title.unwrap_or_default(),
@@ -420,7 +420,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
   });
 
   lua_api.add_dynamic_function("Net", "append_posts", |api_ctx, lua_ctx, params| {
-    use crate::net::BBSPost;
+    use crate::net::BbsPost;
 
     let (id, post_tables, reference): (String, Vec<rlua::Table>, Option<String>) =
       lua_ctx.unpack_multi(params)?;
@@ -435,7 +435,7 @@ pub fn inject_dynamic(lua_api: &mut LuaAPI) {
       let title: Option<String> = post_table.get("title")?;
       let author: Option<String> = post_table.get("author")?;
 
-      posts.push(BBSPost {
+      posts.push(BbsPost {
         id: post_table.get("id")?,
         read: read.unwrap_or_default(),
         title: title.unwrap_or_default(),
