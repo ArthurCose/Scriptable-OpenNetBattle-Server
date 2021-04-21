@@ -106,7 +106,6 @@ impl LuaPluginInterface {
 
         let final_path = &path_str[2..]; // chop off the ./
 
-        println!("{}", final_path);
         let require: rlua::Function = globals.get("require")?;
         require.call::<&str, ()>(final_path)?;
 
