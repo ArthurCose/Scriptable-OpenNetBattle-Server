@@ -13,7 +13,7 @@ use crate::jobs::JobPromiseManager;
 use std::collections::HashMap;
 
 pub struct ApiContext<'lua_scope, 'a> {
-  pub script_dir: &'lua_scope std::path::PathBuf,
+  pub script_path: &'lua_scope std::path::PathBuf,
   pub net_ref: &'lua_scope RefCell<&'a mut Net>,
   pub widget_tracker_ref:
     &'lua_scope RefCell<&'a mut HashMap<String, WidgetTracker<std::path::PathBuf>>>,

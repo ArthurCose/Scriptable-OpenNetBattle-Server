@@ -74,7 +74,11 @@ impl LuaPluginInterface {
     Ok(())
   }
 
-  fn load_script(&mut self, net_ref: &mut Net, script_dir: std::path::PathBuf) -> rlua::Result<()> {
+  fn load_script(
+    &mut self,
+    net_ref: &mut Net,
+    script_path: std::path::PathBuf,
+  ) -> rlua::Result<()> {
     let net_ref = RefCell::new(net_ref);
 
     let lua_env = unsafe { Lua::new_with_debug() };
@@ -84,7 +88,7 @@ impl LuaPluginInterface {
       let promise_manager_ref = RefCell::new(&mut self.promise_manager);
 
       let api_ctx = ApiContext {
-        script_dir: &script_dir,
+        script_path: &script_path,
         net_ref: &net_ref,
         widget_tracker_ref: &widget_tracker_ref,
         promise_manager_ref: &promise_manager_ref,
@@ -95,8 +99,8 @@ impl LuaPluginInterface {
       self.lua_api.inject_static(&lua_ctx)?;
 
       self.lua_api.inject_dynamic(lua_ctx, api_ctx, |_| {
-        let parent_path = script_dir.parent().unwrap_or(std::path::Path::new(""));
-        let stem = script_dir.file_stem().unwrap_or_default();
+        let parent_path = script_path.parent().unwrap_or(std::path::Path::new(""));
+        let stem = script_path.file_stem().unwrap_or_default();
         let path = parent_path.join(stem);
         let path_str = path.to_str().unwrap_or_default();
 
@@ -109,96 +113,98 @@ impl LuaPluginInterface {
         Ok(())
       })?;
 
-      self.tick_listeners.push(script_dir.clone());
+      self.tick_listeners.push(script_path.clone());
 
       if globals
         .get::<_, rlua::Function>("handle_player_request")
         .is_ok()
       {
-        self.player_request_listeners.push(script_dir.clone());
+        self.player_request_listeners.push(script_path.clone());
       }
 
       if globals
         .get::<_, rlua::Function>("handle_player_connect")
         .is_ok()
       {
-        self.player_connect_listeners.push(script_dir.clone());
+        self.player_connect_listeners.push(script_path.clone());
       }
 
       if globals
         .get::<_, rlua::Function>("handle_player_join")
         .is_ok()
       {
-        self.player_join_listeners.push(script_dir.clone());
+        self.player_join_listeners.push(script_path.clone());
       }
 
       if globals
         .get::<_, rlua::Function>("handle_player_transfer")
         .is_ok()
       {
-        self.player_transfer_listeners.push(script_dir.clone());
+        self.player_transfer_listeners.push(script_path.clone());
       }
 
       if globals
         .get::<_, rlua::Function>("handle_player_disconnect")
         .is_ok()
       {
-        self.player_disconnect_listeners.push(script_dir.clone());
+        self.player_disconnect_listeners.push(script_path.clone());
       }
 
       if globals
         .get::<_, rlua::Function>("handle_player_move")
         .is_ok()
       {
-        self.player_move_listeners.push(script_dir.clone());
+        self.player_move_listeners.push(script_path.clone());
       }
 
       if globals
         .get::<_, rlua::Function>("handle_player_avatar_change")
         .is_ok()
       {
-        self.player_avatar_change_listeners.push(script_dir.clone());
+        self
+          .player_avatar_change_listeners
+          .push(script_path.clone());
       }
 
       if globals
         .get::<_, rlua::Function>("handle_player_emote")
         .is_ok()
       {
-        self.player_emote_listeners.push(script_dir.clone());
+        self.player_emote_listeners.push(script_path.clone());
       }
 
       if globals
         .get::<_, rlua::Function>("handle_object_interaction")
         .is_ok()
       {
-        self.object_interaction_listeners.push(script_dir.clone());
+        self.object_interaction_listeners.push(script_path.clone());
       }
 
       if globals
         .get::<_, rlua::Function>("handle_actor_interaction")
         .is_ok()
       {
-        self.actor_interaction_listeners.push(script_dir.clone());
+        self.actor_interaction_listeners.push(script_path.clone());
       }
 
       if globals
         .get::<_, rlua::Function>("handle_tile_interaction")
         .is_ok()
       {
-        self.tile_interaction_listeners.push(script_dir.clone());
+        self.tile_interaction_listeners.push(script_path.clone());
       }
 
       if globals
         .get::<_, rlua::Function>("handle_server_message")
         .is_ok()
       {
-        self.server_message_listeners.push(script_dir.clone());
+        self.server_message_listeners.push(script_path.clone());
       }
 
       Ok(())
     })?;
 
-    self.scripts.insert(script_dir, lua_env);
+    self.scripts.insert(script_path, lua_env);
 
     Ok(())
   }
@@ -404,8 +410,8 @@ impl PluginInterface for LuaPluginInterface {
   fn handle_textbox_response(&mut self, net: &mut Net, player_id: &str, response: u8) {
     let tracker = self.widget_trackers.get_mut(player_id).unwrap();
 
-    let script_dir = if let Some(script_dir) = tracker.pop_textbox() {
-      script_dir
+    let script_path = if let Some(script_path) = tracker.pop_textbox() {
+      script_path
     } else {
       // protect against attackers
       return;
@@ -413,7 +419,7 @@ impl PluginInterface for LuaPluginInterface {
 
     handle_event(
       &mut self.scripts,
-      &[script_dir],
+      &[script_path],
       &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
@@ -428,8 +434,8 @@ impl PluginInterface for LuaPluginInterface {
 
     tracker.open_board();
 
-    let script_dir = if let Some(script_dir) = tracker.current_board() {
-      script_dir.clone()
+    let script_path = if let Some(script_path) = tracker.current_board() {
+      script_path.clone()
     } else {
       // protect against attackers
       return;
@@ -437,7 +443,7 @@ impl PluginInterface for LuaPluginInterface {
 
     handle_event(
       &mut self.scripts,
-      &[script_dir],
+      &[script_path],
       &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
@@ -450,8 +456,8 @@ impl PluginInterface for LuaPluginInterface {
   fn handle_board_close(&mut self, net: &mut Net, player_id: &str) {
     let tracker = self.widget_trackers.get_mut(player_id).unwrap();
 
-    let script_dir = if let Some(script_dir) = tracker.close_board() {
-      script_dir
+    let script_path = if let Some(script_path) = tracker.close_board() {
+      script_path
     } else {
       // protect against attackers
       return;
@@ -459,7 +465,7 @@ impl PluginInterface for LuaPluginInterface {
 
     handle_event(
       &mut self.scripts,
-      &[script_dir],
+      &[script_path],
       &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
@@ -472,8 +478,8 @@ impl PluginInterface for LuaPluginInterface {
   fn handle_post_request(&mut self, net: &mut Net, player_id: &str) {
     let tracker = self.widget_trackers.get_mut(player_id).unwrap();
 
-    let script_dir = if let Some(script_dir) = tracker.current_board() {
-      script_dir.clone()
+    let script_path = if let Some(script_path) = tracker.current_board() {
+      script_path.clone()
     } else {
       // protect against attackers
       return;
@@ -481,7 +487,7 @@ impl PluginInterface for LuaPluginInterface {
 
     handle_event(
       &mut self.scripts,
-      &[script_dir],
+      &[script_path],
       &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
@@ -494,8 +500,8 @@ impl PluginInterface for LuaPluginInterface {
   fn handle_post_selection(&mut self, net: &mut Net, player_id: &str, post_id: &str) {
     let tracker = self.widget_trackers.get_mut(player_id).unwrap();
 
-    let script_dir = if let Some(script_dir) = tracker.current_board() {
-      script_dir.clone()
+    let script_path = if let Some(script_path) = tracker.current_board() {
+      script_path.clone()
     } else {
       // protect against attackers
       return;
@@ -503,7 +509,7 @@ impl PluginInterface for LuaPluginInterface {
 
     handle_event(
       &mut self.scripts,
-      &[script_dir],
+      &[script_path],
       &mut self.widget_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
@@ -559,12 +565,12 @@ fn handle_event<F>(
     let promise_manager_ref = RefCell::new(promise_manager);
 
     // loop over scripts
-    for script_dir in event_listeners {
+    for script_path in event_listeners {
       // grab the lua_env (should always be true)
-      if let Some(lua_env) = scripts.get_mut(script_dir) {
+      if let Some(lua_env) = scripts.get_mut(script_path) {
         // enter the lua context
         let api_ctx = ApiContext {
-          script_dir,
+          script_path,
           net_ref: &net_ref,
           widget_tracker_ref: &widget_tracker_ref,
           promise_manager_ref: &promise_manager_ref,

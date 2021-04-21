@@ -286,7 +286,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let mut net = api_ctx.net_ref.borrow_mut();
 
     if let Some(tracker) = api_ctx.widget_tracker_ref.borrow_mut().get_mut(&id) {
-      tracker.track_textbox(api_ctx.script_dir.clone());
+      tracker.track_textbox(api_ctx.script_path.clone());
 
       net.message_player(
         &id,
@@ -310,7 +310,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let mut net = api_ctx.net_ref.borrow_mut();
 
     if let Some(tracker) = api_ctx.widget_tracker_ref.borrow_mut().get_mut(&id) {
-      tracker.track_textbox(api_ctx.script_dir.clone());
+      tracker.track_textbox(api_ctx.script_path.clone());
 
       net.question_player(
         &id,
@@ -336,7 +336,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let mut net = api_ctx.net_ref.borrow_mut();
 
     if let Some(tracker) = api_ctx.widget_tracker_ref.borrow_mut().get_mut(&id) {
-      tracker.track_textbox(api_ctx.script_dir.clone());
+      tracker.track_textbox(api_ctx.script_path.clone());
 
       net.quiz_player(
         &id,
@@ -360,7 +360,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let mut net = api_ctx.net_ref.borrow_mut();
 
     if let Some(tracker) = api_ctx.widget_tracker_ref.borrow_mut().get_mut(&id) {
-      tracker.track_board(api_ctx.script_dir.clone());
+      tracker.track_board(api_ctx.script_path.clone());
 
       let color = (
         color_table.get("r")?,
