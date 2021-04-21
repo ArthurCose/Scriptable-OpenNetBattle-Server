@@ -50,32 +50,31 @@ impl LuaPluginInterface {
   }
 
   fn load_scripts(&mut self, net_ref: &mut Net) -> std::io::Result<()> {
-    use std::fs::{read_dir, read_to_string};
+    use std::fs::read_dir;
 
     for wrapped_dir_entry in read_dir("./scripts")? {
       let dir_path = wrapped_dir_entry?.path();
-      let script_paths = [&dir_path, &dir_path.join("main.lua")];
+      let mut script_path = dir_path;
 
-      for script_path in &script_paths {
-        if let Ok(script) = read_to_string(script_path) {
-          if let Err(err) = self.load_script(net_ref, script_path.to_path_buf(), script) {
-            println!("Failed to load {}:\n{}", script_path.to_string_lossy(), err)
-          }
+      let extension = script_path.extension().unwrap_or_default().to_str();
 
-          break;
-        }
+      if !matches!(extension, Some("lua")) {
+        script_path = script_path.join("main.lua")
+      }
+
+      if !script_path.exists() {
+        continue;
+      }
+
+      if let Err(err) = self.load_script(net_ref, script_path.to_path_buf()) {
+        println!("{}", err)
       }
     }
 
     Ok(())
   }
 
-  fn load_script(
-    &mut self,
-    net_ref: &mut Net,
-    script_dir: std::path::PathBuf,
-    script: String,
-  ) -> rlua::Result<()> {
+  fn load_script(&mut self, net_ref: &mut Net, script_dir: std::path::PathBuf) -> rlua::Result<()> {
     let net_ref = RefCell::new(net_ref);
 
     let lua_env = unsafe { Lua::new_with_debug() };
@@ -95,8 +94,17 @@ impl LuaPluginInterface {
 
       self.lua_api.inject_static(&lua_ctx)?;
 
-      self.lua_api.inject_dynamic(lua_ctx, api_ctx, |lua_ctx| {
-        lua_ctx.load(&script).exec()?;
+      self.lua_api.inject_dynamic(lua_ctx, api_ctx, |_| {
+        let parent_path = script_dir.parent().unwrap_or(std::path::Path::new(""));
+        let stem = script_dir.file_stem().unwrap_or_default();
+        let path = parent_path.join(stem);
+        let path_str = path.to_str().unwrap_or_default();
+
+        let final_path = &path_str[2..]; // chop off the ./
+
+        println!("{}", final_path);
+        let require: rlua::Function = globals.get("require")?;
+        require.call::<&str, ()>(final_path)?;
 
         Ok(())
       })?;
