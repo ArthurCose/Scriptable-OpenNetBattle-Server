@@ -99,7 +99,9 @@ impl LuaPluginInterface {
       self.lua_api.inject_static(&lua_ctx)?;
 
       self.lua_api.inject_dynamic(lua_ctx, api_ctx, |_| {
-        let parent_path = script_path.parent().unwrap_or(std::path::Path::new(""));
+        let parent_path = script_path
+          .parent()
+          .unwrap_or_else(|| std::path::Path::new(""));
         let stem = script_path.file_stem().unwrap_or_default();
         let path = parent_path.join(stem);
         let path_str = path.to_str().unwrap_or_default();
