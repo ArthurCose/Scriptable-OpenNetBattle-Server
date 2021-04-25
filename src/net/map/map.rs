@@ -40,7 +40,7 @@ pub struct Map {
 }
 
 impl Map {
-  pub fn from(text: String) -> Map {
+  pub fn from(text: &str) -> Map {
     let mut map = Map {
       name: String::new(),
       background_name: String::new(),

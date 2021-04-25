@@ -4,21 +4,26 @@ use crate::net::{Actor, Direction};
 
 pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Net", "list_bots", |api_ctx, lua_ctx, params| {
-    let area_id: String = lua_ctx.unpack_multi(params)?;
+    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id_str = area_id.to_str()?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    if let Some(area) = net.get_area_mut(&area_id) {
-      let connected_bots = area.get_connected_bots();
-      let result: Vec<String> = connected_bots.to_vec();
+    if let Some(area) = net.get_area_mut(area_id_str) {
+      let connected_bots_iter = area.get_connected_bots().iter();
 
-      lua_ctx.pack_multi(result)
+      let result: rlua::Result<Vec<rlua::String>> = connected_bots_iter
+        .map(|bot_id| lua_ctx.create_string(&bot_id))
+        .collect();
+
+      lua_ctx.pack_multi(result?)
     } else {
-      Err(create_area_error(&area_id))
+      Err(create_area_error(area_id_str))
     }
   });
 
   lua_api.add_dynamic_function("Net", "create_bot", |api_ctx, lua_ctx, params| {
-    let (id, table): (String, rlua::Table) = lua_ctx.unpack_multi(params)?;
+    let (bot_id, table): (String, rlua::Table) = lua_ctx.unpack_multi(params)?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
@@ -44,7 +49,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
         .unwrap_or(spawn_direction);
 
       let bot = Actor {
-        id,
+        id: bot_id,
         name: name.unwrap_or_default(),
         area_id,
         texture_path: texture_path.unwrap_or_default(),
@@ -62,84 +67,102 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
       lua_ctx.pack_multi(())
     } else {
-      Err(create_area_error(&id))
+      Err(create_area_error(&area_id))
     }
   });
 
   lua_api.add_dynamic_function("Net", "is_bot", |api_ctx, lua_ctx, params| {
-    let id: String = lua_ctx.unpack_multi(params)?;
+    let bot_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let bot_id_str = bot_id.to_str()?;
+
     let net = api_ctx.net_ref.borrow();
 
-    lua_ctx.pack_multi(net.get_bot(&id).is_some())
+    let bot_exists = net.get_bot(bot_id_str).is_some();
+
+    lua_ctx.pack_multi(bot_exists)
   });
 
   lua_api.add_dynamic_function("Net", "remove_bot", |api_ctx, lua_ctx, params| {
-    let id: String = lua_ctx.unpack_multi(params)?;
+    let bot_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let bot_id_str = bot_id.to_str()?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.remove_bot(&id);
+    net.remove_bot(bot_id_str);
 
     lua_ctx.pack_multi(())
   });
 
   lua_api.add_dynamic_function("Net", "get_bot_area", |api_ctx, lua_ctx, params| {
-    let id: String = lua_ctx.unpack_multi(params)?;
+    let bot_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let bot_id_str = bot_id.to_str()?;
+
     let net = api_ctx.net_ref.borrow_mut();
 
-    if let Some(bot) = net.get_bot(&id) {
+    if let Some(bot) = net.get_bot(bot_id_str) {
       lua_ctx.pack_multi(bot.area_id.as_str())
     } else {
-      Err(create_bot_error(&id))
+      Err(create_bot_error(bot_id_str))
     }
   });
 
   lua_api.add_dynamic_function("Net", "get_bot_name", |api_ctx, lua_ctx, params| {
-    let id: String = lua_ctx.unpack_multi(params)?;
+    let bot_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let bot_id_str = bot_id.to_str()?;
+
     let net = api_ctx.net_ref.borrow_mut();
 
-    if let Some(bot) = net.get_bot(&id) {
+    if let Some(bot) = net.get_bot(bot_id_str) {
       lua_ctx.pack_multi(bot.name.as_str())
     } else {
-      Err(create_bot_error(&id))
+      Err(create_bot_error(bot_id_str))
     }
   });
 
   lua_api.add_dynamic_function("Net", "set_bot_name", |api_ctx, lua_ctx, params| {
-    let (id, name): (String, String) = lua_ctx.unpack_multi(params)?;
+    let (bot_id, name): (rlua::String, String) = lua_ctx.unpack_multi(params)?;
+    let bot_id_str = bot_id.to_str()?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.set_bot_name(&id, name);
+    net.set_bot_name(bot_id_str, name);
 
     lua_ctx.pack_multi(())
   });
 
   lua_api.add_dynamic_function("Net", "get_bot_direction", |api_ctx, lua_ctx, params| {
-    let id: String = lua_ctx.unpack_multi(params)?;
+    let bot_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let bot_id_str = bot_id.to_str()?;
+
     let net = api_ctx.net_ref.borrow();
 
-    if let Some(bot) = net.get_bot(&id) {
+    if let Some(bot) = net.get_bot(bot_id_str) {
       let direction_str = bot.direction.as_str();
 
       lua_ctx.pack_multi(direction_str)
     } else {
-      Err(create_bot_error(&id))
+      Err(create_bot_error(bot_id_str))
     }
   });
 
   lua_api.add_dynamic_function("Net", "set_bot_direction", |api_ctx, lua_ctx, params| {
-    let (id, direction_string): (String, String) = lua_ctx.unpack_multi(params)?;
+    let (bot_id, direction_string): (rlua::String, String) = lua_ctx.unpack_multi(params)?;
+    let bot_id_str = bot_id.to_str()?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.set_bot_direction(&id, Direction::from(&direction_string));
+    net.set_bot_direction(bot_id_str, Direction::from(&direction_string));
 
     lua_ctx.pack_multi(())
   });
 
   lua_api.add_dynamic_function("Net", "get_bot_position", |api_ctx, lua_ctx, params| {
-    let id: String = lua_ctx.unpack_multi(params)?;
+    let bot_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let bot_id_str = bot_id.to_str()?;
+
     let net = api_ctx.net_ref.borrow();
 
-    if let Some(bot) = net.get_bot(&id) {
+    if let Some(bot) = net.get_bot(bot_id_str) {
       let table = lua_ctx.create_table()?;
       table.set("x", bot.x)?;
       table.set("y", bot.y)?;
@@ -147,71 +170,80 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
       lua_ctx.pack_multi(table)
     } else {
-      Err(create_bot_error(&id))
+      Err(create_bot_error(bot_id_str))
     }
   });
 
   lua_api.add_dynamic_function("Net", "move_bot", |api_ctx, lua_ctx, params| {
-    let (id, x, y, z): (String, f32, f32, f32) = lua_ctx.unpack_multi(params)?;
+    let (bot_id, x, y, z): (rlua::String, f32, f32, f32) = lua_ctx.unpack_multi(params)?;
+    let bot_id_str = bot_id.to_str()?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.move_bot(&id, x, y, z);
+    net.move_bot(bot_id_str, x, y, z);
 
     lua_ctx.pack_multi(())
   });
 
   lua_api.add_dynamic_function("Net", "play_bot_animation", |api_ctx, lua_ctx, params| {
-    let (id, name): (String, String) = lua_ctx.unpack_multi(params)?;
+    let (bot_id, name): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+    let (bot_id_str, name_str) = (bot_id.to_str()?, name.to_str()?);
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.play_bot_animation(&id, &name);
+    net.play_bot_animation(bot_id_str, name_str);
 
     lua_ctx.pack_multi(())
   });
 
   lua_api.add_dynamic_function("Net", "set_bot_avatar", |api_ctx, lua_ctx, params| {
-    let (id, texture_path, animation_path): (String, String, String) =
+    let (bot_id, texture_path, animation_path): (rlua::String, String, String) =
       lua_ctx.unpack_multi(params)?;
+    let bot_id_str = bot_id.to_str()?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.set_bot_avatar(&id, texture_path, animation_path);
+    net.set_bot_avatar(bot_id_str, texture_path, animation_path);
 
     lua_ctx.pack_multi(())
   });
 
   lua_api.add_dynamic_function("Net", "set_bot_emote", |api_ctx, lua_ctx, params| {
-    let (id, emote_id): (String, u8) = lua_ctx.unpack_multi(params)?;
+    let (bot_id, emote_id): (rlua::String, u8) = lua_ctx.unpack_multi(params)?;
+    let bot_id_str = bot_id.to_str()?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.set_bot_emote(&id, emote_id);
+    net.set_bot_emote(bot_id_str, emote_id);
 
     lua_ctx.pack_multi(())
   });
 
   lua_api.add_dynamic_function("Net", "transfer_bot", |api_ctx, lua_ctx, params| {
-    let (id, area_id, warp_in_option, x_option, y_option, z_option): (
-      String,
+    let (bot_id, area_id, warp_in_option, x_option, y_option, z_option): (
+      rlua::String,
       String,
       Option<bool>,
       Option<f32>,
       Option<f32>,
       Option<f32>,
     ) = lua_ctx.unpack_multi(params)?;
+    let bot_id_str = bot_id.to_str()?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
     let warp_in = warp_in_option.unwrap_or(true);
     let x;
     let y;
     let z;
 
-    if let Some(bot) = net.get_bot(&id) {
+    if let Some(bot) = net.get_bot(bot_id_str) {
       x = x_option.unwrap_or(bot.x);
       y = y_option.unwrap_or(bot.y);
       z = z_option.unwrap_or(bot.z);
     } else {
-      return Err(create_bot_error(&id));
+      return Err(create_bot_error(bot_id_str));
     }
 
-    net.transfer_bot(&id, &area_id, warp_in, x, y, z);
+    net.transfer_bot(bot_id_str, &area_id, warp_in, x, y, z);
 
     lua_ctx.pack_multi(())
   });

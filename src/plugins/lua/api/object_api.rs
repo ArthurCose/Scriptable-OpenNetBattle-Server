@@ -4,10 +4,12 @@ use crate::net::map::{MapObject, MapObjectData, MapObjectSpecification, Tile};
 
 pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Net", "list_objects", |api_ctx, lua_ctx, params| {
-    let area_id: String = lua_ctx.unpack_multi(params)?;
+    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id_str = area_id.to_str()?;
+
     let net = api_ctx.net_ref.borrow();
 
-    if let Some(area) = net.get_area(&area_id) {
+    if let Some(area) = net.get_area(area_id_str) {
       let result: Vec<u32> = area
         .get_map()
         .get_objects()
@@ -17,45 +19,50 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
       lua_ctx.pack_multi(result)
     } else {
-      Err(create_area_error(&area_id))
+      Err(create_area_error(area_id_str))
     }
   });
 
   lua_api.add_dynamic_function("Net", "get_object_by_id", |api_ctx, lua_ctx, params| {
-    let (area_id, id): (String, u32) = lua_ctx.unpack_multi(params)?;
+    let (area_id, id): (rlua::String, u32) = lua_ctx.unpack_multi(params)?;
+    let area_id_str = area_id.to_str()?;
+
     let net = api_ctx.net_ref.borrow();
 
-    if let Some(area) = net.get_area(&area_id) {
+    if let Some(area) = net.get_area(area_id_str) {
       let optional_object = area.get_map().get_object_by_id(id);
 
       lua_ctx.pack_multi(map_optional_object_to_table(&lua_ctx, optional_object))
     } else {
-      Err(create_area_error(&area_id))
+      Err(create_area_error(area_id_str))
     }
   });
 
   lua_api.add_dynamic_function("Net", "get_object_by_name", |api_ctx, lua_ctx, params| {
-    let (area_id, name): (String, String) = lua_ctx.unpack_multi(params)?;
+    let (area_id, name): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+    let (area_id_str, name_str) = (area_id.to_str()?, name.to_str()?);
+
     let net = api_ctx.net_ref.borrow();
 
-    if let Some(area) = net.get_area(&area_id) {
-      let optional_object = area.get_map().get_object_by_name(&name);
+    if let Some(area) = net.get_area(area_id_str) {
+      let optional_object = area.get_map().get_object_by_name(name_str);
 
       lua_ctx.pack_multi(map_optional_object_to_table(&lua_ctx, optional_object))
     } else {
-      Err(create_area_error(&area_id))
+      Err(create_area_error(area_id_str))
     }
   });
 
   lua_api.add_dynamic_function("Net", "create_object", |api_ctx, lua_ctx, params| {
-    let (area_id, table): (String, rlua::Table) = lua_ctx.unpack_multi(params)?;
+    let (area_id, table): (rlua::String, rlua::Table) = lua_ctx.unpack_multi(params)?;
+    let area_id_str = area_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    let area = if let Some(area) = net.get_area_mut(&area_id) {
+    let area = if let Some(area) = net.get_area_mut(area_id_str) {
       area
     } else {
-      return Err(create_area_error(&area_id));
+      return Err(create_area_error(area_id_str));
     };
 
     use std::collections::HashMap;
@@ -94,47 +101,53 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "remove_object", |api_ctx, lua_ctx, params| {
-    let (area_id, id): (String, u32) = lua_ctx.unpack_multi(params)?;
+    let (area_id, id): (rlua::String, u32) = lua_ctx.unpack_multi(params)?;
+    let area_id_str = area_id.to_str()?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    if let Some(area) = net.get_area_mut(&area_id) {
+    if let Some(area) = net.get_area_mut(area_id_str) {
       let map = area.get_map_mut();
 
       map.remove_object(id);
 
       lua_ctx.pack_multi(())
     } else {
-      Err(create_area_error(&area_id))
+      Err(create_area_error(area_id_str))
     }
   });
 
   lua_api.add_dynamic_function("Net", "set_object_name", |api_ctx, lua_ctx, params| {
-    let (area_id, id, name): (String, u32, String) = lua_ctx.unpack_multi(params)?;
+    let (area_id, id, name): (rlua::String, u32, String) = lua_ctx.unpack_multi(params)?;
+    let area_id_str = area_id.to_str()?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    if let Some(area) = net.get_area_mut(&area_id) {
+    if let Some(area) = net.get_area_mut(area_id_str) {
       let map = area.get_map_mut();
 
       map.set_object_name(id, name);
 
       lua_ctx.pack_multi(())
     } else {
-      Err(create_area_error(&area_id))
+      Err(create_area_error(area_id_str))
     }
   });
 
   lua_api.add_dynamic_function("Net", "set_object_type", |api_ctx, lua_ctx, params| {
-    let (area_id, id, object_type): (String, u32, String) = lua_ctx.unpack_multi(params)?;
+    let (area_id, id, object_type): (rlua::String, u32, String) = lua_ctx.unpack_multi(params)?;
+    let area_id_str = area_id.to_str()?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    if let Some(area) = net.get_area_mut(&area_id) {
+    if let Some(area) = net.get_area_mut(area_id_str) {
       let map = area.get_map_mut();
 
       map.set_object_type(id, object_type);
 
       lua_ctx.pack_multi(())
     } else {
-      Err(create_area_error(&area_id))
+      Err(create_area_error(area_id_str))
     }
   });
 
@@ -142,49 +155,56 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "set_object_custom_property",
     |api_ctx, lua_ctx, params| {
-      let (area_id, id, name, value): (String, u32, String, String) =
+      let (area_id, id, name, value): (rlua::String, u32, String, String) =
         lua_ctx.unpack_multi(params)?;
+      let area_id_str = area_id.to_str()?;
+
       let mut net = api_ctx.net_ref.borrow_mut();
 
-      if let Some(area) = net.get_area_mut(&area_id) {
+      if let Some(area) = net.get_area_mut(area_id_str) {
         let map = area.get_map_mut();
 
         map.set_object_custom_property(id, name, value);
 
         lua_ctx.pack_multi(())
       } else {
-        Err(create_area_error(&area_id))
+        Err(create_area_error(area_id_str))
       }
     },
   );
 
   lua_api.add_dynamic_function("Net", "resize_object", |api_ctx, lua_ctx, params| {
-    let (area_id, id, width, height): (String, u32, f32, f32) = lua_ctx.unpack_multi(params)?;
+    let (area_id, id, width, height): (rlua::String, u32, f32, f32) =
+      lua_ctx.unpack_multi(params)?;
+    let area_id_str = area_id.to_str()?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    if let Some(area) = net.get_area_mut(&area_id) {
+    if let Some(area) = net.get_area_mut(area_id_str) {
       let map = area.get_map_mut();
 
       map.resize_object(id, width, height);
 
       lua_ctx.pack_multi(())
     } else {
-      Err(create_area_error(&area_id))
+      Err(create_area_error(area_id_str))
     }
   });
 
   lua_api.add_dynamic_function("Net", "set_object_rotation", |api_ctx, lua_ctx, params| {
-    let (area_id, id, rotation): (String, u32, f32) = lua_ctx.unpack_multi(params)?;
+    let (area_id, id, rotation): (rlua::String, u32, f32) = lua_ctx.unpack_multi(params)?;
+    let area_id_str = area_id.to_str()?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    if let Some(area) = net.get_area_mut(&area_id) {
+    if let Some(area) = net.get_area_mut(area_id_str) {
       let map = area.get_map_mut();
 
       map.set_object_rotation(id, rotation);
 
       lua_ctx.pack_multi(())
     } else {
-      Err(create_area_error(&area_id))
+      Err(create_area_error(area_id_str))
     }
   });
 
@@ -192,49 +212,56 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "set_object_visibility",
     |api_ctx, lua_ctx, params| {
-      let (area_id, id, visibility): (String, u32, bool) = lua_ctx.unpack_multi(params)?;
+      let (area_id, id, visibility): (rlua::String, u32, bool) = lua_ctx.unpack_multi(params)?;
+      let area_id_str = area_id.to_str()?;
+
       let mut net = api_ctx.net_ref.borrow_mut();
 
-      if let Some(area) = net.get_area_mut(&area_id) {
+      if let Some(area) = net.get_area_mut(area_id_str) {
         let map = area.get_map_mut();
 
         map.set_object_visibility(id, visibility);
 
         lua_ctx.pack_multi(())
       } else {
-        Err(create_area_error(&area_id))
+        Err(create_area_error(area_id_str))
       }
     },
   );
 
   lua_api.add_dynamic_function("Net", "move_object", |api_ctx, lua_ctx, params| {
-    let (area_id, id, x, y, layer): (String, u32, f32, f32, usize) =
+    let (area_id, id, x, y, layer): (rlua::String, u32, f32, f32, usize) =
       lua_ctx.unpack_multi(params)?;
+    let area_id_str = area_id.to_str()?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    if let Some(area) = net.get_area_mut(&area_id) {
+    if let Some(area) = net.get_area_mut(area_id_str) {
       let map = area.get_map_mut();
 
       map.move_object(id, x, y, layer);
 
       lua_ctx.pack_multi(())
     } else {
-      Err(create_area_error(&area_id))
+      Err(create_area_error(area_id_str))
     }
   });
 
   lua_api.add_dynamic_function("Net", "set_object_data", |api_ctx, lua_ctx, params| {
-    let (area_id, id, data_table): (String, u32, rlua::Table) = lua_ctx.unpack_multi(params)?;
+    let (area_id, id, data_table): (rlua::String, u32, rlua::Table) =
+      lua_ctx.unpack_multi(params)?;
+    let area_id_str = area_id.to_str()?;
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    if let Some(area) = net.get_area_mut(&area_id) {
+    if let Some(area) = net.get_area_mut(area_id_str) {
       let map = area.get_map_mut();
 
       map.set_object_data(id, parse_object_data(data_table)?);
 
       lua_ctx.pack_multi(())
     } else {
-      Err(create_area_error(&area_id))
+      Err(create_area_error(area_id_str))
     }
   });
 }

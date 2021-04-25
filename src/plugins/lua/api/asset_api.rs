@@ -29,19 +29,21 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "has_asset", |api_ctx, lua_ctx, params| {
-    let path: String = lua_ctx.unpack_multi(params)?;
+    let path: rlua::String = lua_ctx.unpack_multi(params)?;
+    let path_str = path.to_str()?;
     let net = api_ctx.net_ref.borrow();
 
-    let has_asset = net.get_asset(&path).is_some();
+    let has_asset = net.get_asset(path_str).is_some();
 
     lua_ctx.pack_multi(has_asset)
   });
 
   lua_api.add_dynamic_function("Net", "get_asset_type", |api_ctx, lua_ctx, params| {
-    let path: String = lua_ctx.unpack_multi(params)?;
+    let path: rlua::String = lua_ctx.unpack_multi(params)?;
+    let path_str = path.to_str()?;
     let net = api_ctx.net_ref.borrow();
 
-    let asset_type = if let Some(asset) = net.get_asset(&path) {
+    let asset_type = if let Some(asset) = net.get_asset(path_str) {
       match asset.data {
         AssetData::Text(_) => Some("text"),
         AssetData::Texture(_) => Some("texture"),
@@ -55,10 +57,11 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_asset_size", |api_ctx, lua_ctx, params| {
-    let path: String = lua_ctx.unpack_multi(params)?;
+    let path: rlua::String = lua_ctx.unpack_multi(params)?;
+    let path_str = path.to_str()?;
     let net = api_ctx.net_ref.borrow();
 
-    if let Some(asset) = net.get_asset(&path) {
+    if let Some(asset) = net.get_asset(path_str) {
       lua_ctx.pack_multi(asset.len())
     } else {
       lua_ctx.pack_multi(0)

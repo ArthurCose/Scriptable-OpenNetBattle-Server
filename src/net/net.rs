@@ -45,7 +45,7 @@ impl Net {
           .into_owned();
 
         if let Ok(raw_map) = read_to_string(&map_path) {
-          let mut map = Map::from(raw_map);
+          let mut map = Map::from(&raw_map);
 
           if area_id == "default" {
             default_area_provided = true
