@@ -99,9 +99,9 @@ Map:
   - One animation state "BG"
     - First frame of this animation determines background repetition
   - Excluding this will use texture size for background repetition
-- Background Vel X: int
+- Background Vel X: float
   - Requires "custom" Background
-- Background Vel Y: int
+- Background Vel Y: float
   - Requires "custom" Background
 
 ### Types
