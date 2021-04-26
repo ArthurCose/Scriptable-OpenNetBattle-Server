@@ -107,8 +107,14 @@ impl PacketShipper {
         break;
       }
 
-      self.send_with_silenced_errors(socket, &backed_up_packet.data);
-      remaining_budget -= backed_up_packet.data.len() as isize;
+      let buf = &backed_up_packet.data;
+
+      if socket.send_to(buf, self.socket_address).is_err() {
+        // socket buffer is probably full
+        break;
+      }
+
+      remaining_budget -= buf.len() as isize;
     }
   }
 
