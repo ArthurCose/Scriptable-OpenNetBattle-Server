@@ -208,7 +208,7 @@ function handle_textbox_response(player_id, response) -- response is an index
 function handle_board_open(player_id)
 function handle_board_close(player_id)
 function handle_post_selection(player_id, post_id)
--- function handle_post_request(player_id) -- bbs post request for infinite scroll
+function handle_post_request(player_id) -- bbs post request for infinite scroll
 -- function handle_battle_completion(player_id, results) -- results = { status: "won" | "loss" | "ran", rank? }
 function handle_server_message(ip, port, data)
 
