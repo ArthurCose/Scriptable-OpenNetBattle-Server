@@ -161,6 +161,7 @@ pub enum ServerPacket<'a> {
   ActorAnimate {
     ticket: String,
     state: String,
+    loop_animation: bool,
   },
 }
 
@@ -483,10 +484,15 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       buf.push(*emote_id);
       write_string(&mut buf, ticket);
     }
-    ServerPacket::ActorAnimate { ticket, state } => {
+    ServerPacket::ActorAnimate {
+      ticket,
+      state,
+      loop_animation,
+    } => {
       write_u16(&mut buf, 35);
       write_string(&mut buf, ticket);
       write_string(&mut buf, state);
+      write_bool(&mut buf, *loop_animation)
     }
   }
 

@@ -185,12 +185,16 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
-  lua_api.add_dynamic_function("Net", "play_bot_animation", |api_ctx, lua_ctx, params| {
-    let (bot_id, name): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+  lua_api.add_dynamic_function("Net", "animate_bot", |api_ctx, lua_ctx, params| {
+    let (bot_id, name, loop_option): (rlua::String, rlua::String, Option<bool>) =
+      lua_ctx.unpack_multi(params)?;
     let (bot_id_str, name_str) = (bot_id.to_str()?, name.to_str()?);
+
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.play_bot_animation(bot_id_str, name_str);
+    let loop_animation = loop_option.unwrap_or_default();
+
+    net.animate_bot(bot_id_str, name_str, loop_animation);
 
     lua_ctx.pack_multi(())
   });

@@ -324,7 +324,7 @@ Net.move_bot(bot_id, x, y, z)
 -- Net.set_bot_solid(bot_id, solid)
 Net.set_bot_avatar(bot_id, texture_path, animation_path)
 Net.set_bot_emote(bot_id, emote_id)
--- Net.play_bot_animation(bot_id, state_name)
+Net.animate_bot(bot_id, state_name, loop?)
 Net.transfer_bot(bot_id, area_id, warp_in?, x?, y?, z?)
 ```
 
@@ -343,6 +343,7 @@ Net.get_player_avatar(player_id) -- { texture_path, animation_path }
 Net.set_player_avatar(player_id, texture_path, animation_path)
 Net.set_player_emote(player_id, emote_id)
 Net.exclusive_player_emote(player_id, emoter_id, emote_id)
+Net.animate_player(player_id, state_name, loop?)
 -- Net.is_player_battling(player_id)
 Net.is_player_busy(player_id)
 Net.provide_asset_for_player(player_id, path)

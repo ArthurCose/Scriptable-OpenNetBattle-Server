@@ -175,6 +175,20 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     },
   );
 
+  lua_api.add_dynamic_function("Net", "animate_player", |api_ctx, lua_ctx, params| {
+    let (player_id, name, loop_option): (rlua::String, rlua::String, Option<bool>) =
+      lua_ctx.unpack_multi(params)?;
+    let (player_id_str, name_str) = (player_id.to_str()?, name.to_str()?);
+
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    let loop_animation = loop_option.unwrap_or_default();
+
+    net.animate_player(player_id_str, name_str, loop_animation);
+
+    lua_ctx.pack_multi(())
+  });
+
   lua_api.add_dynamic_function("Net", "is_player_in_widget", |api_ctx, lua_ctx, params| {
     let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;

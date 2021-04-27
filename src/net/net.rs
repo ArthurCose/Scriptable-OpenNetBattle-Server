@@ -315,6 +315,24 @@ impl Net {
     }
   }
 
+  pub fn animate_player(&mut self, id: &str, name: &str, loop_animation: bool) {
+    if let Some(client) = self.clients.get(id) {
+      let area = self.areas.get(&client.actor.area_id).unwrap();
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.clients,
+        area,
+        Reliability::Reliable,
+        ServerPacket::ActorAnimate {
+          ticket: id.to_string(),
+          state: name.to_string(),
+          loop_animation,
+        },
+      );
+    }
+  }
+
   pub fn is_player_in_widget(&self, id: &str) -> bool {
     if let Some(client) = self.clients.get(id) {
       return client.is_in_widget();
@@ -1448,7 +1466,7 @@ impl Net {
     }
   }
 
-  pub fn play_bot_animation(&mut self, id: &str, name: &str) {
+  pub fn animate_bot(&mut self, id: &str, name: &str, loop_animation: bool) {
     if let Some(bot) = self.bots.get(id) {
       let area = self.areas.get(&bot.area_id).unwrap();
 
@@ -1460,6 +1478,7 @@ impl Net {
         ServerPacket::ActorAnimate {
           ticket: id.to_string(),
           state: name.to_string(),
+          loop_animation,
         },
       );
     }
