@@ -383,6 +383,7 @@ Net.remove_post(player_id, post_id) -- unstable, issues arise when multiple scri
 
 ```Lua
 Net.update_asset(server_path, content)
+Net.remove_asset(server_path)
 Net.has_asset(server_path)
 Net.get_asset_type(server_path)
 Net.get_asset_size(server_path)

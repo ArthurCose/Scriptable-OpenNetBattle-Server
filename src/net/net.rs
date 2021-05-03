@@ -158,7 +158,6 @@ impl Net {
     }
   }
 
-  #[allow(dead_code)]
   pub fn remove_asset(&mut self, path: &str) {
     self.assets.remove(path);
   }
