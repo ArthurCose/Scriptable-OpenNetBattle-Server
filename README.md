@@ -334,6 +334,7 @@ Net.transfer_bot(bot_id, area_id, warp_in?, x?, y?, z?)
 Net.list_players(area_id) -- player_id[]
 Net.is_player(player_id)
 Net.get_player_area(player_id) -- area_id
+Net.get_player_ip(player_id) -- address
 Net.get_player_name(player_id) -- name
 Net.set_player_name(player_id)
 Net.get_player_direction(player_id)
@@ -357,6 +358,7 @@ Net.lock_player(player_id)
 Net.unlock_player(player_id)
 -- Net.move_player(player_id, x, y, z)
 Net.teleport_player(player_id, warp, x, y, z, direction?)
+-- Net.scale_player(player_id, scale, transition_duration?)
 -- Net.initiate_encounter(player_id, data)
 -- Net.initiate_pvp(player_1_id, player_2_id, data)
 Net.transfer_player(player_id, area_id, warp_in?, x?, y?, z?, direction?)

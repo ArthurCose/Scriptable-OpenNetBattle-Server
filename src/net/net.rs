@@ -167,6 +167,10 @@ impl Net {
     self.clients.get(id).map(|client| &client.actor)
   }
 
+  pub fn get_player_addr(&self, id: &str) -> Option<std::net::SocketAddr> {
+    self.clients.get(id).map(|client| client.socket_address)
+  }
+
   #[allow(dead_code)]
   pub(super) fn get_client(&self, id: &str) -> Option<&Client> {
     self.clients.get(id)

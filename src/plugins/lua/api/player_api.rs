@@ -46,6 +46,19 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     }
   });
 
+  lua_api.add_dynamic_function("Net", "get_player_ip", |api_ctx, lua_ctx, params| {
+    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id_str = player_id.to_str()?;
+
+    let net = api_ctx.net_ref.borrow();
+
+    if let Some(addr) = net.get_player_addr(player_id_str) {
+      lua_ctx.pack_multi(addr.ip().to_string())
+    } else {
+      Err(create_player_error(player_id_str))
+    }
+  });
+
   lua_api.add_dynamic_function("Net", "get_player_name", |api_ctx, lua_ctx, params| {
     let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
