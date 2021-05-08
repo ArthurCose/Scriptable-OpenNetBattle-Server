@@ -201,6 +201,7 @@ function handle_player_request(player_id, data) -- player requests connection to
 function handle_player_connect(player_id) -- player connects to the server (transfers will change initial area)
 function handle_player_join(player_id) -- player enters their first area after connecting
 function handle_player_transfer(player_id) -- player changes area
+function handle_custom_warp(player_id, object_id) -- player warped out by a "Custom Warp" or "Custom Server Warp"
 function handle_object_interaction(player_id, object_id)
 function handle_actor_interaction(player_id, actor_id) -- actor_id is a player or bot id
 function handle_tile_interaction(player_id, x, y, z)

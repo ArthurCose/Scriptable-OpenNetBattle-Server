@@ -315,6 +315,15 @@ impl Server {
 
           net.complete_transfer(player_id);
         }
+        ClientPacket::CustomWarp { tile_object_id } => {
+          if self.config.log_packets {
+            println!("Received CustomWarp packet from {}", socket_address);
+          }
+
+          self
+            .plugin_wrapper
+            .handle_custom_warp(net, &player_id, tile_object_id);
+        }
         ClientPacket::AvatarChange => {
           if self.config.log_packets {
             println!("Received AvatarChange packet from {}", socket_address);

@@ -42,6 +42,9 @@ pub enum ClientPacket {
   Emote {
     emote_id: u8,
   },
+  CustomWarp {
+    tile_object_id: u32,
+  },
   ObjectInteraction {
     tile_object_id: u32,
   },
@@ -126,24 +129,27 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
     12 => Some(ClientPacket::Emote {
       emote_id: read_byte(work_buf)?,
     }),
-    13 => Some(ClientPacket::ObjectInteraction {
+    13 => Some(ClientPacket::CustomWarp {
       tile_object_id: read_u32(work_buf)?,
     }),
-    14 => Some(ClientPacket::ActorInteraction {
+    14 => Some(ClientPacket::ObjectInteraction {
+      tile_object_id: read_u32(work_buf)?,
+    }),
+    15 => Some(ClientPacket::ActorInteraction {
       actor_id: read_string(work_buf)?,
     }),
-    15 => Some(ClientPacket::TileInteraction {
+    16 => Some(ClientPacket::TileInteraction {
       x: read_f32(work_buf)?,
       y: read_f32(work_buf)?,
       z: read_f32(work_buf)?,
     }),
-    16 => Some(ClientPacket::TextBoxResponse {
+    17 => Some(ClientPacket::TextBoxResponse {
       response: read_byte(work_buf)?,
     }),
-    17 => Some(ClientPacket::BoardOpen),
-    18 => Some(ClientPacket::BoardClose),
-    19 => Some(ClientPacket::PostRequest),
-    20 => Some(ClientPacket::PostSelection {
+    18 => Some(ClientPacket::BoardOpen),
+    19 => Some(ClientPacket::BoardClose),
+    20 => Some(ClientPacket::PostRequest),
+    21 => Some(ClientPacket::PostSelection {
       post_id: read_string(work_buf)?,
     }),
     _ => None,

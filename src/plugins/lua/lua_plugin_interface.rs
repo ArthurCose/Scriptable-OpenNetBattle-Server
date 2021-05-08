@@ -17,6 +17,7 @@ pub struct LuaPluginInterface {
   player_move_listeners: Vec<std::path::PathBuf>,
   player_avatar_change_listeners: Vec<std::path::PathBuf>,
   player_emote_listeners: Vec<std::path::PathBuf>,
+  custom_warp_listeners: Vec<std::path::PathBuf>,
   object_interaction_listeners: Vec<std::path::PathBuf>,
   actor_interaction_listeners: Vec<std::path::PathBuf>,
   tile_interaction_listeners: Vec<std::path::PathBuf>,
@@ -39,6 +40,7 @@ impl LuaPluginInterface {
       player_move_listeners: Vec::new(),
       player_avatar_change_listeners: Vec::new(),
       player_emote_listeners: Vec::new(),
+      custom_warp_listeners: Vec::new(),
       object_interaction_listeners: Vec::new(),
       actor_interaction_listeners: Vec::new(),
       tile_interaction_listeners: Vec::new(),
@@ -172,6 +174,13 @@ impl LuaPluginInterface {
         .is_ok()
       {
         self.player_emote_listeners.push(script_path.clone());
+      }
+
+      if globals
+        .get::<_, rlua::Function>("handle_custom_warp")
+        .is_ok()
+      {
+        self.custom_warp_listeners.push(script_path.clone());
       }
 
       if globals
@@ -367,6 +376,19 @@ impl PluginInterface for LuaPluginInterface {
     );
 
     prevent_default
+  }
+
+  fn handle_custom_warp(&mut self, net: &mut Net, player_id: &str, tile_object_id: u32) {
+    handle_event(
+      &mut self.scripts,
+      &self.custom_warp_listeners,
+      &mut self.widget_trackers,
+      &mut self.promise_manager,
+      &mut self.lua_api,
+      net,
+      "handle_custom_warp",
+      |_, callback| callback.call((player_id, tile_object_id)),
+    );
   }
 
   fn handle_object_interaction(&mut self, net: &mut Net, player_id: &str, tile_object_id: u32) {
