@@ -855,56 +855,75 @@ impl Net {
       return;
     }
 
-    let texture_path;
-    let animation_path;
+    let client = if let Some(client) = self.clients.get_mut(id) {
+      client
+    } else {
+      return;
+    };
 
-    if let Some(client) = self.clients.get_mut(id) {
-      let previous_area = self.areas.get_mut(&client.actor.area_id).unwrap();
+    let previous_area = self.areas.get_mut(&client.actor.area_id).unwrap();
+    client.warp_in = warp_in;
+    client.warp_x = x;
+    client.warp_y = y;
+    client.warp_z = z;
+    client.warp_direction = direction;
 
-      if !previous_area
-        .get_connected_players()
-        .contains(&id.to_string())
-      {
-        // client has not been added to any area yet
-        // assume client was transferred on initial connection by a plugin
-        client.actor.area_id = area_id.to_string();
-        client.warp_in = warp_in;
-        client.warp_x = x;
-        client.warp_y = y;
-        client.warp_z = z;
-        client.warp_direction = direction;
-        return;
-      }
+    if !previous_area
+      .get_connected_players()
+      .contains(&id.to_string())
+    {
+      // client has not been added to any area yet
+      // assume client was transferred on initial connection by a plugin
+      client.actor.area_id = area_id.to_string();
+      return;
+    }
 
-      texture_path = client.actor.texture_path.clone();
-      animation_path = client.actor.animation_path.clone();
+    client.warp_area = area_id.to_string();
+
+    let previous_area = self.areas.get_mut(&client.actor.area_id).unwrap();
+    previous_area.remove_player(&id);
+
+    broadcast_to_area(
+      &self.socket,
+      &mut self.clients,
+      previous_area,
+      Reliability::ReliableOrdered,
+      ServerPacket::ActorDisconnected {
+        ticket: id.to_string(),
+        warp_out: warp_in,
+      },
+    );
+
+    if warp_in {
+      let client = self.clients.get_mut(id).unwrap();
 
       client.packet_shipper.send(
         &self.socket,
         &Reliability::ReliableOrdered,
-        &ServerPacket::TransferStart { warp_out: warp_in },
-      );
-
-      let previous_area = self.areas.get_mut(&client.actor.area_id).unwrap();
-      previous_area.remove_player(&id);
-
-      broadcast_to_area(
-        &self.socket,
-        &mut self.clients,
-        previous_area,
-        Reliability::ReliableOrdered,
-        ServerPacket::ActorDisconnected {
-          ticket: id.to_string(),
-          warp_out: warp_in,
-        },
+        &ServerPacket::TransferWarp,
       );
     } else {
-      // allows us to safely unwrap after this
-      // as long as send_area doesn't delete the client (why would it?)
-      return;
+      self.complete_transfer(id)
     }
+  }
 
-    let area = self.areas.get_mut(area_id).unwrap();
+  pub(super) fn complete_transfer(&mut self, player_id: &str) {
+    let client = if let Some(client) = self.clients.get_mut(player_id) {
+      client
+    } else {
+      return;
+    };
+
+    client.packet_shipper.send(
+      &self.socket,
+      &Reliability::ReliableOrdered,
+      &ServerPacket::TransferStart,
+    );
+
+    let area_id = client.warp_area.clone();
+    let area = self.areas.get_mut(&area_id).unwrap();
+    let texture_path = client.actor.texture_path.clone();
+    let animation_path = client.actor.animation_path.clone();
 
     assert_asset(
       &self.socket,
@@ -924,17 +943,12 @@ impl Net {
       &animation_path,
     );
 
-    area.add_player(id.to_string());
-    self.send_area(id, &area_id);
+    area.add_player(player_id.to_string());
+    self.send_area(player_id, &area_id);
 
-    let mut client = self.clients.get_mut(id).unwrap();
+    let mut client = self.clients.get_mut(player_id).unwrap();
 
     client.actor.area_id = area_id.to_string();
-    client.warp_in = warp_in;
-    client.warp_x = x;
-    client.warp_y = y;
-    client.warp_z = z;
-    client.warp_direction = direction;
     client.transferring = true;
     client.ready = false;
 
@@ -943,17 +957,20 @@ impl Net {
       &Reliability::ReliableOrdered,
       &ServerPacket::Teleport {
         warp: false,
-        x,
-        y,
-        z,
-        direction,
+        x: client.warp_x,
+        y: client.warp_y,
+        z: client.warp_z,
+        direction: client.warp_direction,
       },
     );
 
     client.packet_shipper.send(
       &self.socket,
       &Reliability::ReliableOrdered,
-      &ServerPacket::TransferComplete { warp_in, direction },
+      &ServerPacket::TransferComplete {
+        warp_in: client.warp_in,
+        direction: client.warp_direction,
+      },
     );
   }
 

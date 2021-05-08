@@ -308,6 +308,13 @@ impl Server {
 
           net.mark_client_ready(player_id);
         }
+        ClientPacket::TransferredOut => {
+          if self.config.log_packets {
+            println!("Received TransferredOut packet from {}", socket_address);
+          }
+
+          net.complete_transfer(player_id);
+        }
         ClientPacket::AvatarChange => {
           if self.config.log_packets {
             println!("Received AvatarChange packet from {}", socket_address);
