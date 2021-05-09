@@ -61,13 +61,14 @@ function handle_textbox_response(player_id, response)
 
   local other_id = questioned_requests[player_id]
 
-  if  not requests[other_id] then
+  if not requests[other_id] then
     -- the other player disconnected, we were too slow
     return
   end
 
   if requests[player_id][other_id] then
     -- we're saying yes to the other player's request
+    requests[player_id][other_id] = nil
     Net.initiate_pvp(player_id, other_id)
   else
     -- we're making a request for the other player
