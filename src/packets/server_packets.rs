@@ -121,6 +121,9 @@ pub enum ServerPacket<'a> {
     id: String,
   },
   PostSelectionAck,
+  InitiatePvp {
+    address: String,
+  },
   ActorConnected {
     ticket: String,
     name: String,
@@ -422,6 +425,10 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     ServerPacket::PostSelectionAck => {
       write_u16(&mut buf, 29);
     }
+    ServerPacket::InitiatePvp { address } => {
+      write_u16(&mut buf, 30);
+      write_string(&mut buf, &address);
+    }
     ServerPacket::ActorConnected {
       ticket,
       name,
@@ -434,7 +441,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       solid,
       warp_in,
     } => {
-      write_u16(&mut buf, 30);
+      write_u16(&mut buf, 31);
       write_string(&mut buf, ticket);
       write_string(&mut buf, name);
       write_string(&mut buf, texture_path);
@@ -447,12 +454,12 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_bool(&mut buf, *warp_in);
     }
     ServerPacket::ActorDisconnected { ticket, warp_out } => {
-      write_u16(&mut buf, 31);
+      write_u16(&mut buf, 32);
       write_string(&mut buf, ticket);
       write_bool(&mut buf, *warp_out);
     }
     ServerPacket::ActorSetName { ticket, name } => {
-      write_u16(&mut buf, 32);
+      write_u16(&mut buf, 33);
       write_string(&mut buf, ticket);
       write_string(&mut buf, name);
     }
@@ -463,7 +470,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       z,
       direction,
     } => {
-      write_u16(&mut buf, 33);
+      write_u16(&mut buf, 34);
       write_string(&mut buf, ticket);
       write_f32(&mut buf, *x);
       write_f32(&mut buf, *y);
@@ -475,13 +482,13 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       texture_path,
       animation_path,
     } => {
-      write_u16(&mut buf, 34);
+      write_u16(&mut buf, 35);
       write_string(&mut buf, ticket);
       write_string(&mut buf, texture_path);
       write_string(&mut buf, animation_path);
     }
     ServerPacket::ActorEmote { ticket, emote_id } => {
-      write_u16(&mut buf, 35);
+      write_u16(&mut buf, 36);
       buf.push(*emote_id);
       write_string(&mut buf, ticket);
     }
@@ -490,7 +497,7 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       state,
       loop_animation,
     } => {
-      write_u16(&mut buf, 36);
+      write_u16(&mut buf, 37);
       write_string(&mut buf, ticket);
       write_string(&mut buf, state);
       write_bool(&mut buf, *loop_animation)

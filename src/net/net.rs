@@ -839,6 +839,35 @@ impl Net {
     }
   }
 
+  pub fn initiate_pvp(&mut self, player_1_id: &str, player_2_id: &str) {
+    use multi_mut::HashMapMultiMut;
+
+    let (client_1, client_2) =
+      if let Some((client_1, client_2)) = self.clients.get_pair_mut(player_1_id, player_2_id) {
+        (client_1, client_2)
+      } else {
+        return;
+      };
+
+    // todo: put these clients in slow mode
+
+    client_1.packet_shipper.send(
+      &self.socket,
+      &Reliability::ReliableOrdered,
+      &ServerPacket::InitiatePvp {
+        address: client_2.socket_address.to_string(),
+      },
+    );
+
+    client_2.packet_shipper.send(
+      &self.socket,
+      &Reliability::ReliableOrdered,
+      &ServerPacket::InitiatePvp {
+        address: client_1.socket_address.to_string(),
+      },
+    )
+  }
+
   #[allow(clippy::too_many_arguments)]
   pub fn transfer_player(
     &mut self,

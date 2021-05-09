@@ -457,6 +457,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "multi_mut"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "816df386e5557ac1843a96f1ba8a7cbf4ab175d05ccc15c87a3cda27b4fbdece"
+
+[[package]]
 name = "nb-connect"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -475,6 +481,7 @@ dependencies = [
  "clap",
  "itertools",
  "minidom",
+ "multi_mut",
  "rlua",
  "ureq",
  "uuid",

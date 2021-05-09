@@ -363,7 +363,7 @@ Net.unlock_player(player_id)
 Net.teleport_player(player_id, warp, x, y, z, direction?)
 -- Net.scale_player(player_id, scale, transition_duration?)
 -- Net.initiate_encounter(player_id, data)
--- Net.initiate_pvp(player_1_id, player_2_id, data)
+Net.initiate_pvp(player_1_id, player_2_id, field_script_path?)
 Net.transfer_player(player_id, area_id, warp_in?, x?, y?, z?, direction?)
 Net.transfer_server(player_id, address, port, warp_out?, data?) -- data = string
 Net.kick_player(player_id, reason, warp_out?)
