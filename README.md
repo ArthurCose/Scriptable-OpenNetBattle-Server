@@ -128,7 +128,7 @@ Position Warp:
 
 - Tile Objects only
 - Visible in minimap
-- Players will be warped to the set position if they walk into the tile this object is centered on
+- Players will be warped to the set position if colliding with the warp
 - Custom properties:
   - X: float
   - Y: float
@@ -147,7 +147,7 @@ Server Warp:
 
 - Tile Objects only
 - Visible in minimap
-- Players will be transferred to a different server if they walk into the tile this object is centered on
+- Players will be transferred to a different server if colliding with the warp
 - Custom properties:
   - Address: string
   - Port: number
@@ -158,11 +158,13 @@ Custom Server Warp:
 
 - Tile Objects only
 - Visible in minimap
+- Players will be warped out if colliding with the warp, the result of the warp can be resolved in handle_custom_warp
 
 Custom Warp:
 
 - Tile Objects only
 - Visible in minimap
+- Players will be warped out if colliding with the warp, the result of the warp can be resolved in handle_custom_warp
 
 Board:
 
