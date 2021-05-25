@@ -33,7 +33,7 @@ impl Server {
   fn get_ip() -> String {
     if let Ok(resp) = ureq::get("http://checkip.amazonaws.com").call() {
         if let Ok(ip) = resp.into_string() {
-            return ip;
+            return ip.replace("\n","");
         }
     }
     return "127.0.0.1".to_string();
