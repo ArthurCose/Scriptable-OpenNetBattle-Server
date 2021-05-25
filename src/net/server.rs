@@ -26,15 +26,26 @@ pub struct Server {
   packet_sorter_map: HashMap<std::net::SocketAddr, PacketSorter>,
   plugin_wrapper: PluginWrapper,
   config: ServerConfig,
+  public_ip: String
 }
 
 impl Server {
+  fn get_ip() -> String {
+    if let Ok(resp) = ureq::get("http://checkip.amazonaws.com").call() {
+        if let Ok(ip) = resp.into_string() {
+            return ip;
+        }
+    }
+    return "127.0.0.1".to_string();
+  }
+
   pub fn new(config: ServerConfig) -> Server {
     Server {
       player_id_map: HashMap::new(),
       packet_sorter_map: HashMap::new(),
       plugin_wrapper: PluginWrapper::new(),
       config,
+      public_ip: Server::get_ip()
     }
   }
 
@@ -55,6 +66,7 @@ impl Server {
 
     let socket = Rc::new(socket);
     let mut net = Net::new(socket.clone(), &self.config);
+    net.set_public_ip(&self.public_ip);
 
     self.plugin_wrapper.init(&mut net);
 

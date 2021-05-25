@@ -21,6 +21,7 @@ pub struct Net {
   active_script: usize,
   kick_list: Vec<Boot>,
   job_giver: JobGiver,
+  public_ip: String
 }
 
 impl Net {
@@ -75,7 +76,12 @@ impl Net {
       active_script: 0,
       kick_list: Vec::new(),
       job_giver: create_worker_threads(server_config.worker_thread_count),
+      public_ip: String::new()
     }
+  }
+
+  pub fn set_public_ip(&mut self, ip: &String) {
+    self.public_ip = ip.clone();
   }
 
   fn load_assets_from_dir(assets: &mut HashMap<String, Asset>, dir: &std::path::Path) {
@@ -839,34 +845,51 @@ impl Net {
     }
   }
 
-  pub fn initiate_pvp(&mut self, player_1_id: &str, player_2_id: &str) {
-    use multi_mut::HashMapMultiMut;
+/* \brief makes a localhost ip useable for pvp */
+fn make_ip_useable(ip: &String) -> String {
+  let mut result: String = ip.clone();
+  let home = ip.find("127.0.0.1").unwrap_or_default();
+  let colon = ip.find(":").unwrap_or_default();
 
-    let (client_1, client_2) =
-      if let Some((client_1, client_2)) = self.clients.get_pair_mut(player_1_id, player_2_id) {
-        (client_1, client_2)
-      } else {
-        return;
-      };
-
-    // todo: put these clients in slow mode
-
-    client_1.packet_shipper.send(
-      &self.socket,
-      &Reliability::ReliableOrdered,
-      &ServerPacket::InitiatePvp {
-        address: client_2.socket_address.to_string(),
-      },
-    );
-
-    client_2.packet_shipper.send(
-      &self.socket,
-      &Reliability::ReliableOrdered,
-      &ServerPacket::InitiatePvp {
-        address: client_1.socket_address.to_string(),
-      },
-    )
+  if home == 0 && colon > 0 {
+    let port: String = ip.chars().skip(colon).take(ip.chars().count()-colon).collect();
+    result.push_str(&port);
   }
+
+  return result;
+}
+
+pub fn initiate_pvp(&mut self, player_1_id: &str, player_2_id: &str) {
+  use multi_mut::HashMapMultiMut;
+
+  let (client_1, client_2) =
+    if let Some((client_1, client_2)) = self.clients.get_pair_mut(player_1_id, player_2_id) {
+      (client_1, client_2)
+    } else {
+      return;
+    };
+
+  // todo: put these clients in slow mode
+
+  let client_1_addr = Net::make_ip_useable(&client_1.socket_address.to_string());
+  let client_2_addr = Net::make_ip_useable(&client_2.socket_address.to_string());    
+
+  client_1.packet_shipper.send(
+    &self.socket,
+    &Reliability::ReliableOrdered,
+    &ServerPacket::InitiatePvp {
+      address: client_1_addr
+    },
+  );
+
+  client_2.packet_shipper.send(
+    &self.socket,
+    &Reliability::ReliableOrdered,
+    &ServerPacket::InitiatePvp {
+      address: client_2_addr
+    },
+  )
+}
 
   #[allow(clippy::too_many_arguments)]
   pub fn transfer_player(
