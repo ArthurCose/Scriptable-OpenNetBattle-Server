@@ -846,12 +846,13 @@ impl Net {
   }
 
 /* \brief makes a localhost ip useable for pvp */
-fn make_ip_useable(ip: &String) -> String {
+fn make_ip_useable(ip: &String, alternate: &String) -> String {
   let mut result: String = ip.clone();
   let home = ip.find("127.0.0.1").unwrap_or_default();
   let colon = ip.find(":").unwrap_or_default();
 
   if home == 0 && colon > 0 {
+    result = alternate.clone();
     let port: String = ip.chars().skip(colon).take(ip.chars().count()-colon).collect();
     result.push_str(&port);
   }
@@ -871,14 +872,14 @@ pub fn initiate_pvp(&mut self, player_1_id: &str, player_2_id: &str) {
 
   // todo: put these clients in slow mode
 
-  let client_1_addr = Net::make_ip_useable(&client_1.socket_address.to_string());
-  let client_2_addr = Net::make_ip_useable(&client_2.socket_address.to_string());    
+  let client_1_addr = Net::make_ip_useable(&client_1.socket_address.to_string(), &self.public_ip);
+  let client_2_addr = Net::make_ip_useable(&client_2.socket_address.to_string(), &self.public_ip);    
 
   client_1.packet_shipper.send(
     &self.socket,
     &Reliability::ReliableOrdered,
     &ServerPacket::InitiatePvp {
-      address: client_1_addr
+      address: client_2_addr
     },
   );
 
@@ -886,7 +887,7 @@ pub fn initiate_pvp(&mut self, player_1_id: &str, player_2_id: &str) {
     &self.socket,
     &Reliability::ReliableOrdered,
     &ServerPacket::InitiatePvp {
-      address: client_2_addr
+      address: client_1_addr
     },
   )
 }
