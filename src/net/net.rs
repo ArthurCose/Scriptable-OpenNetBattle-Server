@@ -848,10 +848,10 @@ impl Net {
 /* \brief makes a localhost ip useable for pvp */
 fn make_ip_useable(ip: &String, alternate: &String) -> String {
   let mut result: String = ip.clone();
-  let home = ip.find("127.0.0.1").unwrap_or_default();
+  let home = ip.find("127.0.0.1");
   let colon = ip.find(":").unwrap_or_default();
 
-  if home == 0 && colon > 0 {
+  if home == Some(0) && colon > 0 {
     result = alternate.clone();
     let port: String = ip.chars().skip(colon).take(ip.chars().count()-colon).collect();
     result.push_str(&port);
