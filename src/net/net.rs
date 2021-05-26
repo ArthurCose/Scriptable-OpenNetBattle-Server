@@ -36,27 +36,28 @@ impl Net {
     let mut areas = HashMap::new();
     let mut default_area_provided = false;
 
-    for wrapped_dir_entry in read_dir("./areas").expect("Area folder missing! (./areas)") {
-      if let Ok(map_dir_entry) = wrapped_dir_entry {
-        let map_path = map_dir_entry.path();
-        let area_id = map_path
-          .file_stem()
-          .unwrap_or_default()
-          .to_string_lossy()
-          .into_owned();
+    for map_dir_entry in read_dir("./areas")
+      .expect("Area folder missing! (./areas)")
+      .flatten()
+    {
+      let map_path = map_dir_entry.path();
+      let area_id = map_path
+        .file_stem()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned();
 
-        if let Ok(raw_map) = read_to_string(&map_path) {
-          let mut map = Map::from(&raw_map);
+      if let Ok(raw_map) = read_to_string(&map_path) {
+        let mut map = Map::from(&raw_map);
 
-          if area_id == "default" {
-            default_area_provided = true
-          }
-
-          let map_asset = map.generate_asset();
-
-          assets.insert(get_map_path(&area_id), map_asset);
-          areas.insert(area_id.clone(), Area::new(area_id, map));
+        if area_id == "default" {
+          default_area_provided = true
         }
+
+        let map_asset = map.generate_asset();
+
+        assets.insert(get_map_path(&area_id), map_asset);
+        areas.insert(area_id.clone(), Area::new(area_id, map));
       }
     }
 
@@ -76,7 +77,7 @@ impl Net {
       active_script: 0,
       kick_list: Vec::new(),
       job_giver: create_worker_threads(server_config.worker_thread_count),
-      public_ip: server_config.public_ip.clone(),
+      public_ip: server_config.public_ip,
     }
   }
 
@@ -85,20 +86,18 @@ impl Net {
     use std::fs::read_dir;
 
     if let Ok(entries) = read_dir(dir) {
-      for wrapped_entry in entries {
-        if let Ok(entry) = wrapped_entry {
-          let path = entry.path();
+      for entry in entries.flatten() {
+        let path = entry.path();
 
-          if path.is_dir() {
-            Net::load_assets_from_dir(assets, &path);
-          } else {
-            let mut path_string = String::from("/server/") + path.to_str().unwrap_or_default();
+        if path.is_dir() {
+          Net::load_assets_from_dir(assets, &path);
+        } else {
+          let mut path_string = String::from("/server/") + path.to_str().unwrap_or_default();
 
-            // adjust windows paths
-            path_string = path_string.replace('\\', "/");
+          // adjust windows paths
+          path_string = path_string.replace('\\', "/");
 
-            assets.insert(path_string, load_asset(path));
-          }
+          assets.insert(path_string, load_asset(path));
         }
       }
     }

@@ -205,7 +205,7 @@ fn read_points(points_str: &str) -> Vec<(f32, f32)> {
         point_str[comma_index + 1..].parse::<f32>().unwrap_or(0.0),
       ))
     })
-    .filter_map(|point| point)
+    .flatten()
     .collect::<Vec<(f32, f32)>>()
 }
 
