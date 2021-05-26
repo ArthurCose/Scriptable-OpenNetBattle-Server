@@ -6,7 +6,7 @@ use super::{Actor, Area, Asset, AssetData, BbsPost, Direction};
 use crate::packets::{create_asset_stream, Reliability, ServerPacket};
 use crate::threads::worker_threads::{Job, JobGiver};
 use std::collections::HashMap;
-use std::net::UdpSocket;
+use std::net::{IpAddr, UdpSocket};
 use std::rc::Rc;
 
 pub struct Net {
@@ -21,7 +21,7 @@ pub struct Net {
   active_script: usize,
   kick_list: Vec<Boot>,
   job_giver: JobGiver,
-  public_ip: String
+  public_ip: IpAddr,
 }
 
 impl Net {
@@ -76,12 +76,8 @@ impl Net {
       active_script: 0,
       kick_list: Vec::new(),
       job_giver: create_worker_threads(server_config.worker_thread_count),
-      public_ip: String::new()
+      public_ip: server_config.public_ip.clone(),
     }
-  }
-
-  pub fn set_public_ip(&mut self, ip: &String) {
-    self.public_ip = ip.clone();
   }
 
   fn load_assets_from_dir(assets: &mut HashMap<String, Asset>, dir: &std::path::Path) {
@@ -845,52 +841,38 @@ impl Net {
     }
   }
 
-/* \brief makes a localhost ip useable for pvp */
-fn make_ip_useable(ip: &String, alternate: &String) -> String {
-  let mut result: String = ip.clone();
-  let home = ip.find("127.0.0.1");
-  let colon = ip.find(":").unwrap_or_default();
+  pub fn initiate_pvp(&mut self, player_1_id: &str, player_2_id: &str) {
+    use crate::helpers::use_public_ip;
+    use multi_mut::HashMapMultiMut;
 
-  if home == Some(0) && colon > 0 {
-    result = alternate.clone();
-    let port: String = ip.chars().skip(colon).take(ip.chars().count()-colon).collect();
-    result.push_str(&port);
+    let (client_1, client_2) =
+      if let Some((client_1, client_2)) = self.clients.get_pair_mut(player_1_id, player_2_id) {
+        (client_1, client_2)
+      } else {
+        return;
+      };
+
+    // todo: put these clients in slow mode
+
+    let client_1_addr = use_public_ip(client_1.socket_address, self.public_ip);
+    let client_2_addr = use_public_ip(client_2.socket_address, self.public_ip);
+
+    client_1.packet_shipper.send(
+      &self.socket,
+      &Reliability::ReliableOrdered,
+      &ServerPacket::InitiatePvp {
+        address: client_2_addr.to_string(),
+      },
+    );
+
+    client_2.packet_shipper.send(
+      &self.socket,
+      &Reliability::ReliableOrdered,
+      &ServerPacket::InitiatePvp {
+        address: client_1_addr.to_string(),
+      },
+    )
   }
-
-  return result;
-}
-
-pub fn initiate_pvp(&mut self, player_1_id: &str, player_2_id: &str) {
-  use multi_mut::HashMapMultiMut;
-
-  let (client_1, client_2) =
-    if let Some((client_1, client_2)) = self.clients.get_pair_mut(player_1_id, player_2_id) {
-      (client_1, client_2)
-    } else {
-      return;
-    };
-
-  // todo: put these clients in slow mode
-
-  let client_1_addr = Net::make_ip_useable(&client_1.socket_address.to_string(), &self.public_ip);
-  let client_2_addr = Net::make_ip_useable(&client_2.socket_address.to_string(), &self.public_ip);    
-
-  client_1.packet_shipper.send(
-    &self.socket,
-    &Reliability::ReliableOrdered,
-    &ServerPacket::InitiatePvp {
-      address: client_2_addr
-    },
-  );
-
-  client_2.packet_shipper.send(
-    &self.socket,
-    &Reliability::ReliableOrdered,
-    &ServerPacket::InitiatePvp {
-      address: client_1_addr
-    },
-  )
-}
 
   #[allow(clippy::too_many_arguments)]
   pub fn transfer_player(

@@ -7,6 +7,7 @@ mod threads;
 
 use helpers::unwrap_and_parse_or_default;
 use plugins::LuaPluginInterface;
+use std::net::IpAddr;
 
 fn main() {
     let matches = clap::App::new("OpenNetBattle Server")
@@ -118,7 +119,8 @@ fn main() {
         .get_matches();
 
     let config = net::ServerConfig {
-        // validators makes this safe to unwrap
+        public_ip: get_public_ip().unwrap_or_else(|_| IpAddr::from([127, 0, 0, 1])), // default to localhost
+        // validators makes these safe to unwrap
         port: matches.value_of("port").unwrap().parse().unwrap(),
         log_connections: matches.is_present("log_connections"),
         log_packets: matches.is_present("log_packets"),
@@ -140,4 +142,15 @@ fn main() {
     if let Err(err) = server.start() {
         panic!("{}", err);
     }
+}
+
+fn get_public_ip() -> Result<IpAddr, Box<dyn std::error::Error>> {
+    use std::str::FromStr;
+
+    let response = ureq::get("http://checkip.amazonaws.com").call()?;
+    let response_text = response.into_string()?;
+
+    let ip_string = response_text.replace("\n", "");
+
+    Ok(IpAddr::from_str(&ip_string)?)
 }
