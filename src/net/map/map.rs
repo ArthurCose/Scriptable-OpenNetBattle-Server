@@ -182,7 +182,7 @@ impl Map {
     // warnings
     let manual_horizontal_offset: i32 = unwrap_and_parse_or_default(layer_element.attr("offsetx"));
     let manual_vertical_offset: i32 = unwrap_and_parse_or_default(layer_element.attr("offsety"));
-    let correct_vertical_offset = layer_index as i32 * (self.tile_height / 2) as i32;
+    let correct_vertical_offset = layer_index as i32 * -((self.tile_height / 2) as i32);
 
     if manual_horizontal_offset != 0 {
       println!(
