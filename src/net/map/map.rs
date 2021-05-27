@@ -110,12 +110,7 @@ impl Map {
           let name: String = child.attr("name").unwrap_or_default().to_string();
 
           // map name might be missing if the file wasn't generated
-          Map::test_offsets_and_warn_for_layer(
-            map.name.as_str(),
-            name.as_str(),
-            map.layers.len(),
-            child,
-          );
+          map.indicate_layer_offset_issues(name.as_str(), map.layers.len(), child);
 
           // actual handling
           let data: Vec<u32> = child
@@ -137,7 +132,7 @@ impl Map {
           let name: &str = child.attr("name").unwrap_or_default();
 
           // map name might be missing if the file wasn't generated
-          Map::test_offsets_and_warn_for_layer(map.name.as_str(), name, object_layers, child);
+          map.indicate_layer_offset_issues(name, object_layers, child);
 
           if object_layers + 1 != map.layers.len() {
             println!("{}: Layer \"{}\" will link to layer {}! (Layer order starting from bottom is Tile, Object, Tile, Object, etc)", map.name, name, object_layers);
@@ -178,8 +173,8 @@ impl Map {
     map
   }
 
-  fn test_offsets_and_warn_for_layer(
-    map_name: &str,
+  fn indicate_layer_offset_issues(
+    &self,
     layer_name: &str,
     layer_index: usize,
     layer_element: &minidom::Element,
@@ -187,19 +182,19 @@ impl Map {
     // warnings
     let manual_horizontal_offset: i32 = unwrap_and_parse_or_default(layer_element.attr("offsetx"));
     let manual_vertical_offset: i32 = unwrap_and_parse_or_default(layer_element.attr("offsety"));
-    let correct_vertical_offset = layer_index as i32 * -16;
+    let correct_vertical_offset = layer_index as i32 * (self.tile_height / 2) as i32;
 
     if manual_horizontal_offset != 0 {
       println!(
         "{}: Layer \"{}\" has incorrect horizontal offset! (Should be 0)",
-        map_name, layer_name
+        self.name, layer_name
       );
     }
 
     if manual_vertical_offset != correct_vertical_offset {
       println!(
         "{}: Layer \"{}\" has incorrect vertical offset! (Should be {})",
-        map_name, layer_name, correct_vertical_offset
+        self.name, layer_name, correct_vertical_offset
       );
     }
   }
