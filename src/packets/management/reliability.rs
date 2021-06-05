@@ -7,6 +7,12 @@ pub enum Reliability {
   ReliableOrdered,
 }
 
+impl Reliability {
+  pub fn is_reliable(&self) -> bool {
+    matches!(self, Reliability::Reliable | Reliability::ReliableOrdered)
+  }
+}
+
 pub fn get_reliability(reliability_byte: u8) -> Reliability {
   match reliability_byte {
     1 => Reliability::UnreliableSequenced,

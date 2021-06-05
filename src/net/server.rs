@@ -122,9 +122,11 @@ impl Server {
           headers,
           packet,
         } => {
-          if !matches!(headers.reliability, Reliability::Unreliable)
+          if headers.id == 0
+            && headers.reliability.is_reliable()
             && !self.packet_sorter_map.contains_key(&socket_address)
           {
+            // received the first reliable packet, store a new connection
             let packet_sorter = PacketSorter::new(socket_address);
             self.packet_sorter_map.insert(socket_address, packet_sorter);
 
