@@ -60,6 +60,10 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
         x: x.unwrap_or(spawn.0),
         y: y.unwrap_or(spawn.1),
         z: z.unwrap_or(spawn.2),
+        scale_x: 1.0,
+        scale_y: 1.0,
+        rotation: 0.0,
+        current_animation: None,
         solid: solid.unwrap_or_default(),
       };
 
@@ -198,6 +202,25 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
     lua_ctx.pack_multi(())
   });
+
+  lua_api.add_dynamic_function(
+    "Net",
+    "animate_bot_properties",
+    |api_ctx, lua_ctx, params| {
+      use super::actor_property_animaton::parse_animation;
+
+      let (player_id, keyframe_tables): (rlua::String, Vec<rlua::Table>) =
+        lua_ctx.unpack_multi(params)?;
+      let player_id_str = player_id.to_str()?;
+
+      let mut net = api_ctx.net_ref.borrow_mut();
+
+      let animation = parse_animation(keyframe_tables)?;
+      net.animate_bot_properties(player_id_str, animation);
+
+      lua_ctx.pack_multi(())
+    },
+  );
 
   lua_api.add_dynamic_function("Net", "set_bot_avatar", |api_ctx, lua_ctx, params| {
     let (bot_id, texture_path, animation_path): (rlua::String, String, String) =

@@ -1,3 +1,4 @@
+mod actor_property_animaton;
 mod area_api;
 mod asset_api;
 mod async_api;

@@ -279,6 +279,8 @@ impl Server {
               client.actor.x != x || client.actor.y != y || client.actor.z != z;
 
             if position_changed {
+              client.actor.current_animation = None;
+
               self
                 .plugin_wrapper
                 .handle_player_move(net, player_id, x, y, z);

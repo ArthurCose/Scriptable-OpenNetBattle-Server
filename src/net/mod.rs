@@ -2,6 +2,7 @@
 mod net;
 
 mod actor;
+pub mod actor_property_animation;
 mod area;
 pub mod asset;
 pub mod bbs_post;

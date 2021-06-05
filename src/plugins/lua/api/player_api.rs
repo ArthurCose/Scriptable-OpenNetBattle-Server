@@ -202,6 +202,25 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
+  lua_api.add_dynamic_function(
+    "Net",
+    "animate_player_properties",
+    |api_ctx, lua_ctx, params| {
+      use super::actor_property_animaton::parse_animation;
+
+      let (player_id, keyframe_tables): (rlua::String, Vec<rlua::Table>) =
+        lua_ctx.unpack_multi(params)?;
+      let player_id_str = player_id.to_str()?;
+
+      let mut net = api_ctx.net_ref.borrow_mut();
+
+      let animation = parse_animation(keyframe_tables)?;
+      net.animate_player_properties(player_id_str, animation);
+
+      lua_ctx.pack_multi(())
+    },
+  );
+
   lua_api.add_dynamic_function("Net", "is_player_in_widget", |api_ctx, lua_ctx, params| {
     let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;

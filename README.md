@@ -322,6 +322,7 @@ Net.get_bot_name(bot_id) -- name
 Net.set_bot_name(bot_id, name)
 Net.get_bot_direction(bot_id)
 Net.set_bot_direction(bot_id, direction)
+Net.animate_bot_properties(bot_id, keyframes) -- unstable
 Net.get_bot_position(bot_id) -- { x, y, z }
 Net.move_bot(bot_id, x, y, z)
 -- Net.set_bot_solid(bot_id, solid)
@@ -329,6 +330,16 @@ Net.set_bot_avatar(bot_id, texture_path, animation_path)
 Net.set_bot_emote(bot_id, emote_id)
 Net.animate_bot(bot_id, state_name, loop?)
 Net.transfer_bot(bot_id, area_id, warp_in?, x?, y?, z?)
+
+-- keyframes:
+{
+  properties: {
+    property: "Animation" | "X" | "Y" | "Z" | "ScaleX" | "ScaleY" | "Rotation" | "Direction",
+    ease?: "Linear" | "In" | "Out" | "InOut" | "Floor",
+    value: number | string
+  }[],
+  duration: number
+}[]
 ```
 
 #### Player API
@@ -348,6 +359,7 @@ Net.set_player_avatar(player_id, texture_path, animation_path)
 Net.set_player_emote(player_id, emote_id)
 Net.exclusive_player_emote(player_id, emoter_id, emote_id)
 Net.animate_player(player_id, state_name, loop?)
+Net.animate_player_properties(player_id, keyframes) -- unstable
 -- Net.is_player_battling(player_id)
 Net.is_player_busy(player_id)
 Net.provide_asset_for_player(player_id, path)
@@ -359,9 +371,7 @@ Net.slide_player_camera(player_id, x, y, z, durationInSeconds)
 Net.unlock_player_camera(player_id)
 Net.lock_player(player_id)
 Net.unlock_player(player_id)
--- Net.move_player(player_id, x, y, z)
 Net.teleport_player(player_id, warp, x, y, z, direction?)
--- Net.scale_player(player_id, scale, transition_duration?)
 -- Net.initiate_encounter(player_id, data)
 Net.initiate_pvp(player_1_id, player_2_id, field_script_path?)
 Net.transfer_player(player_id, area_id, warp_in?, x?, y?, z?, direction?)

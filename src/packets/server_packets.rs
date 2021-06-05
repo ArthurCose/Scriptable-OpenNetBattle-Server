@@ -2,6 +2,7 @@
 
 use super::bytes::*;
 use super::{VERSION_ID, VERSION_ITERATION};
+use crate::net::actor_property_animation::{ActorProperty, Ease, KeyFrame};
 use crate::net::{Asset, AssetData, BbsPost, Direction};
 
 #[derive(Debug)]
@@ -135,6 +136,10 @@ pub enum ServerPacket<'a> {
     z: f32,
     solid: bool,
     warp_in: bool,
+    scale_x: f32,
+    scale_y: f32,
+    rotation: f32,
+    animation: Option<String>,
   },
   ActorDisconnected {
     ticket: String,
@@ -164,6 +169,11 @@ pub enum ServerPacket<'a> {
     ticket: String,
     state: String,
     loop_animation: bool,
+  },
+  ActorPropertyKeyFrames {
+    ticket: String,
+    tail: bool,
+    keyframes: Vec<KeyFrame>,
   },
 }
 
@@ -440,6 +450,10 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       z,
       solid,
       warp_in,
+      scale_x,
+      scale_y,
+      rotation,
+      animation,
     } => {
       write_u16(&mut buf, 31);
       write_string(&mut buf, ticket);
@@ -452,6 +466,14 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_f32(&mut buf, *z);
       write_bool(&mut buf, *solid);
       write_bool(&mut buf, *warp_in);
+      write_f32(&mut buf, *scale_x);
+      write_f32(&mut buf, *scale_y);
+      write_f32(&mut buf, *rotation);
+      write_bool(&mut buf, animation.is_some());
+
+      if let Some(animation) = animation {
+        write_string(&mut buf, animation);
+      }
     }
     ServerPacket::ActorDisconnected { ticket, warp_out } => {
       write_u16(&mut buf, 32);
@@ -501,6 +523,37 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_string(&mut buf, ticket);
       write_string(&mut buf, state);
       write_bool(&mut buf, *loop_animation)
+    }
+    ServerPacket::ActorPropertyKeyFrames {
+      ticket,
+      tail,
+      keyframes,
+    } => {
+      write_u16(&mut buf, 38);
+      write_string(&mut buf, ticket);
+      write_bool(&mut buf, *tail);
+      write_u16(&mut buf, keyframes.len() as u16);
+
+      for keyframe in keyframes {
+        write_f32(&mut buf, keyframe.duration);
+        write_u16(&mut buf, keyframe.property_steps.len() as u16);
+
+        for (property, ease) in &keyframe.property_steps {
+          buf.push(get_ease_identifier(&ease));
+          buf.push(get_actor_property_identifier(&property));
+
+          match property {
+            ActorProperty::Animation(value) => write_string(&mut buf, &value),
+            ActorProperty::X(value) => write_f32(&mut buf, *value),
+            ActorProperty::Y(value) => write_f32(&mut buf, *value),
+            ActorProperty::Z(value) => write_f32(&mut buf, *value),
+            ActorProperty::ScaleX(value) => write_f32(&mut buf, *value),
+            ActorProperty::ScaleY(value) => write_f32(&mut buf, *value),
+            ActorProperty::Rotation(value) => write_f32(&mut buf, *value),
+            ActorProperty::Direction(value) => buf.push(translate_direction(*value)),
+          }
+        }
+      }
     }
   }
 
@@ -559,5 +612,28 @@ fn translate_direction(direction: Direction) -> u8 {
     Direction::DownLeft => 0x40,
     Direction::DownRight => 0x80,
     _ => 0x00,
+  }
+}
+
+fn get_actor_property_identifier(property: &ActorProperty) -> u8 {
+  match property {
+    ActorProperty::Animation(_) => 0,
+    ActorProperty::X(_) => 1,
+    ActorProperty::Y(_) => 2,
+    ActorProperty::Z(_) => 3,
+    ActorProperty::ScaleX(_) => 4,
+    ActorProperty::ScaleY(_) => 5,
+    ActorProperty::Rotation(_) => 6,
+    ActorProperty::Direction(_) => 7,
+  }
+}
+
+fn get_ease_identifier(ease: &Ease) -> u8 {
+  match ease {
+    Ease::Linear => 0,
+    Ease::In => 1,
+    Ease::Out => 2,
+    Ease::InOut => 3,
+    Ease::Floor => 4,
   }
 }

@@ -1,3 +1,4 @@
+use super::actor_property_animation::KeyFrame;
 use super::boot::Boot;
 use super::client::Client;
 use super::map::Map;
@@ -333,6 +334,40 @@ impl Net {
           state: name.to_string(),
           loop_animation,
         },
+      );
+    }
+  }
+
+  pub fn animate_player_properties(&mut self, id: &str, animation: Vec<KeyFrame>) {
+    use super::actor_property_animation::ActorProperty;
+
+    if let Some(client) = self.clients.get_mut(id) {
+      let area = match self.areas.get(&client.actor.area_id) {
+        Some(area) => area,
+        None => return,
+      };
+
+      // store final values for new players
+      for keyframe in &animation {
+        for (property, _) in &keyframe.property_steps {
+          match property {
+            ActorProperty::Animation(value) => client.actor.current_animation = Some(value.clone()),
+            ActorProperty::ScaleX(value) => client.actor.scale_x = *value,
+            ActorProperty::ScaleY(value) => client.actor.scale_y = *value,
+            ActorProperty::Rotation(value) => client.actor.rotation = *value,
+            ActorProperty::Direction(value) => client.actor.direction = *value,
+            _ => {}
+          }
+        }
+      }
+
+      broadcast_actor_keyframes(
+        &self.socket,
+        &mut self.clients,
+        area,
+        self.max_payload_size,
+        id,
+        animation,
       );
     }
   }
@@ -1221,22 +1256,12 @@ impl Net {
       }
 
       let other_client = self.clients.get(other_player_id).unwrap();
+      let actor = &other_client.actor;
 
-      asset_paths.push(other_client.actor.texture_path.clone());
-      asset_paths.push(other_client.actor.animation_path.clone());
+      asset_paths.push(actor.texture_path.clone());
+      asset_paths.push(actor.animation_path.clone());
 
-      packets.push(ServerPacket::ActorConnected {
-        ticket: other_client.actor.id.clone(),
-        name: other_client.actor.name.clone(),
-        texture_path: other_client.actor.texture_path.clone(),
-        animation_path: other_client.actor.animation_path.clone(),
-        direction: other_client.actor.direction,
-        x: other_client.actor.x,
-        y: other_client.actor.y,
-        z: other_client.actor.z,
-        solid: other_client.actor.solid,
-        warp_in: false,
-      });
+      packets.push(actor.create_spawn_packet(actor.x, actor.y, actor.z, false));
     }
 
     // send bots
@@ -1246,18 +1271,7 @@ impl Net {
       asset_paths.push(bot.texture_path.clone());
       asset_paths.push(bot.animation_path.clone());
 
-      packets.push(ServerPacket::ActorConnected {
-        ticket: bot.id.clone(),
-        name: bot.name.clone(),
-        texture_path: bot.texture_path.clone(),
-        animation_path: bot.animation_path.clone(),
-        direction: bot.direction,
-        x: bot.x,
-        y: bot.y,
-        z: bot.z,
-        solid: bot.solid,
-        warp_in: false,
-      });
+      packets.push(bot.create_spawn_packet(bot.x, bot.y, bot.z, false));
     }
 
     // send asset_packets before anything else
@@ -1289,24 +1303,14 @@ impl Net {
       client.ready = true;
       client.transferring = false;
 
-      // clone id to end mutable client lifetime
-      let player_id = client.actor.id.clone();
-      let area = self.areas.get_mut(&client.actor.area_id).unwrap();
-      let texture_path = client.actor.texture_path.clone();
-      let animation_path = client.actor.animation_path.clone();
+      let packet = client.actor.create_spawn_packet(
+        client.warp_x,
+        client.warp_y,
+        client.warp_z,
+        client.warp_in,
+      );
 
-      let packet = ServerPacket::ActorConnected {
-        ticket: player_id,
-        name: client.actor.name.clone(),
-        texture_path,
-        animation_path,
-        direction: client.actor.direction,
-        x: client.warp_x,
-        y: client.warp_y,
-        z: client.warp_z,
-        solid: client.actor.solid,
-        warp_in: client.warp_in,
-      };
+      let area = self.areas.get_mut(&client.actor.area_id).unwrap();
 
       broadcast_to_area(
         &self.socket,
@@ -1354,18 +1358,7 @@ impl Net {
     if let Some(area) = self.areas.get_mut(&bot.area_id) {
       area.add_bot(bot.id.clone());
 
-      let packet = ServerPacket::ActorConnected {
-        ticket: bot.id.clone(),
-        name: bot.name.clone(),
-        texture_path: bot.texture_path.clone(),
-        animation_path: bot.animation_path.clone(),
-        direction: bot.direction,
-        x: bot.x,
-        y: bot.y,
-        z: bot.z,
-        solid: bot.solid,
-        warp_in: true,
-      };
+      let packet = bot.create_spawn_packet(bot.x, bot.y, bot.z, true);
 
       assert_asset(
         &self.socket,
@@ -1453,6 +1446,7 @@ impl Net {
       bot.x = x;
       bot.y = y;
       bot.z = z;
+      bot.current_animation = None;
     }
   }
 
@@ -1538,6 +1532,42 @@ impl Net {
     }
   }
 
+  pub fn animate_bot_properties(&mut self, id: &str, animation: Vec<KeyFrame>) {
+    use super::actor_property_animation::ActorProperty;
+
+    if let Some(bot) = self.bots.get_mut(id) {
+      // store final values for new players
+      let area = match self.areas.get(&bot.area_id) {
+        Some(area) => area,
+        None => return,
+      };
+
+      for keyframe in &animation {
+        for (property, _) in &keyframe.property_steps {
+          match property {
+            ActorProperty::Animation(value) => bot.current_animation = Some(value.clone()),
+            ActorProperty::X(value) => bot.x = *value,
+            ActorProperty::Y(value) => bot.y = *value,
+            ActorProperty::Z(value) => bot.z = *value,
+            ActorProperty::ScaleX(value) => bot.scale_x = *value,
+            ActorProperty::ScaleY(value) => bot.scale_y = *value,
+            ActorProperty::Rotation(value) => bot.rotation = *value,
+            ActorProperty::Direction(value) => bot.direction = *value,
+          }
+        }
+      }
+
+      broadcast_actor_keyframes(
+        &self.socket,
+        &mut self.clients,
+        area,
+        self.max_payload_size,
+        id,
+        animation,
+      );
+    }
+  }
+
   pub fn transfer_bot(&mut self, id: &str, area_id: &str, warp_in: bool, x: f32, y: f32, z: f32) {
     if self.areas.get(area_id).is_none() {
       // non existent area
@@ -1590,18 +1620,7 @@ impl Net {
         &mut self.clients,
         area,
         Reliability::Reliable,
-        ServerPacket::ActorConnected {
-          ticket: id.to_string(),
-          name: bot.name.clone(),
-          texture_path: bot.texture_path.clone(),
-          animation_path: bot.animation_path.clone(),
-          direction: bot.direction,
-          x: bot.x,
-          y: bot.y,
-          z: bot.z,
-          solid: bot.solid,
-          warp_in,
-        },
+        bot.create_spawn_packet(bot.x, bot.y, bot.z, warp_in),
       );
     }
   }
@@ -1690,6 +1709,79 @@ impl Net {
     for client in self.clients.values_mut() {
       client.packet_shipper.resend_backed_up_packets(&self.socket);
     }
+  }
+}
+
+fn broadcast_actor_keyframes(
+  socket: &UdpSocket,
+  clients: &mut HashMap<String, Client>,
+  area: &Area,
+  max_payload_size: usize,
+  id: &str,
+  animation: Vec<KeyFrame>,
+) {
+  use super::actor_property_animation::ActorProperty;
+  use crate::helpers::iterators::IteratorHelper;
+
+  // reliability + reliability id + type + id + \0 + tail + keyframe size
+  let header_size = 1 + 8 + 2 + id.len() + 1 + 1 + 2;
+  let remaining_size = max_payload_size - header_size;
+
+  let measure = |keyframe: &KeyFrame| {
+    // duration + step count
+    let mut size = 4 + 2;
+
+    for (property, _) in &keyframe.property_steps {
+      // ease id + property id
+      size += 1 + 1;
+
+      // + value
+      match property {
+        ActorProperty::Animation(value) => size += value.len() + 1,
+        ActorProperty::Direction(_) => size += 1,
+        _ => size += 4,
+      }
+    }
+
+    size
+  };
+
+  let chunks = animation
+    .into_iter()
+    .pack_chunks_lossy(remaining_size, measure);
+
+  let mut last_chunk = None;
+
+  for chunk in chunks {
+    if let Some(chunk) = last_chunk {
+      broadcast_to_area(
+        socket,
+        clients,
+        area,
+        Reliability::ReliableOrdered,
+        ServerPacket::ActorPropertyKeyFrames {
+          ticket: id.to_string(),
+          tail: false,
+          keyframes: chunk,
+        },
+      )
+    }
+
+    last_chunk = Some(chunk)
+  }
+
+  if let Some(chunk) = last_chunk {
+    broadcast_to_area(
+      socket,
+      clients,
+      area,
+      Reliability::ReliableOrdered,
+      ServerPacket::ActorPropertyKeyFrames {
+        ticket: id.to_string(),
+        tail: true,
+        keyframes: chunk,
+      },
+    )
   }
 }
 
