@@ -590,6 +590,17 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
+  lua_api.add_dynamic_function("Net", "close_bbs", |api_ctx, lua_ctx, params| {
+    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id_str = player_id.to_str()?;
+
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    net.close_bbs(player_id_str);
+
+    lua_ctx.pack_multi(())
+  });
+
   lua_api.add_dynamic_function("Net", "initiate_pvp", |api_ctx, lua_ctx, params| {
     let (player_1_id, player_2_id, _): (rlua::String, rlua::String, Option<rlua::String>) =
       lua_ctx.unpack_multi(params)?;

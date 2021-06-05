@@ -875,6 +875,16 @@ impl Net {
     }
   }
 
+  pub fn close_bbs(&mut self, player_id: &str) {
+    if let Some(client) = self.clients.get_mut(player_id) {
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::CloseBBS,
+      );
+    }
+  }
+
   pub fn initiate_pvp(&mut self, player_1_id: &str, player_2_id: &str) {
     use crate::helpers::use_public_ip;
     use multi_mut::HashMapMultiMut;
