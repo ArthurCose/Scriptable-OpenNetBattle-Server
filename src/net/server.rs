@@ -396,6 +396,15 @@ impl Server {
             .plugin_wrapper
             .handle_textbox_response(net, player_id, response);
         }
+        ClientPacket::PromptResponse { response } => {
+          if self.config.log_packets {
+            println!("Received PromptResponse packet from {}", socket_address);
+          }
+
+          self
+            .plugin_wrapper
+            .handle_prompt_response(net, player_id, response);
+        }
         ClientPacket::BoardOpen => {
           if self.config.log_packets {
             println!("Received BoardOpen packet from {}", socket_address);

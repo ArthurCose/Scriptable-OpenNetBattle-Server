@@ -59,6 +59,9 @@ pub enum ClientPacket {
   TextBoxResponse {
     response: u8,
   },
+  PromptResponse {
+    response: String,
+  },
   BoardOpen,
   BoardClose,
   PostRequest,
@@ -146,10 +149,13 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
     17 => Some(ClientPacket::TextBoxResponse {
       response: read_byte(work_buf)?,
     }),
-    18 => Some(ClientPacket::BoardOpen),
-    19 => Some(ClientPacket::BoardClose),
-    20 => Some(ClientPacket::PostRequest),
-    21 => Some(ClientPacket::PostSelection {
+    18 => Some(ClientPacket::PromptResponse {
+      response: read_string(work_buf)?,
+    }),
+    19 => Some(ClientPacket::BoardOpen),
+    20 => Some(ClientPacket::BoardClose),
+    21 => Some(ClientPacket::PostRequest),
+    22 => Some(ClientPacket::PostSelection {
       post_id: read_string(work_buf)?,
     }),
     _ => None,

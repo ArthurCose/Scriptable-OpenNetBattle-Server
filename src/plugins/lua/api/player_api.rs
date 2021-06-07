@@ -471,6 +471,26 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
+  lua_api.add_dynamic_function("Net", "prompt_player", |api_ctx, lua_ctx, params| {
+    let (player_id, character_limit, message): (rlua::String, Option<u16>, Option<String>) =
+      lua_ctx.unpack_multi(params)?;
+    let player_id_str = player_id.to_str()?;
+
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    if let Some(tracker) = api_ctx
+      .widget_tracker_ref
+      .borrow_mut()
+      .get_mut(player_id_str)
+    {
+      tracker.track_textbox(api_ctx.script_path.clone());
+
+      net.prompt_player(player_id_str, character_limit.unwrap_or(u16::MAX), message);
+    }
+
+    lua_ctx.pack_multi(())
+  });
+
   lua_api.add_dynamic_function("Net", "open_board", |api_ctx, lua_ctx, params| {
     use crate::net::BbsPost;
 

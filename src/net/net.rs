@@ -678,6 +678,26 @@ impl Net {
     }
   }
 
+  pub fn prompt_player(&mut self, id: &str, character_limit: u16, default_text: Option<String>) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.widget_tracker.track_textbox(self.active_script);
+
+      // reliability + id + type + \0
+      let available_space = 1 + 8 + 2 + 2 + 1;
+
+      let character_limit = std::cmp::min(character_limit, available_space);
+
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::Prompt {
+          character_limit,
+          default_text,
+        },
+      );
+    }
+  }
+
   pub fn open_board(
     &mut self,
     player_id: &str,

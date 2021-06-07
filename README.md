@@ -386,6 +386,7 @@ Net.is_player_in_widget(player_id)
 Net.message_player(player_id, message, mug_texture_path?, mug_animation_path?)
 Net.question_player(player_id, question, mug_texture_path?, mug_animation_path?)
 Net.quiz_player(player_id, option_a?, option_b?, option_c?, mug_texture_path?, mug_animation_path?)
+Net.prompt_player(player_id, character_limit?, default_text?)
 Net.open_board(player_id, board_name, color, posts) -- color = { r: 0-255, g: 0-255, b: 0-255 }, posts = { id: string, read: bool?, title: string?, author: string? }[]
 Net.prepend_posts(player_id, posts, post_id?) -- unstable, issues arise when multiple scripts create boards at the same time
 Net.append_posts(player_id, posts, post_id?) -- unstable, issues arise when multiple scripts create boards at the same time

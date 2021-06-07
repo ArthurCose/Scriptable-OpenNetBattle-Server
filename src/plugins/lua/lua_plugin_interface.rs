@@ -452,6 +452,28 @@ impl PluginInterface for LuaPluginInterface {
     );
   }
 
+  fn handle_prompt_response(&mut self, net: &mut Net, player_id: &str, response: String) {
+    let tracker = self.widget_trackers.get_mut(player_id).unwrap();
+
+    let script_path = if let Some(script_path) = tracker.pop_textbox() {
+      script_path
+    } else {
+      // protect against attackers
+      return;
+    };
+
+    handle_event(
+      &mut self.scripts,
+      &[script_path],
+      &mut self.widget_trackers,
+      &mut self.promise_manager,
+      &mut self.lua_api,
+      net,
+      "handle_prompt_response",
+      |_, callback| callback.call((player_id, response.clone())),
+    );
+  }
+
   fn handle_board_open(&mut self, net: &mut Net, player_id: &str) {
     let tracker = self.widget_trackers.get_mut(player_id).unwrap();
 

@@ -22,6 +22,7 @@ pub trait PluginInterface {
   fn handle_actor_interaction(&mut self, net: &mut Net, player_id: &str, actor_id: &str);
   fn handle_tile_interaction(&mut self, net: &mut Net, player_id: &str, x: f32, y: f32, z: f32);
   fn handle_textbox_response(&mut self, net: &mut Net, player_id: &str, response: u8);
+  fn handle_prompt_response(&mut self, net: &mut Net, player_id: &str, response: String);
   fn handle_board_open(&mut self, net: &mut Net, player_id: &str);
   fn handle_board_close(&mut self, net: &mut Net, player_id: &str);
   fn handle_post_request(&mut self, net: &mut Net, player_id: &str);

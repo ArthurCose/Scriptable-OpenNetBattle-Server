@@ -152,6 +152,21 @@ impl PluginInterface for PluginWrapper {
     }
   }
 
+  fn handle_prompt_response(&mut self, net: &mut Net, player_id: &str, response: String) {
+    let client = net
+      .get_client_mut(player_id)
+      .expect("An internal author should understand how to handle this better");
+
+    // expect the above to be correct
+    // don't expect the client to be correct
+    // otherwise someone can read the source and force a crash :p
+    if let Some(i) = client.widget_tracker.pop_textbox() {
+      self.wrap_call(i, net, |plugin_interface, net| {
+        plugin_interface.handle_prompt_response(net, player_id, response.clone())
+      });
+    }
+  }
+
   fn handle_board_open(&mut self, net: &mut Net, player_id: &str) {
     let client = net
       .get_client_mut(player_id)
