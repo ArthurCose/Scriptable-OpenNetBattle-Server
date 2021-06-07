@@ -469,7 +469,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_prompt_response",
+      "handle_textbox_response",
       |_, callback| callback.call((player_id, response.clone())),
     );
   }

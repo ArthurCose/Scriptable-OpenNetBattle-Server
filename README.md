@@ -207,7 +207,7 @@ function handle_custom_warp(player_id, object_id) -- player warped out by a "Cus
 function handle_object_interaction(player_id, object_id)
 function handle_actor_interaction(player_id, actor_id) -- actor_id is a player or bot id
 function handle_tile_interaction(player_id, x, y, z)
-function handle_textbox_response(player_id, response) -- response is an index
+function handle_textbox_response(player_id, response) -- response is an index or a string
 function handle_board_open(player_id)
 function handle_board_close(player_id)
 function handle_post_selection(player_id, post_id)
