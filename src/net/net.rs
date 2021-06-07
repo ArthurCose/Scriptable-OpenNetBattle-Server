@@ -683,7 +683,7 @@ impl Net {
       client.widget_tracker.track_textbox(self.active_script);
 
       // reliability + id + type + \0
-      let available_space = 1 + 8 + 2 + 2 + 1;
+      let available_space = self.max_payload_size as u16 - 1 - 8 - 2 - 2 - 1;
 
       let character_limit = std::cmp::min(character_limit, available_space);
 
