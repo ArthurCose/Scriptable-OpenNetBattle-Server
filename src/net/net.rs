@@ -705,7 +705,9 @@ impl Net {
     color: (u8, u8, u8),
     posts: Vec<BbsPost>,
   ) {
-    use super::bbs_post::count_fit_posts;
+    use super::bbs_post::calc_size;
+    use crate::helpers::iterators::IteratorHelper;
+    use std::cell::RefCell;
 
     let client = if let Some(client) = self.clients.get_mut(player_id) {
       client
@@ -713,64 +715,94 @@ impl Net {
       return;
     };
 
-    // reliability + id + type
-    let header_size = 1 + 8 + 2;
-
-    let mut packet_size = header_size;
-    packet_size += name.len() + 1;
-    packet_size += 3; // color
-
-    let fit_post_count = count_fit_posts(self.max_payload_size - packet_size, 0, &posts);
-
-    client.packet_shipper.send(
-      &self.socket,
-      &Reliability::ReliableOrdered,
-      &ServerPacket::OpenBoard {
-        current_depth: client.widget_tracker.get_board_count() as u8,
-        name,
-        color,
-        posts: &posts[..fit_post_count],
-      },
-    );
-
+    let start_depth = client.widget_tracker.get_board_count() as u8;
     client.widget_tracker.track_board(self.active_script);
 
-    let mut last_id = &posts[fit_post_count - 1].id;
-    let mut start_index = 0;
-    start_index += fit_post_count;
-
-    while start_index < posts.len() {
-      let mut packet_size = header_size;
-      packet_size += 2; // currentDepth + hasReference
-      packet_size += last_id.len() + 1; // reference
-
-      let fit_post_count =
-        count_fit_posts(self.max_payload_size - packet_size, start_index, &posts);
-
-      if fit_post_count == 0 {
-        println!("open_board failed! (Contains a post too large to send)");
-        break;
-      }
-
-      let end_index = start_index + fit_post_count - 1;
-
+    if posts.len() == 0 {
+      // logic below will send nothing if there's no posts,
+      // we want to at least open the bbs if the post vec is empty
       client.packet_shipper.send(
         &self.socket,
         &Reliability::ReliableOrdered,
-        &ServerPacket::AppendPosts {
-          current_depth: client.widget_tracker.get_board_count() as u8,
-          reference: Some(last_id.clone()),
-          posts: &posts[start_index..end_index + 1],
+        &ServerPacket::OpenBoard {
+          current_depth: start_depth,
+          name: name.clone(),
+          color,
+          posts: &[],
         },
       );
+    }
 
-      last_id = &posts[end_index].id;
-      start_index = end_index + 1;
+    let max_payload_size = self.max_payload_size;
+    let chunk_state: Rc<RefCell<(usize, Option<String>)>> = Rc::new(RefCell::new((0, None)));
+
+    let calc_chunk_limit = |_| {
+      // reliability + id + type
+      let mut packet_size = 1 + 8 + 2;
+
+      let borrowed_state = chunk_state.borrow();
+
+      if borrowed_state.0 == 0 {
+        packet_size += name.len() + 1;
+        packet_size += 3; // color
+      } else {
+        packet_size += 2; // currentDepth + hasReference
+
+        if let Some(last_id) = borrowed_state.1.as_ref() {
+          packet_size += last_id.len() + 1; // reference
+        }
+      }
+
+      max_payload_size - packet_size
+    };
+
+    let calc_post_size = |post: &BbsPost| {
+      let mut borrowed_state = chunk_state.borrow_mut();
+      borrowed_state.0 += 1;
+      borrowed_state.1 = Some(post.id.clone());
+      calc_size(post)
+    };
+
+    let chunks = posts
+      .into_iter()
+      .pack_chunks_lossy(calc_chunk_limit, calc_post_size);
+
+    let mut i = 0;
+    let mut last_id = None;
+    let current_depth = client.widget_tracker.get_board_count() as u8;
+
+    for mut chunk in chunks {
+      let mut ref_id = None;
+      std::mem::swap(&mut ref_id, &mut last_id); // avoiding clone
+
+      let packet = if i == 0 {
+        ServerPacket::OpenBoard {
+          current_depth: start_depth,
+          name: name.clone(),
+          color,
+          posts: chunk.as_slice(),
+        }
+      } else {
+        ServerPacket::AppendPosts {
+          current_depth,
+          reference: ref_id,
+          posts: chunk.as_slice(),
+        }
+      };
+
+      client
+        .packet_shipper
+        .send(&self.socket, &Reliability::ReliableOrdered, &packet);
+
+      last_id = chunk.pop().map(|post| post.id);
+      i += 1;
     }
   }
 
   pub fn prepend_posts(&mut self, player_id: &str, reference: Option<String>, posts: Vec<BbsPost>) {
-    use super::bbs_post::count_fit_posts;
+    use super::bbs_post::calc_size;
+    use crate::helpers::iterators::IteratorHelper;
+    use std::cell::RefCell;
 
     let client = if let Some(client) = self.clients.get_mut(player_id) {
       client
@@ -778,64 +810,66 @@ impl Net {
       return;
     };
 
-    // reliability + id + type
-    let header_size = 1 + 8 + 2;
+    let max_payload_size = self.max_payload_size;
 
-    let mut packet_size = header_size;
-    packet_size += 2; // currentDepth + hasReference
+    let last_id = Rc::new(RefCell::new(reference.clone()));
 
-    if let Some(reference) = reference.as_ref() {
-      packet_size += reference.len() + 1; // reference
-    }
-
-    let fit_post_count = count_fit_posts(self.max_payload_size - packet_size, 0, &posts);
-
-    client.packet_shipper.send(
-      &self.socket,
-      &Reliability::ReliableOrdered,
-      &ServerPacket::PrependPosts {
-        current_depth: client.widget_tracker.get_board_count() as u8,
-        reference,
-        posts: &posts[..fit_post_count],
-      },
-    );
-
-    let mut last_id = &posts[fit_post_count - 1].id;
-    let mut start_index = 0;
-    start_index += fit_post_count;
-
-    while start_index < posts.len() {
-      let mut packet_size = header_size;
+    let calc_chunk_limit = |_| {
+      // reliability + id + type
+      let mut packet_size = 1 + 8 + 2;
       packet_size += 2; // currentDepth + hasReference
-      packet_size += last_id.len() + 1; // reference
 
-      let fit_post_count =
-        count_fit_posts(self.max_payload_size - packet_size, start_index, &posts);
-
-      if fit_post_count == 0 {
-        println!("prepend_posts failed! (Contains a post too large to send)");
-        break;
+      if let Some(last_id) = last_id.borrow().as_ref() {
+        packet_size += last_id.len() + 1; // reference
       }
 
-      let end_index = start_index + fit_post_count - 1;
+      max_payload_size - packet_size
+    };
 
-      client.packet_shipper.send(
-        &self.socket,
-        &Reliability::ReliableOrdered,
-        &ServerPacket::AppendPosts {
-          current_depth: client.widget_tracker.get_board_count() as u8,
-          reference: Some(last_id.clone()),
-          posts: &posts[start_index..end_index + 1],
-        },
-      );
+    let calc_post_size = |post: &BbsPost| {
+      *last_id.borrow_mut() = Some(post.id.clone());
+      calc_size(post)
+    };
 
-      last_id = &posts[end_index].id;
-      start_index = end_index + 1;
+    let chunks = posts
+      .into_iter()
+      .pack_chunks_lossy(calc_chunk_limit, calc_post_size);
+
+    let mut i = 0;
+    let mut last_id = reference;
+    let current_depth = client.widget_tracker.get_board_count() as u8;
+
+    for mut chunk in chunks {
+      let mut ref_id = None;
+      std::mem::swap(&mut ref_id, &mut last_id); // avoiding clone
+
+      let packet = if i == 0 {
+        ServerPacket::PrependPosts {
+          current_depth,
+          reference: ref_id,
+          posts: chunk.as_slice(),
+        }
+      } else {
+        ServerPacket::AppendPosts {
+          current_depth,
+          reference: ref_id,
+          posts: chunk.as_slice(),
+        }
+      };
+
+      client
+        .packet_shipper
+        .send(&self.socket, &Reliability::ReliableOrdered, &packet);
+
+      last_id = chunk.pop().map(|post| post.id);
+      i += 1;
     }
   }
 
   pub fn append_posts(&mut self, player_id: &str, reference: Option<String>, posts: Vec<BbsPost>) {
-    use super::bbs_post::count_fit_posts;
+    use super::bbs_post::calc_size;
+    use crate::helpers::iterators::IteratorHelper;
+    use std::cell::RefCell;
 
     let client = if let Some(client) = self.clients.get_mut(player_id) {
       client
@@ -843,42 +877,49 @@ impl Net {
       return;
     };
 
-    // reliability + id + type
-    let header_size = 1 + 8 + 2;
+    let max_payload_size = self.max_payload_size;
 
-    let mut last_id = reference;
-    let mut start_index = 0;
+    let last_id = Rc::new(RefCell::new(reference.clone()));
 
-    while start_index < posts.len() {
-      let mut packet_size = header_size;
+    let calc_chunk_limit = |_| {
+      // reliability + id + type
+      let mut packet_size = 1 + 8 + 2;
       packet_size += 2; // currentDepth + hasReference
 
-      if let Some(last_id) = last_id.as_ref() {
+      if let Some(last_id) = last_id.borrow().as_ref() {
         packet_size += last_id.len() + 1; // reference
       }
 
-      let fit_post_count =
-        count_fit_posts(self.max_payload_size - packet_size, start_index, &posts);
+      max_payload_size - packet_size
+    };
 
-      if fit_post_count == 0 {
-        println!("append_posts failed! (Contains a post too large to send)");
-        break;
-      }
+    let calc_post_size = |post: &BbsPost| {
+      *last_id.borrow_mut() = Some(post.id.clone());
+      calc_size(post)
+    };
 
-      let end_index = start_index + fit_post_count - 1;
+    let chunks = posts
+      .into_iter()
+      .pack_chunks_lossy(calc_chunk_limit, calc_post_size);
 
-      client.packet_shipper.send(
-        &self.socket,
-        &Reliability::ReliableOrdered,
-        &ServerPacket::AppendPosts {
-          current_depth: client.widget_tracker.get_board_count() as u8,
-          reference: last_id,
-          posts: &posts[start_index..end_index + 1],
-        },
-      );
+    let mut last_id = reference;
+    let current_depth = client.widget_tracker.get_board_count() as u8;
 
-      last_id = Some(posts[end_index].id.clone());
-      start_index = end_index + 1;
+    for mut chunk in chunks {
+      let mut ref_id = None;
+      std::mem::swap(&mut ref_id, &mut last_id); // avoiding clone
+
+      let packet = ServerPacket::AppendPosts {
+        current_depth,
+        reference: ref_id,
+        posts: chunk.as_slice(),
+      };
+
+      client
+        .packet_shipper
+        .send(&self.socket, &Reliability::ReliableOrdered, &packet);
+
+      last_id = chunk.pop().map(|post| post.id);
     }
   }
 
@@ -1778,7 +1819,7 @@ fn broadcast_actor_keyframes(
 
   let chunks = animation
     .into_iter()
-    .pack_chunks_lossy(remaining_size, measure);
+    .pack_chunks_lossy(|_| remaining_size, measure);
 
   let mut last_chunk = None;
 

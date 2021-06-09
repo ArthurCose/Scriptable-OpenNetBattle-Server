@@ -1,19 +1,23 @@
-pub struct LossyChunkPacker<I, F>
+pub struct LossyChunkPacker<I, C, M>
 where
   I: Iterator,
-  F: Fn(&I::Item) -> usize,
+  C: Fn(usize) -> usize,
+  M: FnMut(&I::Item) -> usize,
 {
   iterator: I,
   current_chunk: Vec<I::Item>,
-  measure_item: F,
-  size_per_chunk: usize,
+  chunk_count: usize,
+  calculate_chunk_limit: C,
+  measure_item: M,
+  chunk_size_limit: usize,
   remaining_size: usize,
 }
 
-impl<I, F> LossyChunkPacker<I, F>
+impl<I, C, M> LossyChunkPacker<I, C, M>
 where
   I: Iterator,
-  F: Fn(&I::Item) -> usize,
+  C: Fn(usize) -> usize,
+  M: FnMut(&I::Item) -> usize,
 {
   fn flush(&mut self) -> Vec<I::Item> {
     let mut out = Vec::new();
@@ -24,10 +28,11 @@ where
   }
 }
 
-impl<I, F> Iterator for LossyChunkPacker<I, F>
+impl<I, C, M> Iterator for LossyChunkPacker<I, C, M>
 where
   I: Iterator,
-  F: Fn(&I::Item) -> usize,
+  C: Fn(usize) -> usize,
+  M: FnMut(&I::Item) -> usize,
 {
   type Item = Vec<I::Item>;
 
@@ -44,17 +49,20 @@ where
         }
       };
 
-      let measure_item = &self.measure_item;
+      let measure_item = &mut self.measure_item;
       let item_size = measure_item(&item);
 
-      if item_size >= self.size_per_chunk {
+      if item_size >= self.chunk_size_limit {
         // too big for any chunk, ignore
         continue;
       }
 
       if self.remaining_size < item_size {
-        // reset remaining size
-        self.remaining_size = self.size_per_chunk;
+        // calculate max size for the next chunk
+        let calculate_chunk_limit = &self.calculate_chunk_limit;
+        self.chunk_count += 1;
+        self.chunk_size_limit = calculate_chunk_limit(self.chunk_count);
+        self.remaining_size = self.chunk_size_limit;
 
         return Some(self.flush());
       }
@@ -66,17 +74,26 @@ where
 }
 
 pub trait IteratorHelper: Iterator {
-  fn pack_chunks_lossy<F>(self, size_per_chunk: usize, measure_item: F) -> LossyChunkPacker<Self, F>
+  fn pack_chunks_lossy<C, M>(
+    self,
+    calculate_chunk_limit: C,
+    measure_item: M,
+  ) -> LossyChunkPacker<Self, C, M>
   where
-    F: Fn(&Self::Item) -> usize,
+    C: Fn(usize) -> usize,
+    M: FnMut(&Self::Item) -> usize,
     Self: Sized,
   {
+    let chunk_size_limit = calculate_chunk_limit(0);
+
     LossyChunkPacker {
       iterator: self,
       current_chunk: Vec::new(),
+      chunk_count: 0,
+      calculate_chunk_limit,
       measure_item,
-      size_per_chunk,
-      remaining_size: size_per_chunk,
+      chunk_size_limit,
+      remaining_size: chunk_size_limit,
     }
   }
 }
