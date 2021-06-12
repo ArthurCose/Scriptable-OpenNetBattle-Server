@@ -26,7 +26,7 @@ pub struct Server {
   player_id_map: HashMap<std::net::SocketAddr, String>,
   packet_sorter_map: HashMap<std::net::SocketAddr, PacketSorter>,
   plugin_wrapper: PluginWrapper,
-  config: ServerConfig,
+  config: Rc<ServerConfig>,
 }
 
 impl Server {
@@ -35,7 +35,7 @@ impl Server {
       player_id_map: HashMap::new(),
       packet_sorter_map: HashMap::new(),
       plugin_wrapper: PluginWrapper::new(),
-      config,
+      config: Rc::new(config),
     }
   }
 
@@ -55,7 +55,7 @@ impl Server {
     println!("Server listening on: {}", self.config.port);
 
     let socket = Rc::new(socket);
-    let mut net = Net::new(socket.clone(), &self.config);
+    let mut net = Net::new(socket.clone(), self.config.clone());
 
     self.plugin_wrapper.init(&mut net);
 

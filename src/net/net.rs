@@ -7,14 +7,12 @@ use super::{Actor, Area, Asset, AssetData, BbsPost, Direction};
 use crate::packets::{create_asset_stream, Reliability, ServerPacket};
 use crate::threads::worker_threads::{Job, JobGiver};
 use std::collections::HashMap;
-use std::net::{IpAddr, UdpSocket};
+use std::net::UdpSocket;
 use std::rc::Rc;
 
 pub struct Net {
   socket: Rc<UdpSocket>,
-  max_payload_size: usize,
-  resend_budget: usize,
-  avatar_dimensions_limit: u32,
+  config: Rc<ServerConfig>,
   areas: HashMap<String, Area>,
   clients: HashMap<String, Client>,
   bots: HashMap<String, Actor>,
@@ -22,11 +20,10 @@ pub struct Net {
   active_script: usize,
   kick_list: Vec<Boot>,
   job_giver: JobGiver,
-  public_ip: IpAddr,
 }
 
 impl Net {
-  pub fn new(socket: Rc<UdpSocket>, server_config: &ServerConfig) -> Net {
+  pub fn new(socket: Rc<UdpSocket>, config: Rc<ServerConfig>) -> Net {
     use super::asset::get_map_path;
     use crate::threads::create_worker_threads;
     use std::fs::{read_dir, read_to_string};
@@ -66,19 +63,18 @@ impl Net {
       panic!("No default (default.txt) area data found");
     }
 
+    let job_giver = create_worker_threads(config.worker_thread_count);
+
     Net {
       socket,
-      max_payload_size: server_config.max_payload_size,
-      resend_budget: server_config.resend_budget,
-      avatar_dimensions_limit: server_config.avatar_dimensions_limit,
+      config,
       areas,
       clients: HashMap::new(),
       bots: HashMap::new(),
       assets,
       active_script: 0,
       kick_list: Vec::new(),
-      job_giver: create_worker_threads(server_config.worker_thread_count),
-      public_ip: server_config.public_ip,
+      job_giver,
     }
   }
 
@@ -113,7 +109,7 @@ impl Net {
 
     update_cached_clients(
       &self.socket,
-      self.max_payload_size,
+      self.config.max_payload_size,
       &self.assets,
       &mut self.clients,
       &path,
@@ -185,7 +181,7 @@ impl Net {
     if let Some(area) = self.areas.get_mut(area_id) {
       assert_asset(
         &self.socket,
-        self.max_payload_size,
+        self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
         &area.get_connected_players(),
@@ -200,7 +196,7 @@ impl Net {
     if let Some(area) = self.areas.get(area_id) {
       assert_asset(
         &self.socket,
-        self.max_payload_size,
+        self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
         &area.get_connected_players(),
@@ -256,7 +252,7 @@ impl Net {
 
       assert_asset(
         &self.socket,
-        self.max_payload_size,
+        self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
         area.get_connected_players(),
@@ -265,7 +261,7 @@ impl Net {
 
       assert_asset(
         &self.socket,
-        self.max_payload_size,
+        self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
         area.get_connected_players(),
@@ -365,7 +361,7 @@ impl Net {
         &self.socket,
         &mut self.clients,
         area,
-        self.max_payload_size,
+        self.config.max_payload_size,
         id,
         animation,
       );
@@ -383,7 +379,7 @@ impl Net {
   pub fn preload_asset_for_player(&mut self, id: &str, asset_path: &str) {
     assert_asset(
       &self.socket,
-      self.max_payload_size,
+      self.config.max_payload_size,
       &self.assets,
       &mut self.clients,
       &[String::from(id)],
@@ -563,7 +559,7 @@ impl Net {
   ) {
     assert_asset(
       &self.socket,
-      self.max_payload_size,
+      self.config.max_payload_size,
       &self.assets,
       &mut self.clients,
       &[id.to_string()],
@@ -572,7 +568,7 @@ impl Net {
 
     assert_asset(
       &self.socket,
-      self.max_payload_size,
+      self.config.max_payload_size,
       &self.assets,
       &mut self.clients,
       &[id.to_string()],
@@ -603,7 +599,7 @@ impl Net {
   ) {
     assert_asset(
       &self.socket,
-      self.max_payload_size,
+      self.config.max_payload_size,
       &self.assets,
       &mut self.clients,
       &[id.to_string()],
@@ -612,7 +608,7 @@ impl Net {
 
     assert_asset(
       &self.socket,
-      self.max_payload_size,
+      self.config.max_payload_size,
       &self.assets,
       &mut self.clients,
       &[id.to_string()],
@@ -645,7 +641,7 @@ impl Net {
   ) {
     assert_asset(
       &self.socket,
-      self.max_payload_size,
+      self.config.max_payload_size,
       &self.assets,
       &mut self.clients,
       &[id.to_string()],
@@ -654,7 +650,7 @@ impl Net {
 
     assert_asset(
       &self.socket,
-      self.max_payload_size,
+      self.config.max_payload_size,
       &self.assets,
       &mut self.clients,
       &[id.to_string()],
@@ -683,7 +679,7 @@ impl Net {
       client.widget_tracker.track_textbox(self.active_script);
 
       // reliability + id + type + \0
-      let available_space = self.max_payload_size as u16 - 1 - 8 - 2 - 2 - 1;
+      let available_space = self.config.max_payload_size as u16 - 1 - 8 - 2 - 2 - 1;
 
       let character_limit = std::cmp::min(character_limit, available_space);
 
@@ -733,7 +729,7 @@ impl Net {
       );
     }
 
-    let max_payload_size = self.max_payload_size;
+    let max_payload_size = self.config.max_payload_size;
     let chunk_state: Rc<RefCell<(usize, Option<String>)>> = Rc::new(RefCell::new((0, None)));
 
     let calc_chunk_limit = |_| {
@@ -810,7 +806,7 @@ impl Net {
       return;
     };
 
-    let max_payload_size = self.max_payload_size;
+    let max_payload_size = self.config.max_payload_size;
 
     let last_id = Rc::new(RefCell::new(reference.clone()));
 
@@ -877,7 +873,7 @@ impl Net {
       return;
     };
 
-    let max_payload_size = self.max_payload_size;
+    let max_payload_size = self.config.max_payload_size;
 
     let last_id = Rc::new(RefCell::new(reference.clone()));
 
@@ -959,8 +955,8 @@ impl Net {
 
     // todo: put these clients in slow mode
 
-    let client_1_addr = use_public_ip(client_1.socket_address, self.public_ip);
-    let client_2_addr = use_public_ip(client_2.socket_address, self.public_ip);
+    let client_1_addr = use_public_ip(client_1.socket_address, self.config.public_ip);
+    let client_2_addr = use_public_ip(client_2.socket_address, self.config.public_ip);
 
     client_1.packet_shipper.send(
       &self.socket,
@@ -1067,7 +1063,7 @@ impl Net {
 
     assert_asset(
       &self.socket,
-      self.max_payload_size,
+      self.config.max_payload_size,
       &self.assets,
       &mut self.clients,
       area.get_connected_players(),
@@ -1076,7 +1072,7 @@ impl Net {
 
     assert_asset(
       &self.socket,
-      self.max_payload_size,
+      self.config.max_payload_size,
       &self.assets,
       &mut self.clients,
       area.get_connected_players(),
@@ -1175,7 +1171,7 @@ impl Net {
       spawn_y,
       spawn_z,
       spawn_direction,
-      self.resend_budget,
+      self.config.resend_budget,
     );
 
     let id = client.actor.id.clone();
@@ -1203,10 +1199,12 @@ impl Net {
     client.mugshot_texture_buffer.clear();
     client.mugshot_animation_buffer.clear();
 
-    if find_longest_frame_length(&animation_data) > self.avatar_dimensions_limit {
+    let avatar_dimensions_limit = self.config.avatar_dimensions_limit;
+
+    if find_longest_frame_length(&animation_data) > avatar_dimensions_limit {
       let reason = format!(
         "Avatar has frames larger than limit {}x{}",
-        self.avatar_dimensions_limit, self.avatar_dimensions_limit
+        avatar_dimensions_limit, avatar_dimensions_limit
       );
 
       self.kick_player(player_id, &reason, true);
@@ -1273,7 +1271,7 @@ impl Net {
 
     assert_asset(
       &self.socket,
-      self.max_payload_size,
+      self.config.max_payload_size,
       &self.assets,
       &mut self.clients,
       area.get_connected_players(),
@@ -1282,7 +1280,7 @@ impl Net {
 
     assert_asset(
       &self.socket,
-      self.max_payload_size,
+      self.config.max_payload_size,
       &self.assets,
       &mut self.clients,
       area.get_connected_players(),
@@ -1351,7 +1349,7 @@ impl Net {
     for asset_path in asset_paths {
       assert_asset(
         &self.socket,
-        self.max_payload_size,
+        self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
         &&asset_recievers[..],
@@ -1433,7 +1431,7 @@ impl Net {
 
       assert_asset(
         &self.socket,
-        self.max_payload_size,
+        self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
         area.get_connected_players(),
@@ -1442,7 +1440,7 @@ impl Net {
 
       assert_asset(
         &self.socket,
-        self.max_payload_size,
+        self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
         area.get_connected_players(),
@@ -1536,7 +1534,7 @@ impl Net {
 
       update_cached_clients(
         &self.socket,
-        self.max_payload_size,
+        self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
         &texture_path,
@@ -1544,7 +1542,7 @@ impl Net {
 
       update_cached_clients(
         &self.socket,
-        self.max_payload_size,
+        self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
         &animation_path,
@@ -1632,7 +1630,7 @@ impl Net {
         &self.socket,
         &mut self.clients,
         area,
-        self.max_payload_size,
+        self.config.max_payload_size,
         id,
         animation,
       );
@@ -1670,7 +1668,7 @@ impl Net {
 
       assert_asset(
         &self.socket,
-        self.max_payload_size,
+        self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
         area.get_connected_players(),
@@ -1679,7 +1677,7 @@ impl Net {
 
       assert_asset(
         &self.socket,
-        self.max_payload_size,
+        self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
         area.get_connected_players(),
@@ -1757,7 +1755,7 @@ impl Net {
         self.assets.insert(map_path.clone(), map_asset);
         update_cached_clients(
           &self.socket,
-          self.max_payload_size,
+          self.config.max_payload_size,
           &self.assets,
           &mut self.clients,
           &map_path,
