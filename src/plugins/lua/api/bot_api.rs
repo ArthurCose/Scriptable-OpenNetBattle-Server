@@ -235,12 +235,13 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "set_bot_emote", |api_ctx, lua_ctx, params| {
-    let (bot_id, emote_id): (rlua::String, u8) = lua_ctx.unpack_multi(params)?;
+    let (bot_id, emote_id, use_custom_emotes): (rlua::String, u8, Option<bool>) =
+      lua_ctx.unpack_multi(params)?;
     let bot_id_str = bot_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.set_bot_emote(bot_id_str, emote_id);
+    net.set_bot_emote(bot_id_str, emote_id, use_custom_emotes.unwrap_or_default());
 
     lua_ctx.pack_multi(())
   });

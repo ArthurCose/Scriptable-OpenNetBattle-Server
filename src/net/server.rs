@@ -20,6 +20,7 @@ pub struct ServerConfig {
   pub player_asset_limit: usize,
   pub avatar_dimensions_limit: u32,
   pub worker_thread_count: u16,
+  pub custom_emotes_path: Option<String>,
 }
 
 pub struct Server {
@@ -357,7 +358,7 @@ impl Server {
             .handle_player_emote(net, player_id, emote_id);
 
           if !prevent_default {
-            net.set_player_emote(player_id, emote_id);
+            net.set_player_emote(player_id, emote_id, false);
           }
         }
         ClientPacket::ObjectInteraction { tile_object_id } => {

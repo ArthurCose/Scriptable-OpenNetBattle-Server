@@ -116,6 +116,18 @@ fn main() {
           Err(_) => Err(String::from("Invalid quantity")),
         }),
     )
+    .arg(
+      clap::Arg::with_name("custom_emotes_path")
+        .long("custom-emotes-path")
+        .value_name("ASSET_PATH")
+        .validator(|value| {
+          if value.starts_with("/server/assets/") {
+            Ok(())
+          } else {
+            Err(String::from("ASSET_PATH must start with \"/server/assets/\""))
+          }
+        }),
+    )
     .get_matches();
 
   let config = net::ServerConfig {
@@ -133,6 +145,9 @@ fn main() {
       matches.value_of("avatar_dimensions_limit"),
     ),
     worker_thread_count: unwrap_and_parse_or_default(matches.value_of("worker_thread_count")),
+    custom_emotes_path: matches
+      .value_of("custom_emotes_path")
+      .map(|path| path.to_string()),
   };
 
   let mut server = net::Server::new(config);

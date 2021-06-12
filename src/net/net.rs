@@ -284,11 +284,12 @@ impl Net {
     }
   }
 
-  pub fn set_player_emote(&mut self, id: &str, emote_id: u8) {
+  pub fn set_player_emote(&mut self, id: &str, emote_id: u8, use_custom_emotes: bool) {
     if let Some(client) = self.clients.get(id) {
       let packet = ServerPacket::ActorEmote {
         ticket: id.to_string(),
         emote_id,
+        use_custom_emotes,
       };
 
       let area = self.areas.get(&client.actor.area_id).unwrap();
@@ -303,11 +304,18 @@ impl Net {
     }
   }
 
-  pub fn exclusive_player_emote(&mut self, target_id: &str, emoter_id: &str, emote_id: u8) {
+  pub fn exclusive_player_emote(
+    &mut self,
+    target_id: &str,
+    emoter_id: &str,
+    emote_id: u8,
+    use_custom_emotes: bool,
+  ) {
     if let Some(client) = self.clients.get_mut(target_id) {
       let packet = ServerPacket::ActorEmote {
         ticket: emoter_id.to_string(),
         emote_id,
+        use_custom_emotes,
       };
 
       client
@@ -1343,6 +1351,13 @@ impl Net {
       packets.push(bot.create_spawn_packet(bot.x, bot.y, bot.z, false));
     }
 
+    if let Some(custom_emotes_path) = &self.config.custom_emotes_path {
+      asset_paths.push(custom_emotes_path.clone());
+      packets.push(ServerPacket::CustomEmotesPath {
+        asset_path: custom_emotes_path.clone(),
+      });
+    }
+
     // send asset_packets before anything else
     let asset_recievers = vec![player_id.to_string()];
 
@@ -1564,11 +1579,12 @@ impl Net {
     }
   }
 
-  pub fn set_bot_emote(&mut self, id: &str, emote_id: u8) {
+  pub fn set_bot_emote(&mut self, id: &str, emote_id: u8, use_custom_emotes: bool) {
     if let Some(bot) = self.bots.get(id) {
       let packet = ServerPacket::ActorEmote {
         ticket: id.to_string(),
         emote_id,
+        use_custom_emotes,
       };
 
       let area = self.areas.get(&bot.area_id).unwrap();
