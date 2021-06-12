@@ -457,6 +457,16 @@ impl Net {
     }
   }
 
+  pub fn track_with_player_camera(&mut self, id: &str, actor_id: Option<String>) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::TrackWithCamera { actor_id },
+      );
+    }
+  }
+
   pub fn unlock_player_camera(&mut self, id: &str) {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(

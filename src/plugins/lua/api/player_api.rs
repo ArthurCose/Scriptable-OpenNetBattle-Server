@@ -341,6 +341,20 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
+  lua_api.add_dynamic_function(
+    "Net",
+    "track_with_player_camera",
+    |api_ctx, lua_ctx, params| {
+      let (player_id, actor_id): (rlua::String, Option<String>) = lua_ctx.unpack_multi(params)?;
+      let player_id_str = player_id.to_str()?;
+
+      let mut net = api_ctx.net_ref.borrow_mut();
+      net.track_with_player_camera(player_id_str, actor_id);
+
+      lua_ctx.pack_multi(())
+    },
+  );
+
   lua_api.add_dynamic_function("Net", "unlock_player_camera", |api_ctx, lua_ctx, params| {
     let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
