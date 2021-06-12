@@ -722,7 +722,7 @@ impl Net {
     let start_depth = client.widget_tracker.get_board_count() as u8;
     client.widget_tracker.track_board(self.active_script);
 
-    if posts.len() == 0 {
+    if posts.is_empty() {
       // logic below will send nothing if there's no posts,
       // we want to at least open the bbs if the post vec is empty
       client.packet_shipper.send(
@@ -771,11 +771,10 @@ impl Net {
       .into_iter()
       .pack_chunks_lossy(calc_chunk_limit, calc_post_size);
 
-    let mut i = 0;
     let mut last_id = None;
     let current_depth = client.widget_tracker.get_board_count() as u8;
 
-    for mut chunk in chunks {
+    for (i, mut chunk) in chunks.enumerate() {
       let mut ref_id = None;
       std::mem::swap(&mut ref_id, &mut last_id); // avoiding clone
 
@@ -799,7 +798,6 @@ impl Net {
         .send(&self.socket, &Reliability::ReliableOrdered, &packet);
 
       last_id = chunk.pop().map(|post| post.id);
-      i += 1;
     }
   }
 
@@ -839,11 +837,10 @@ impl Net {
       .into_iter()
       .pack_chunks_lossy(calc_chunk_limit, calc_post_size);
 
-    let mut i = 0;
     let mut last_id = reference;
     let current_depth = client.widget_tracker.get_board_count() as u8;
 
-    for mut chunk in chunks {
+    for (i, mut chunk) in chunks.enumerate() {
       let mut ref_id = None;
       std::mem::swap(&mut ref_id, &mut last_id); // avoiding clone
 
@@ -866,7 +863,6 @@ impl Net {
         .send(&self.socket, &Reliability::ReliableOrdered, &packet);
 
       last_id = chunk.pop().map(|post| post.id);
-      i += 1;
     }
   }
 
