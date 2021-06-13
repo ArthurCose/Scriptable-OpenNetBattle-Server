@@ -327,7 +327,7 @@ Net.get_bot_position(bot_id) -- { x, y, z }
 Net.move_bot(bot_id, x, y, z)
 -- Net.set_bot_solid(bot_id, solid)
 Net.set_bot_avatar(bot_id, texture_path, animation_path)
-Net.set_bot_emote(bot_id, emote_id)
+Net.set_bot_emote(bot_id, emote_id, use_custom_emotes?)
 Net.animate_bot(bot_id, state_name, loop?)
 Net.transfer_bot(bot_id, area_id, warp_in?, x?, y?, z?)
 
@@ -356,8 +356,8 @@ Net.get_player_position(player_id) -- { x, y, z }
 Net.get_player_mugshot(player_id) -- { texture_path, animation_path }
 Net.get_player_avatar(player_id) -- { texture_path, animation_path }
 Net.set_player_avatar(player_id, texture_path, animation_path)
-Net.set_player_emote(player_id, emote_id)
-Net.exclusive_player_emote(player_id, emoter_id, emote_id)
+Net.set_player_emote(player_id, emote_id, use_custom_emotes?)
+Net.exclusive_player_emote(player_id, emoter_id, emote_id, use_custom_emotes?)
 Net.animate_player(player_id, state_name, loop?)
 Net.animate_player_properties(player_id, keyframes) -- unstable
 -- Net.is_player_battling(player_id)
