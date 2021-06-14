@@ -248,9 +248,11 @@ impl Server {
             println!("Received RequestJoin packet from {}", socket_address);
           }
 
-          self.plugin_wrapper.handle_player_connect(net, &player_id);
+          net.spawn_client(player_id);
 
-          net.connect_client(&player_id);
+          self.plugin_wrapper.handle_player_connect(net, player_id);
+
+          net.connect_client(player_id);
 
           if self.config.log_connections {
             println!("{} connected", player_id);

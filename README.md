@@ -199,8 +199,8 @@ Commented functions are in development and require changes to the client (specif
 
 ```Lua
 function tick(delta_time)
-function handle_player_request(player_id, data) -- player requests connection to server (transfers will change initial area)
-function handle_player_connect(player_id) -- player connects to the server (transfers will change initial area)
+function handle_player_request(player_id, data) -- player requests connection to server (only transfers and kicks should occur here)
+function handle_player_connect(player_id) -- player connects to the server (good place to setup while the player is loading)
 function handle_player_join(player_id) -- player enters their first area after connecting
 function handle_player_transfer(player_id) -- player changes area
 function handle_custom_warp(player_id, object_id) -- player warped out by a "Custom Warp" or "Custom Server Warp"

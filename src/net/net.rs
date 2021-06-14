@@ -1303,7 +1303,7 @@ impl Net {
     Some((texture_path, animation_path))
   }
 
-  pub(super) fn connect_client(&mut self, player_id: &str) {
+  pub(super) fn spawn_client(&mut self, player_id: &str) {
     let client = self.clients.get(player_id).unwrap();
     let area_id = client.actor.area_id.clone();
     let texture_path = client.actor.texture_path.clone();
@@ -1346,6 +1346,16 @@ impl Net {
     client
       .packet_shipper
       .send(&self.socket, &Reliability::ReliableOrdered, &packet);
+  }
+
+  pub(super) fn connect_client(&mut self, player_id: &str) {
+    let client = self.clients.get_mut(player_id).unwrap();
+
+    client.packet_shipper.send(
+      &self.socket,
+      &Reliability::ReliableOrdered,
+      &ServerPacket::CompleteConnection,
+    );
   }
 
   fn send_area(&mut self, player_id: &str, area_id: &str) {
