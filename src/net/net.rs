@@ -3,7 +3,7 @@ use super::boot::Boot;
 use super::client::Client;
 use super::map::Map;
 use super::server::ServerConfig;
-use super::{Actor, Area, Asset, AssetData, BbsPost, Direction};
+use super::{Actor, Area, Asset, AssetData, BbsPost, Direction, PlayerData};
 use crate::packets::{create_asset_stream, Reliability, ServerPacket};
 use crate::threads::worker_threads::{Job, JobGiver};
 use std::collections::HashMap;
@@ -997,6 +997,25 @@ impl Net {
         address: client_1_addr.to_string(),
       },
     )
+  }
+
+  pub fn get_player_data(&self, player_id: &str) -> Option<&PlayerData> {
+    self
+      .clients
+      .get(player_id)
+      .map(|client| &client.player_data)
+  }
+
+  pub fn set_player_money(&mut self, player_id: &str, money: u32) {
+    if let Some(client) = self.clients.get_mut(player_id) {
+      client.player_data.money = money;
+
+      client.packet_shipper.send(
+        &self.socket,
+        &Reliability::ReliableOrdered,
+        &ServerPacket::Money { money },
+      );
+    }
   }
 
   #[allow(clippy::too_many_arguments)]

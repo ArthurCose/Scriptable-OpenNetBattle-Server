@@ -6,6 +6,7 @@ mod bot_api;
 mod lua_errors;
 mod object_api;
 mod player_api;
+mod player_data_api;
 
 use crate::net::{Net, WidgetTracker};
 use std::cell::RefCell;
@@ -48,6 +49,7 @@ impl LuaApi {
     asset_api::inject_dynamic(&mut lua_api);
     object_api::inject_dynamic(&mut lua_api);
     player_api::inject_dynamic(&mut lua_api);
+    player_data_api::inject_dynamic(&mut lua_api);
     bot_api::inject_dynamic(&mut lua_api);
 
     async_api::inject_static(&mut lua_api);

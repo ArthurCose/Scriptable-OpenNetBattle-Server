@@ -1,4 +1,4 @@
-use super::{Actor, Direction, WidgetTracker};
+use super::{Actor, Direction, PlayerData, WidgetTracker};
 use crate::packets::PacketShipper;
 use std::collections::HashSet;
 use std::net::SocketAddr;
@@ -22,6 +22,7 @@ pub(super) struct Client {
   pub mugshot_texture_buffer: Vec<u8>,
   pub mugshot_animation_buffer: Vec<u8>,
   pub widget_tracker: WidgetTracker<usize>,
+  pub player_data: PlayerData,
 }
 
 impl Client {
@@ -77,6 +78,7 @@ impl Client {
       mugshot_texture_buffer: Vec::new(),
       mugshot_animation_buffer: Vec::new(),
       widget_tracker: WidgetTracker::new(),
+      player_data: PlayerData::new(),
     }
   }
 

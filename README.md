@@ -396,6 +396,13 @@ Net.remove_post(player_id, post_id) -- unstable, issues arise when multiple scri
 Net.close_bbs()
 ```
 
+#### Player Data API
+
+```lua
+Net.get_player_money(player_id)
+Net.set_player_money(player_id)
+```
+
 #### Asset API
 
 ```Lua
