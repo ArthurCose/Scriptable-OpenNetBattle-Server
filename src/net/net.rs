@@ -1484,6 +1484,16 @@ impl Net {
   }
 
   pub fn add_bot(&mut self, bot: Actor) {
+    if self.bots.contains_key(&bot.id) {
+      println!("A bot with id \"{}\" already exists!", bot.id);
+      return;
+    }
+
+    if self.clients.contains_key(&bot.id) {
+      println!("A player with id \"{}\" exists, can't create bot!", bot.id);
+      return;
+    }
+
     if let Some(area) = self.areas.get_mut(&bot.area_id) {
       area.add_bot(bot.id.clone());
 
