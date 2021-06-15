@@ -64,9 +64,12 @@ impl MapObject {
         }
 
         let name = child.attr("name").unwrap_or_default();
-        let value = child.attr("value").unwrap_or_default();
+        let value = child
+          .attr("value")
+          .map(|value| value.to_string())
+          .unwrap_or_else(|| child.text());
 
-        custom_properties.insert(name.to_string(), value.to_string());
+        custom_properties.insert(name.to_string(), value);
       }
     }
 

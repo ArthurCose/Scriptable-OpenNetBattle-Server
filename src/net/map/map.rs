@@ -88,7 +88,10 @@ impl Map {
         "properties" => {
           for property in child.children() {
             let name = property.attr("name").unwrap_or_default();
-            let value = property.attr("value").unwrap_or_default().to_string();
+            let value = property
+              .attr("value")
+              .map(|value| value.to_string())
+              .unwrap_or_else(|| child.text());
 
             map.set_custom_property(name, value);
           }
