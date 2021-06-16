@@ -76,33 +76,15 @@ Map:
   - Area name to display in the PersonalMenu
 - Song: string
   - Path to ogg file
-- Background: string
-  - Supported values:
-    - undernet
-    - robot
-    - misc
-    - grave
-    - weather
-    - medical
-    - acdc
-    - virus
-    - judge
-    - secret
-    - custom
-  - Case insensitive
 - Background Texture: string
-  - Requires "custom" Background
   - Path to background image file
 - Background Animation: string
-  - Requires "custom" Background
   - Path to background .animation file
   - One animation state "BG"
     - First frame of this animation determines background repetition
   - Excluding this will use texture size for background repetition
 - Background Vel X: float
-  - Requires "custom" Background
 - Background Vel Y: float
-  - Requires "custom" Background
 
 ### Types
 
@@ -256,11 +238,9 @@ Net.get_area_name(area_id)
 Net.set_area_name(area_id)
 Net.get_song(area_id) -- song_path
 Net.set_song(area_id, song_path)
-Net.get_background_name(area_id) -- background_name
-Net.set_background(area_id, background_name)
-Net.get_custom_background(area_id) -- { texture_path, animation_path }
-Net.get_custom_background_velocity(area_id) -- { x, y }
-Net.set_custom_background(area_id, texture_path, animation_path?, vel_x?, vel_y?)
+Net.get_background(area_id) -- { texture_path, animation_path }
+Net.get_background_velocity(area_id) -- { x, y }
+Net.set_background(area_id, texture_path, animation_path?, vel_x?, vel_y?)
 Net.get_spawn_position(area_id) -- { x, y, z }
 Net.set_spawn_position(area_id, x, y, z)
 Net.get_spawn_direction(area_id)

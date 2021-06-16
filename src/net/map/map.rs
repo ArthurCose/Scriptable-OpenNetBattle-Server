@@ -14,7 +14,6 @@ pub struct TilesetInfo {
 #[derive(Clone)]
 pub struct Map {
   name: String,
-  background_name: String,
   background_texture_path: String,
   background_animation_path: String,
   background_vel_x: f32,
@@ -43,7 +42,6 @@ impl Map {
   pub fn from(text: &str) -> Map {
     let mut map = Map {
       name: String::new(),
-      background_name: String::new(),
       background_texture_path: String::new(),
       background_animation_path: String::new(),
       background_vel_x: 0.0,
@@ -232,24 +230,11 @@ impl Map {
     self.mark_dirty();
   }
 
-  pub fn get_background_name(&self) -> &String {
-    &self.background_name
-  }
-
-  pub fn set_background_name(&mut self, name: String) {
-    self
-      .custom_properties
-      .insert(String::from("Background"), name.clone());
-
-    self.background_name = name;
-    self.mark_dirty();
-  }
-
-  pub fn get_custom_background_texture_path(&self) -> &String {
+  pub fn get_background_texture_path(&self) -> &String {
     &self.background_texture_path
   }
 
-  pub fn set_custom_background_texture_path(&mut self, path: String) {
+  pub fn set_background_texture_path(&mut self, path: String) {
     self
       .custom_properties
       .insert(String::from("Background Texture"), path.clone());
@@ -258,11 +243,11 @@ impl Map {
     self.mark_dirty();
   }
 
-  pub fn get_custom_background_animation_path(&self) -> &String {
+  pub fn get_background_animation_path(&self) -> &String {
     &self.background_animation_path
   }
 
-  pub fn set_custom_background_animation_path(&mut self, path: String) {
+  pub fn set_background_animation_path(&mut self, path: String) {
     self
       .custom_properties
       .insert(String::from("Background Animation"), path.clone());
@@ -271,11 +256,11 @@ impl Map {
     self.mark_dirty();
   }
 
-  pub fn get_custom_background_velocity(&self) -> (f32, f32) {
+  pub fn get_background_velocity(&self) -> (f32, f32) {
     (self.background_vel_x, self.background_vel_y)
   }
 
-  pub fn set_custom_background_velocity(&mut self, x: f32, y: f32) {
+  pub fn set_background_velocity(&mut self, x: f32, y: f32) {
     self
       .custom_properties
       .insert(String::from("Background Vel X"), x.to_string());
@@ -304,9 +289,6 @@ impl Map {
     match name {
       "Name" => {
         self.name = value;
-      }
-      "Background" => {
-        self.background_name = value;
       }
       "Background Texture" => {
         self.background_texture_path = value;

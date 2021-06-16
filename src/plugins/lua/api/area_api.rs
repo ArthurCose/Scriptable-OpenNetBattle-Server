@@ -243,31 +243,25 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     }
   });
 
-  lua_api.add_dynamic_function("Net", "get_background_name", |api_ctx, lua_ctx, params| {
+  lua_api.add_dynamic_function("Net", "get_background", |api_ctx, lua_ctx, params| {
     let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
 
     if let Some(area) = net.get_area(area_id_str) {
-      lua_ctx.pack_multi(area.get_map().get_background_name().as_str())
-    } else {
-      Err(create_area_error(area_id_str))
-    }
-  });
+      let map = area.get_map();
 
-  lua_api.add_dynamic_function("Net", "set_background", |api_ctx, lua_ctx, params| {
-    let (area_id, name): (rlua::String, String) = lua_ctx.unpack_multi(params)?;
-    let area_id_str = area_id.to_str()?;
+      let table = lua_ctx.create_table()?;
 
-    let mut net = api_ctx.net_ref.borrow_mut();
+      table.set("texture_path", map.get_background_texture_path().as_str())?;
 
-    if let Some(area) = net.get_area_mut(area_id_str) {
-      let map = area.get_map_mut();
+      table.set(
+        "animation_path",
+        map.get_background_animation_path().as_str(),
+      )?;
 
-      map.set_background_name(name);
-
-      lua_ctx.pack_multi(())
+      lua_ctx.pack_multi(table)
     } else {
       Err(create_area_error(area_id_str))
     }
@@ -275,7 +269,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
   lua_api.add_dynamic_function(
     "Net",
-    "get_custom_background",
+    "get_background_velocity",
     |api_ctx, lua_ctx, params| {
       let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
       let area_id_str = area_id.to_str()?;
@@ -285,38 +279,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       if let Some(area) = net.get_area(area_id_str) {
         let map = area.get_map();
 
-        let table = lua_ctx.create_table()?;
-
-        table.set(
-          "texture_path",
-          map.get_custom_background_texture_path().as_str(),
-        )?;
-
-        table.set(
-          "animation_path",
-          map.get_custom_background_animation_path().as_str(),
-        )?;
-
-        lua_ctx.pack_multi(table)
-      } else {
-        Err(create_area_error(area_id_str))
-      }
-    },
-  );
-
-  lua_api.add_dynamic_function(
-    "Net",
-    "get_custom_background_velocity",
-    |api_ctx, lua_ctx, params| {
-      let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
-      let area_id_str = area_id.to_str()?;
-
-      let net = api_ctx.net_ref.borrow();
-
-      if let Some(area) = net.get_area(area_id_str) {
-        let map = area.get_map();
-
-        let (vel_x, vel_y) = map.get_custom_background_velocity();
+        let (vel_x, vel_y) = map.get_background_velocity();
 
         let table = lua_ctx.create_table()?;
         table.set("x", vel_x)?;
@@ -329,35 +292,30 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     },
   );
 
-  lua_api.add_dynamic_function(
-    "Net",
-    "set_custom_background",
-    |api_ctx, lua_ctx, params| {
-      let (area_id, texture_path, animation_path, vel_x, vel_y): (
-        rlua::String,
-        String,
-        Option<String>,
-        Option<f32>,
-        Option<f32>,
-      ) = lua_ctx.unpack_multi(params)?;
-      let area_id_str = area_id.to_str()?;
+  lua_api.add_dynamic_function("Net", "set_background", |api_ctx, lua_ctx, params| {
+    let (area_id, texture_path, animation_path, vel_x, vel_y): (
+      rlua::String,
+      String,
+      Option<String>,
+      Option<f32>,
+      Option<f32>,
+    ) = lua_ctx.unpack_multi(params)?;
+    let area_id_str = area_id.to_str()?;
 
-      let mut net = api_ctx.net_ref.borrow_mut();
+    let mut net = api_ctx.net_ref.borrow_mut();
 
-      if let Some(area) = net.get_area_mut(area_id_str) {
-        let map = area.get_map_mut();
+    if let Some(area) = net.get_area_mut(area_id_str) {
+      let map = area.get_map_mut();
 
-        map.set_background_name(String::from("custom"));
-        map.set_custom_background_texture_path(texture_path);
-        map.set_custom_background_animation_path(animation_path.unwrap_or_default());
-        map.set_custom_background_velocity(vel_x.unwrap_or_default(), vel_y.unwrap_or_default());
+      map.set_background_texture_path(texture_path);
+      map.set_background_animation_path(animation_path.unwrap_or_default());
+      map.set_background_velocity(vel_x.unwrap_or_default(), vel_y.unwrap_or_default());
 
-        lua_ctx.pack_multi(())
-      } else {
-        Err(create_area_error(area_id_str))
-      }
-    },
-  );
+      lua_ctx.pack_multi(())
+    } else {
+      Err(create_area_error(area_id_str))
+    }
+  });
 
   lua_api.add_dynamic_function("Net", "get_spawn_position", |api_ctx, lua_ctx, params| {
     let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
