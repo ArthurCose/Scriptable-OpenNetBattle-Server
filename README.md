@@ -400,7 +400,7 @@ Net.close_bbs()
 
 ```lua
 Net.get_player_money(player_id)
-Net.set_player_money(player_id)
+Net.set_player_money(player_id, money)
 ```
 
 #### Asset API
