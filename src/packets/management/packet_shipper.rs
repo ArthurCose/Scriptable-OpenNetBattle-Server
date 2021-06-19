@@ -33,7 +33,7 @@ impl PacketShipper {
     }
   }
 
-  pub fn send(&mut self, socket: &UdpSocket, reliability: &Reliability, packet: &ServerPacket) {
+  pub fn send(&mut self, socket: &UdpSocket, reliability: Reliability, packet: &ServerPacket) {
     match reliability {
       Reliability::Unreliable => {
         let mut data = vec![0];

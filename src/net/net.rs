@@ -311,7 +311,7 @@ impl Net {
 
       client
         .packet_shipper
-        .send(&self.socket, &Reliability::Reliable, &packet);
+        .send(&self.socket, Reliability::Reliable, &packet);
     }
   }
 
@@ -405,7 +405,7 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::Preload {
           asset_path: asset_path.to_string(),
         },
@@ -417,7 +417,7 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::PlaySound {
           path: path.to_string(),
         },
@@ -429,7 +429,7 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::ExcludeObject { id: object_id },
       );
     }
@@ -439,7 +439,7 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::IncludeObject { id: object_id },
       );
     }
@@ -449,7 +449,7 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::MoveCamera { x, y, z, hold_time },
       );
     }
@@ -459,7 +459,7 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::SlideCamera { x, y, z, duration },
       );
     }
@@ -469,7 +469,7 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::ShakeCamera { strength, duration },
       );
     }
@@ -479,7 +479,7 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::TrackWithCamera { actor_id },
       );
     }
@@ -489,7 +489,7 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::UnlockCamera,
       );
     }
@@ -499,7 +499,7 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::LockInput,
       );
     }
@@ -509,7 +509,7 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::UnlockInput,
       );
     }
@@ -527,7 +527,7 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::Teleport {
           warp,
           x,
@@ -607,7 +607,7 @@ impl Net {
 
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::Message {
           message: message.to_string(),
           mug_texture_path: mug_texture_path.to_string(),
@@ -638,7 +638,7 @@ impl Net {
 
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::Question {
           message: message.to_string(),
           mug_texture_path: mug_texture_path.to_string(),
@@ -671,7 +671,7 @@ impl Net {
 
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::Quiz {
           option_a: option_a.to_string(),
           option_b: option_b.to_string(),
@@ -694,7 +694,7 @@ impl Net {
 
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::Prompt {
           character_limit,
           default_text,
@@ -728,7 +728,7 @@ impl Net {
       // we want to at least open the bbs if the post vec is empty
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::OpenBoard {
           current_depth: start_depth,
           name: name.clone(),
@@ -796,7 +796,7 @@ impl Net {
 
       client
         .packet_shipper
-        .send(&self.socket, &Reliability::ReliableOrdered, &packet);
+        .send(&self.socket, Reliability::ReliableOrdered, &packet);
 
       last_id = chunk.pop().map(|post| post.id);
     }
@@ -861,7 +861,7 @@ impl Net {
 
       client
         .packet_shipper
-        .send(&self.socket, &Reliability::ReliableOrdered, &packet);
+        .send(&self.socket, Reliability::ReliableOrdered, &packet);
 
       last_id = chunk.pop().map(|post| post.id);
     }
@@ -918,7 +918,7 @@ impl Net {
 
       client
         .packet_shipper
-        .send(&self.socket, &Reliability::ReliableOrdered, &packet);
+        .send(&self.socket, Reliability::ReliableOrdered, &packet);
 
       last_id = chunk.pop().map(|post| post.id);
     }
@@ -928,7 +928,7 @@ impl Net {
     if let Some(client) = self.clients.get_mut(player_id) {
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::RemovePost {
           current_depth: client.widget_tracker.get_board_count() as u8,
           id: post_id.to_string(),
@@ -941,7 +941,7 @@ impl Net {
     if let Some(client) = self.clients.get_mut(player_id) {
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::CloseBBS,
       );
     }
@@ -965,7 +965,7 @@ impl Net {
 
     client_1.packet_shipper.send(
       &self.socket,
-      &Reliability::ReliableOrdered,
+      Reliability::ReliableOrdered,
       &ServerPacket::InitiatePvp {
         address: client_2_addr.to_string(),
       },
@@ -973,7 +973,7 @@ impl Net {
 
     client_2.packet_shipper.send(
       &self.socket,
-      &Reliability::ReliableOrdered,
+      Reliability::ReliableOrdered,
       &ServerPacket::InitiatePvp {
         address: client_1_addr.to_string(),
       },
@@ -993,7 +993,7 @@ impl Net {
 
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::Money { money },
       );
     }
@@ -1059,7 +1059,7 @@ impl Net {
 
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::TransferWarp,
       );
     } else {
@@ -1076,7 +1076,7 @@ impl Net {
 
     client.packet_shipper.send(
       &self.socket,
-      &Reliability::ReliableOrdered,
+      Reliability::ReliableOrdered,
       &ServerPacket::TransferStart,
     );
 
@@ -1105,7 +1105,7 @@ impl Net {
 
     client.packet_shipper.send(
       &self.socket,
-      &Reliability::ReliableOrdered,
+      Reliability::ReliableOrdered,
       &ServerPacket::Teleport {
         warp: false,
         x: client.warp_x,
@@ -1117,7 +1117,7 @@ impl Net {
 
     client.packet_shipper.send(
       &self.socket,
-      &Reliability::ReliableOrdered,
+      Reliability::ReliableOrdered,
       &ServerPacket::TransferComplete {
         warp_in: client.warp_in,
         direction: client.warp_direction,
@@ -1136,7 +1136,7 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
         &self.socket,
-        &Reliability::ReliableOrdered,
+        Reliability::ReliableOrdered,
         &ServerPacket::TransferServer {
           address: address.to_string(),
           port,
@@ -1294,7 +1294,7 @@ impl Net {
 
     client
       .packet_shipper
-      .send(&self.socket, &Reliability::ReliableOrdered, &packet);
+      .send(&self.socket, Reliability::ReliableOrdered, &packet);
   }
 
   pub(super) fn connect_client(&mut self, player_id: &str) {
@@ -1302,7 +1302,7 @@ impl Net {
 
     client.packet_shipper.send(
       &self.socket,
-      &Reliability::ReliableOrdered,
+      Reliability::ReliableOrdered,
       &ServerPacket::CompleteConnection,
     );
   }
@@ -1371,7 +1371,7 @@ impl Net {
     for packet in packets {
       client
         .packet_shipper
-        .send(&self.socket, &Reliability::ReliableOrdered, &packet);
+        .send(&self.socket, Reliability::ReliableOrdered, &packet);
     }
   }
 
@@ -1901,7 +1901,7 @@ fn update_cached_clients(
         }
 
         for packet in &packets {
-          client.packet_shipper.send(socket, &reliability, &packet);
+          client.packet_shipper.send(socket, reliability, &packet);
         }
       }
     }
@@ -1913,7 +1913,7 @@ fn update_cached_clients(
 
     for client in &mut clients_to_update {
       for packet in &packets {
-        client.packet_shipper.send(socket, &reliability, &packet);
+        client.packet_shipper.send(socket, reliability, &packet);
       }
     }
   }
@@ -1952,7 +1952,7 @@ fn assert_asset(
       for packet in &packets {
         client
           .packet_shipper
-          .send(socket, &Reliability::ReliableOrdered, &packet);
+          .send(socket, Reliability::ReliableOrdered, &packet);
       }
     }
   }
@@ -1968,7 +1968,7 @@ fn broadcast_to_area(
   for player_id in area.get_connected_players() {
     let client = clients.get_mut(player_id).unwrap();
 
-    client.packet_shipper.send(socket, &reliability, &packet);
+    client.packet_shipper.send(socket, reliability, &packet);
   }
 }
 

@@ -190,7 +190,7 @@ impl Server {
             } else {
               client.packet_shipper.send(
                 socket,
-                &Reliability::ReliableOrdered,
+                Reliability::ReliableOrdered,
                 &ServerPacket::RemoveAsset { path },
               );
             }
@@ -442,7 +442,7 @@ impl Server {
 
           client.packet_shipper.send(
             &socket,
-            &Reliability::ReliableOrdered,
+            Reliability::ReliableOrdered,
             &ServerPacket::PostSelectionAck,
           );
         }
