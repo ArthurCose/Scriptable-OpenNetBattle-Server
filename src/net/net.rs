@@ -1227,6 +1227,7 @@ impl Net {
   pub(super) fn store_player_assets(&mut self, player_id: &str) -> Option<(String, String)> {
     use super::asset;
     use super::client::find_longest_frame_length;
+    use std::array::IntoIter;
 
     let client = self.clients.get_mut(player_id).unwrap();
 
@@ -1260,45 +1261,30 @@ impl Net {
     let mugshot_texture_path = asset::get_player_mugshot_texture_path(player_id);
     let mugshot_animation_path = asset::get_player_mugshot_animation_path(player_id);
 
-    self.set_asset(
-      texture_path.clone(),
-      Asset {
-        data: AssetData::Texture(texture_data),
-        dependencies: Vec::new(),
-        last_modified: 0,
-        cachable: false,
-      },
-    );
+    let player_assets = [
+      (texture_path.clone(), AssetData::Texture(texture_data)),
+      (animation_path.clone(), AssetData::Text(animation_data)),
+      (
+        mugshot_texture_path,
+        AssetData::Texture(mugshot_texture_data),
+      ),
+      (
+        mugshot_animation_path,
+        AssetData::Text(mugshot_animation_data),
+      ),
+    ];
 
-    self.set_asset(
-      animation_path.clone(),
-      Asset {
-        data: AssetData::Text(animation_data),
-        dependencies: Vec::new(),
-        last_modified: 0,
-        cachable: false,
-      },
-    );
-
-    self.set_asset(
-      mugshot_texture_path,
-      Asset {
-        data: AssetData::Texture(mugshot_texture_data),
-        dependencies: Vec::new(),
-        last_modified: 0,
-        cachable: false,
-      },
-    );
-
-    self.set_asset(
-      mugshot_animation_path,
-      Asset {
-        data: AssetData::Text(mugshot_animation_data),
-        dependencies: Vec::new(),
-        last_modified: 0,
-        cachable: false,
-      },
-    );
+    for (path, data) in IntoIter::new(player_assets) {
+      self.set_asset(
+        path,
+        Asset {
+          data,
+          dependencies: Vec::new(),
+          last_modified: 0,
+          cachable: false,
+        },
+      );
+    }
 
     Some((texture_path, animation_path))
   }
