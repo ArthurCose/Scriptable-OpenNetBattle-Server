@@ -250,22 +250,13 @@ impl Net {
       // but for this we want to make sure the player sees this and updates their avatar
       // if the other players receive this, they'll just ignore it
 
-      assert_asset(
+      assert_assets(
         &self.socket,
         self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
         area.get_connected_players(),
-        &texture_path,
-      );
-
-      assert_asset(
-        &self.socket,
-        self.config.max_payload_size,
-        &self.assets,
-        &mut self.clients,
-        area.get_connected_players(),
-        &animation_path,
+        [texture_path.as_str(), animation_path.as_str()].iter(),
       );
 
       let packet = ServerPacket::ActorSetAvatar {
@@ -373,16 +364,14 @@ impl Net {
         }
       }
 
-      for asset_path in asset_paths {
-        assert_asset(
-          &self.socket,
-          self.config.max_payload_size,
-          &self.assets,
-          &mut self.clients,
-          &[id.to_string()],
-          asset_path,
-        )
-      }
+      assert_assets(
+        &self.socket,
+        self.config.max_payload_size,
+        &self.assets,
+        &mut self.clients,
+        &[id.to_string()],
+        asset_paths.iter(),
+      );
 
       broadcast_actor_keyframes(
         &self.socket,
@@ -604,22 +593,13 @@ impl Net {
     mug_texture_path: &str,
     mug_animation_path: &str,
   ) {
-    assert_asset(
+    assert_assets(
       &self.socket,
       self.config.max_payload_size,
       &self.assets,
       &mut self.clients,
       &[id.to_string()],
-      &mug_texture_path,
-    );
-
-    assert_asset(
-      &self.socket,
-      self.config.max_payload_size,
-      &self.assets,
-      &mut self.clients,
-      &[id.to_string()],
-      &mug_animation_path,
+      [mug_texture_path, mug_animation_path].iter(),
     );
 
     if let Some(client) = self.clients.get_mut(id) {
@@ -644,22 +624,13 @@ impl Net {
     mug_texture_path: &str,
     mug_animation_path: &str,
   ) {
-    assert_asset(
+    assert_assets(
       &self.socket,
       self.config.max_payload_size,
       &self.assets,
       &mut self.clients,
       &[id.to_string()],
-      &mug_texture_path,
-    );
-
-    assert_asset(
-      &self.socket,
-      self.config.max_payload_size,
-      &self.assets,
-      &mut self.clients,
-      &[id.to_string()],
-      &mug_animation_path,
+      [mug_texture_path, mug_animation_path].iter(),
     );
 
     if let Some(client) = self.clients.get_mut(id) {
@@ -686,22 +657,13 @@ impl Net {
     mug_texture_path: &str,
     mug_animation_path: &str,
   ) {
-    assert_asset(
+    assert_assets(
       &self.socket,
       self.config.max_payload_size,
       &self.assets,
       &mut self.clients,
       &[id.to_string()],
-      &mug_texture_path,
-    );
-
-    assert_asset(
-      &self.socket,
-      self.config.max_payload_size,
-      &self.assets,
-      &mut self.clients,
-      &[id.to_string()],
-      &mug_animation_path,
+      [mug_texture_path, mug_animation_path].iter(),
     );
 
     if let Some(client) = self.clients.get_mut(id) {
@@ -1123,22 +1085,13 @@ impl Net {
     let texture_path = client.actor.texture_path.clone();
     let animation_path = client.actor.animation_path.clone();
 
-    assert_asset(
+    assert_assets(
       &self.socket,
       self.config.max_payload_size,
       &self.assets,
       &mut self.clients,
       area.get_connected_players(),
-      &texture_path,
-    );
-
-    assert_asset(
-      &self.socket,
-      self.config.max_payload_size,
-      &self.assets,
-      &mut self.clients,
-      area.get_connected_players(),
-      &animation_path,
+      [texture_path.as_str(), animation_path.as_str()].iter(),
     );
 
     area.add_player(player_id.to_string());
@@ -1317,22 +1270,13 @@ impl Net {
     let area = self.areas.get_mut(&area_id).unwrap();
     area.add_player(client.actor.id.clone());
 
-    assert_asset(
+    assert_assets(
       &self.socket,
       self.config.max_payload_size,
       &self.assets,
       &mut self.clients,
       area.get_connected_players(),
-      &texture_path,
-    );
-
-    assert_asset(
-      &self.socket,
-      self.config.max_payload_size,
-      &self.assets,
-      &mut self.clients,
-      area.get_connected_players(),
-      &animation_path,
+      [texture_path.as_str(), animation_path.as_str()].iter(),
     );
 
     self.send_area(player_id, &area_id);
@@ -1512,22 +1456,13 @@ impl Net {
 
       let packet = bot.create_spawn_packet(bot.x, bot.y, bot.z, true);
 
-      assert_asset(
+      assert_assets(
         &self.socket,
         self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
         area.get_connected_players(),
-        &bot.texture_path,
-      );
-
-      assert_asset(
-        &self.socket,
-        self.config.max_payload_size,
-        &self.assets,
-        &mut self.clients,
-        area.get_connected_players(),
-        &bot.animation_path,
+        [bot.texture_path.as_str(), bot.animation_path.as_str()].iter(),
       );
 
       broadcast_to_area(
@@ -1751,22 +1686,13 @@ impl Net {
       let area = self.areas.get_mut(area_id).unwrap();
       area.add_bot(id.to_string());
 
-      assert_asset(
+      assert_assets(
         &self.socket,
         self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
         area.get_connected_players(),
-        &bot.texture_path,
-      );
-
-      assert_asset(
-        &self.socket,
-        self.config.max_payload_size,
-        &self.assets,
-        &mut self.clients,
-        area.get_connected_players(),
-        &bot.animation_path,
+        [bot.texture_path.as_str(), bot.animation_path.as_str()].iter(),
       );
 
       broadcast_to_area(
@@ -2043,5 +1969,27 @@ fn broadcast_to_area(
     let client = clients.get_mut(player_id).unwrap();
 
     client.packet_shipper.send(socket, &reliability, &packet);
+  }
+}
+
+fn assert_assets<'a, I>(
+  socket: &UdpSocket,
+  max_payload_size: usize,
+  assets: &HashMap<String, Asset>,
+  clients: &mut HashMap<String, Client>,
+  player_ids: &[String],
+  asset_paths: I,
+) where
+  I: std::iter::Iterator<Item = &'a &'a str>,
+{
+  for asset_path in asset_paths {
+    assert_asset(
+      socket,
+      max_payload_size,
+      assets,
+      clients,
+      player_ids,
+      asset_path,
+    );
   }
 }
