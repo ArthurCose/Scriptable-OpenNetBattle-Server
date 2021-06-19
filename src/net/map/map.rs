@@ -555,6 +555,7 @@ impl Map {
     let mut object_referenced_assets = HashSet::<&String>::new();
 
     for object in &self.objects {
+      #[allow(clippy::single_match)]
       match object.object_type.as_str() {
         "Conveyor" => {
           if let Some(path) = object.custom_properties.get("Sound Effect") {
