@@ -158,6 +158,21 @@ Shop:
 - Tile Objects only
 - Visible in minimap
 
+Conveyor:
+
+- Tile Objects only
+- Visible in minimap
+- Custom properties:
+
+  - Direction: string
+    - Marks the direction the player will travel
+    - Up Left
+    - Up Right
+    - Down Left
+    - Down Right
+  - Speed: number? (Tiles per second, default: 6)
+  - Sound Effect: string
+
 Stairs:
 
 - Tiles only
@@ -314,7 +329,7 @@ Net.transfer_bot(bot_id, area_id, warp_in?, x?, y?, z?)
 -- keyframes:
 {
   properties: {
-    property: "Animation" | "X" | "Y" | "Z" | "ScaleX" | "ScaleY" | "Rotation" | "Direction",
+    property: "Animation" | "X" | "Y" | "Z" | "ScaleX" | "ScaleY" | "Rotation" | "Direction" | "Sound Effect" | "Sound Effect Loop",
     ease?: "Linear" | "In" | "Out" | "InOut" | "Floor",
     value: number | string
   }[],

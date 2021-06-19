@@ -548,8 +548,22 @@ impl Map {
 
   pub fn generate_asset(&mut self) -> Asset {
     use super::super::AssetData;
+    use std::collections::HashSet;
 
     self.asset_stale = false;
+
+    let mut object_referenced_assets = HashSet::<&String>::new();
+
+    for object in &self.objects {
+      match object.object_type.as_str() {
+        "Conveyor" => {
+          if let Some(path) = object.custom_properties.get("Sound Effect") {
+            object_referenced_assets.insert(path);
+          }
+        }
+        _ => {}
+      }
+    }
 
     let tileset_paths = self.tilesets.iter().map(|tileset| &tileset.path);
 
@@ -557,6 +571,7 @@ impl Map {
       .chain(std::iter::once(&self.background_texture_path))
       .chain(std::iter::once(&self.background_animation_path))
       .chain(std::iter::once(&self.song_path))
+      .chain(object_referenced_assets)
       .filter(|path| path.starts_with("/server/")) // provided by server
       .cloned()
       .collect();

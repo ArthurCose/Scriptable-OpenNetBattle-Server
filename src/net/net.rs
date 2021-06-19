@@ -364,7 +364,7 @@ impl Net {
             ActorProperty::Rotation(value) => client.actor.rotation = *value,
             ActorProperty::Direction(value) => client.actor.direction = *value,
             ActorProperty::SoundEffect(value) | ActorProperty::SoundEffectLoop(value) => {
-              if value.starts_with("/server/assets/") {
+              if value.starts_with("/server/") {
                 asset_paths.insert(value);
               }
             }
