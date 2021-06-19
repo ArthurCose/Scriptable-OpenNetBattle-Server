@@ -614,6 +614,8 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
             ActorProperty::ScaleY(value) => write_f32(&mut buf, *value),
             ActorProperty::Rotation(value) => write_f32(&mut buf, *value),
             ActorProperty::Direction(value) => buf.push(translate_direction(*value)),
+            ActorProperty::SoundEffect(value) => write_string(&mut buf, &value),
+            ActorProperty::SoundEffectLoop(value) => write_string(&mut buf, &value),
           }
         }
       }
@@ -688,6 +690,8 @@ fn get_actor_property_identifier(property: &ActorProperty) -> u8 {
     ActorProperty::ScaleY(_) => 5,
     ActorProperty::Rotation(_) => 6,
     ActorProperty::Direction(_) => 7,
+    ActorProperty::SoundEffect(_) => 8,
+    ActorProperty::SoundEffectLoop(_) => 9,
   }
 }
 

@@ -10,6 +10,8 @@ pub enum ActorProperty {
   ScaleY(f32),
   Rotation(f32),
   Direction(Direction),
+  SoundEffect(String),
+  SoundEffectLoop(String),
 }
 
 #[derive(Debug)]

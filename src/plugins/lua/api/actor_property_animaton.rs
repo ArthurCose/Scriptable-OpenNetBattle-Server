@@ -31,6 +31,8 @@ pub fn parse_animation(keyframe_tables: Vec<rlua::Table>) -> rlua::Result<Vec<Ke
 
           ActorProperty::Direction(Direction::from(value.to_str()?))
         }
+        "Sound Effect" => ActorProperty::SoundEffect(property_table.get("value")?),
+        "Sound Effect Loop" => ActorProperty::SoundEffectLoop(property_table.get("value")?),
         _ => {
           let error_string = format!("Unknown Property: {}", property_name_str);
           return Err(rlua::Error::RuntimeError(error_string));

@@ -344,6 +344,7 @@ impl Net {
 
   pub fn animate_player_properties(&mut self, id: &str, animation: Vec<KeyFrame>) {
     use super::actor_property_animation::ActorProperty;
+    use std::collections::HashSet;
 
     if let Some(client) = self.clients.get_mut(id) {
       let area = match self.areas.get(&client.actor.area_id) {
@@ -351,7 +352,9 @@ impl Net {
         None => return,
       };
 
-      // store final values for new players
+      let mut asset_paths = HashSet::<&str>::new();
+
+      // store final values for new players, also track assets
       for keyframe in &animation {
         for (property, _) in &keyframe.property_steps {
           match property {
@@ -360,9 +363,25 @@ impl Net {
             ActorProperty::ScaleY(value) => client.actor.scale_y = *value,
             ActorProperty::Rotation(value) => client.actor.rotation = *value,
             ActorProperty::Direction(value) => client.actor.direction = *value,
+            ActorProperty::SoundEffect(value) | ActorProperty::SoundEffectLoop(value) => {
+              if value.starts_with("/server/assets/") {
+                asset_paths.insert(value);
+              }
+            }
             _ => {}
           }
         }
+      }
+
+      for asset_path in asset_paths {
+        assert_asset(
+          &self.socket,
+          self.config.max_payload_size,
+          &self.assets,
+          &mut self.clients,
+          &[id.to_string()],
+          asset_path,
+        )
       }
 
       broadcast_actor_keyframes(
@@ -1440,8 +1459,16 @@ impl Net {
   pub(super) fn remove_player(&mut self, id: &str, warp_out: bool) {
     use super::asset;
     if let Some(client) = self.clients.remove(id) {
-      self.assets.remove(&asset::get_player_texture_path(id));
-      self.assets.remove(&asset::get_player_animation_path(id));
+      let remove_list = [
+        asset::get_player_texture_path(id),
+        asset::get_player_animation_path(id),
+        asset::get_player_mugshot_animation_path(id),
+        asset::get_player_mugshot_texture_path(id),
+      ];
+
+      for asset_path in remove_list.iter() {
+        self.assets.remove(asset_path);
+      }
 
       let area = self
         .areas
@@ -1679,6 +1706,7 @@ impl Net {
             ActorProperty::ScaleY(value) => bot.scale_y = *value,
             ActorProperty::Rotation(value) => bot.rotation = *value,
             ActorProperty::Direction(value) => bot.direction = *value,
+            _ => {}
           }
         }
       }
