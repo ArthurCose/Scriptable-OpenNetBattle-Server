@@ -1,5 +1,4 @@
 use super::job_promise::{JobPromise, PromiseValue};
-use super::Job;
 use std::fs::File;
 use std::io::Write;
 use std::io::{BufRead, BufReader, BufWriter};
@@ -10,11 +9,11 @@ pub fn web_download(
   method: String,
   headers: Vec<(String, String)>,
   body: Option<Vec<u8>>,
-) -> (Job, JobPromise) {
+) -> JobPromise {
   let promise = JobPromise::new();
   let mut thread_promise = promise.clone();
 
-  let job = Box::new(move || {
+  async_std::task::spawn(async move {
     // todo: there's more methods than this
     // can i just set the method in headers?
     let mut request = match method.as_str() {
@@ -91,5 +90,5 @@ pub fn web_download(
     thread_promise.set_value(PromiseValue::Success(true));
   });
 
-  (job, promise)
+  promise
 }

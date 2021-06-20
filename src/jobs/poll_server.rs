@@ -1,93 +1,58 @@
 use super::job_promise::{JobPromise, PromiseValue};
-use super::Job;
+use crate::packets::{VERSION_ID, VERSION_ITERATION};
+use async_std::net::UdpSocket;
 
-pub fn poll_server(address: String, port: u16) -> (Job, JobPromise) {
+pub fn poll_server(address: String, port: u16) -> JobPromise {
   let promise = JobPromise::new();
   let mut thread_promise = promise.clone();
 
-  let job = Box::new(move || {
+  async_std::task::spawn(async move {
     use super::helpers::*;
-    use crate::packets::bytes::*;
-    use crate::packets::{VERSION_ID, VERSION_ITERATION};
-    use std::net::UdpSocket;
+    use futures::FutureExt;
     use std::time::Duration;
 
-    let socket_addr = if let Some(socket_addr) = resolve_socket_addr(address.as_str(), port) {
+    let socket_addr = if let Some(socket_addr) = resolve_socket_addr(address.as_str(), port).await {
       socket_addr
     } else {
       thread_promise.set_value(PromiseValue::None);
       return;
     };
 
-    let socket = if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
+    let socket = if let Ok(socket) = UdpSocket::bind("0.0.0.0:0").await {
       socket
     } else {
       thread_promise.set_value(PromiseValue::None);
       return;
     };
 
-    let _ = socket.set_read_timeout(Some(Duration::from_millis(500)));
-
     // only send + recieve to this address
-    if socket.connect(socket_addr).is_err() {
+    if socket.connect(socket_addr).await.is_err() {
       // invalid address
       thread_promise.set_value(PromiseValue::None);
       return;
     }
 
-    let mut attempts = 0;
-
-    // max size defined by NetPlayConfig::MAX_BUFFER_LEN
-    let mut buf = [0; 10240];
+    let max_wait = Duration::from_millis(500);
+    let mut attempts: u8 = 0;
 
     while attempts < 10 {
       // send &[unreliable, ping_part, ping_part]
-      let _ = socket.send(&[0, 0, 0]);
+      let _ = socket.send(&[0, 0, 0]).await;
 
-      if let Ok(size) = socket.recv(&mut buf) {
-        let slice = &mut &buf[..size];
+      let response_fut = get_response(&socket).fuse();
+      let timeout_fut = async_std::task::sleep(max_wait).fuse();
 
-        if !matches!(read_byte(slice), Some(0)) {
-          // invalid response: expecting "unreliable" byte
-          break;
-        }
+      futures::pin_mut!(response_fut, timeout_fut);
 
-        if !matches!(read_u16(slice), Some(0)) {
-          // invalid response: expecting "Pong" byte
-          break;
-        }
-
-        if let Some(version_id_optional) = read_string(slice) {
-          if version_id_optional != VERSION_ID {
-            // invalid response: mismatching VERSION_ID
-            break;
+      futures::select! {
+        result = response_fut => {
+          if let Some(max_message_size) = result {
+            thread_promise.set_value(PromiseValue::ServerInfo { max_message_size });
+            return;
           }
-          // good path
-        } else {
-          // invalid response: expecting VERSION_ID
-          break;
-        }
-
-        if !matches!(read_u64(slice), Some(VERSION_ITERATION)) {
-          // invalid response: mismatching VERSION_ITERATION
-          break;
-        }
-
-        let max_payload_size = if let Some(max_payload_size) = read_u16(slice) {
-          max_payload_size
-        } else {
-          // invalid response: missing max_payload_size
-          break;
-        };
-
-        // header size = unreliable byte + packet type u16
-        let header_size = 1 + 2;
-        let max_message_size = max_payload_size - header_size;
-
-        thread_promise.set_value(PromiseValue::ServerInfo { max_message_size });
-
-        return;
-      }
+        },
+        () = timeout_fut => {}
+      };
 
       attempts += 1;
     }
@@ -95,5 +60,57 @@ pub fn poll_server(address: String, port: u16) -> (Job, JobPromise) {
     thread_promise.set_value(PromiseValue::None);
   });
 
-  (job, promise)
+  promise
+}
+
+async fn get_response(socket: &UdpSocket) -> Option<u16> {
+  use crate::packets::bytes::*;
+
+  // max size defined by NetPlayConfig::MAX_BUFFER_LEN
+  let mut buf = [0; 10240];
+
+  if let Ok(size) = socket.recv(&mut buf).await {
+    let slice = &mut &buf[..size];
+
+    if !matches!(read_byte(slice), Some(0)) {
+      // invalid response: expecting "unreliable" byte
+      return None;
+    }
+
+    if !matches!(read_u16(slice), Some(0)) {
+      // invalid response: expecting "Pong" byte
+      return None;
+    }
+
+    if let Some(version_id_optional) = read_string(slice) {
+      if version_id_optional != VERSION_ID {
+        // invalid response: mismatching VERSION_ID
+        return None;
+      }
+      // good path
+    } else {
+      // invalid response: expecting VERSION_ID
+      return None;
+    }
+
+    if !matches!(read_u64(slice), Some(VERSION_ITERATION)) {
+      // invalid response: mismatching VERSION_ITERATION
+      return None;
+    }
+
+    let max_payload_size = if let Some(max_payload_size) = read_u16(slice) {
+      max_payload_size
+    } else {
+      // invalid response: missing max_payload_size
+      return None;
+    };
+
+    // header size = unreliable byte + packet type u16
+    let header_size = 1 + 2;
+    let max_message_size = max_payload_size - header_size;
+
+    return Some(max_message_size);
+  }
+
+  return None;
 }

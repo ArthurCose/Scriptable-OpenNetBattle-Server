@@ -107,16 +107,6 @@ fn main() {
         }),
     )
     .arg(
-      clap::Arg::with_name("worker_thread_count")
-        .long("worker-threads")
-        .help("Sets the amount of threads to spawn for handling special tasks")
-        .default_value("2")
-        .validator(|value| match value.parse::<u16>() {
-          Ok(_) => Ok(()),
-          Err(_) => Err(String::from("Invalid quantity")),
-        }),
-    )
-    .arg(
       clap::Arg::with_name("custom_emotes_path")
         .long("custom-emotes-path")
         .value_name("ASSET_PATH")
@@ -144,7 +134,6 @@ fn main() {
     avatar_dimensions_limit: unwrap_and_parse_or_default(
       matches.value_of("avatar_dimensions_limit"),
     ),
-    worker_thread_count: unwrap_and_parse_or_default(matches.value_of("worker_thread_count")),
     custom_emotes_path: matches
       .value_of("custom_emotes_path")
       .map(|path| path.to_string()),

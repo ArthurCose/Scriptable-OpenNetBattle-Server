@@ -5,7 +5,6 @@ use super::map::Map;
 use super::server::ServerConfig;
 use super::{Actor, Area, Asset, AssetData, BbsPost, Direction, PlayerData};
 use crate::packets::{create_asset_stream, Reliability, ServerPacket};
-use crate::threads::worker_threads::{Job, JobGiver};
 use std::collections::HashMap;
 use std::net::UdpSocket;
 use std::rc::Rc;
@@ -19,13 +18,11 @@ pub struct Net {
   assets: HashMap<String, Asset>,
   active_script: usize,
   kick_list: Vec<Boot>,
-  job_giver: JobGiver,
 }
 
 impl Net {
   pub fn new(socket: Rc<UdpSocket>, config: Rc<ServerConfig>) -> Net {
     use super::asset::get_map_path;
-    use crate::threads::create_worker_threads;
     use std::fs::{read_dir, read_to_string};
 
     let mut assets = HashMap::new();
@@ -63,8 +60,6 @@ impl Net {
       panic!("No default (default.txt) area data found");
     }
 
-    let job_giver = create_worker_threads(config.worker_thread_count);
-
     Net {
       socket,
       config,
@@ -74,7 +69,6 @@ impl Net {
       assets,
       active_script: 0,
       kick_list: Vec::new(),
-      job_giver,
     }
   }
 
@@ -1709,13 +1703,8 @@ impl Net {
     use crate::jobs::message_server::message_server;
 
     if let Ok(socket) = self.socket.try_clone() {
-      let job = message_server(socket, address, port, data);
-      self.add_job(job);
+      message_server(socket, address, port, data);
     }
-  }
-
-  pub fn add_job(&mut self, job: Job) {
-    self.job_giver.give_job(job);
   }
 
   // ugly opengl like context storing

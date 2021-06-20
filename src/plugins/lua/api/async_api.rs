@@ -85,8 +85,6 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
     let (url, options): (String, Option<rlua::Table>) = lua_ctx.unpack_multi(params)?;
 
-    let mut net = api_ctx.net_ref.borrow_mut();
-
     let method: String;
     let body: Option<Vec<u8>>;
     let headers: Vec<(String, String)>;
@@ -118,8 +116,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       headers = Vec::new();
     }
 
-    let (job, promise) = web_request(url, method, headers, body);
-    net.add_job(job);
+    let promise = web_request(url, method, headers, body);
 
     let lua_promise = create_lua_promise(&lua_ctx, api_ctx.promise_manager_ref, promise);
     lua_ctx.pack_multi(lua_promise)
@@ -130,7 +127,6 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
     let (path, url, options): (String, String, Option<rlua::Table>) =
       lua_ctx.unpack_multi(params)?;
-    let mut net = api_ctx.net_ref.borrow_mut();
 
     let method: String;
     let body: Option<Vec<u8>>;
@@ -163,8 +159,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       headers = Vec::new();
     }
 
-    let (job, promise) = web_download(path, url, method, headers, body);
-    net.add_job(job);
+    let promise = web_download(path, url, method, headers, body);
 
     let lua_promise = create_lua_promise(&lua_ctx, api_ctx.promise_manager_ref, promise);
 
@@ -175,10 +170,8 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     use crate::jobs::read_file::read_file;
 
     let path: String = lua_ctx.unpack_multi(params)?;
-    let mut net = api_ctx.net_ref.borrow_mut();
 
-    let (job, promise) = read_file(path);
-    net.add_job(job);
+    let promise = read_file(path);
 
     let lua_promise = create_lua_promise(&lua_ctx, api_ctx.promise_manager_ref, promise);
 
@@ -189,10 +182,8 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let (path, content): (String, rlua::String) = lua_ctx.unpack_multi(params)?;
 
     use crate::jobs::write_file::write_file;
-    let mut net = api_ctx.net_ref.borrow_mut();
 
-    let (job, promise) = write_file(path, content.as_bytes());
-    net.add_job(job);
+    let promise = write_file(path, content.as_bytes());
 
     let lua_promise = create_lua_promise(&lua_ctx, api_ctx.promise_manager_ref, promise);
 
@@ -204,10 +195,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
     use crate::jobs::poll_server::poll_server;
 
-    let mut net = api_ctx.net_ref.borrow_mut();
-
-    let (job, promise) = poll_server(address, port);
-    net.add_job(job);
+    let promise = poll_server(address, port);
 
     let lua_promise = create_lua_promise(&lua_ctx, api_ctx.promise_manager_ref, promise);
 

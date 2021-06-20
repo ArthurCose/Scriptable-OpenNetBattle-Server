@@ -8,6 +8,7 @@ license = "GPL"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 async-std = "1.9"
+futures = "0.3"
 byteorder = "1.4"
 uuid = { version = "0.8", features = ["v4"] }
 rlua = "0.17"
