@@ -172,16 +172,59 @@ pub fn resolve_dependencies(path: &std::path::Path, asset_data: &AssetData) -> V
   }
 }
 
-pub(super) fn resolve_tsx_dependencies(data: &str) -> Vec<String> {
+fn resolve_tsx_dependencies(data: &str) -> Vec<String> {
+  let mut dependencies = Vec::new();
+
   if let Ok(tileset_element) = data.parse::<minidom::Element>() {
-    return tileset_element
-      .children()
-      .filter(|child| child.name() == "image")
-      .map(|child| child.attr("source").unwrap_or_default())
-      .filter(|source| source.starts_with("/server"))
-      .map(|source| source.to_string())
-      .collect();
+    for child in tileset_element.children() {
+      match child.name() {
+        "image" => {
+          let source = child.attr("source").unwrap_or_default();
+
+          if source.starts_with("/server/") {
+            dependencies.push(source.to_string())
+          }
+        }
+        "tile" => {
+          dependencies.append(&mut resolve_tile_dependencies(child));
+        }
+        _ => {}
+      }
+    }
   }
 
-  vec![]
+  dependencies
+}
+
+fn resolve_tile_dependencies(tile_element: &minidom::Element) -> Vec<String> {
+  let mut dependencies = Vec::new();
+
+  let tile_type = if let Some(tile_type) = tile_element.attr("type") {
+    tile_type
+  } else {
+    return dependencies;
+  };
+
+  let properties_element = if let Some(properties_element) =
+    tile_element.get_child("properties", minidom::NSChoice::Any)
+  {
+    properties_element
+  } else {
+    return dependencies;
+  };
+
+  for property_element in properties_element.children() {
+    match (tile_type, property_element.attr("name")) {
+      ("Conveyor", Some("Sound Effect")) => {
+        let value = property_element.attr("value").unwrap_or_default();
+
+        if value.starts_with("/server/") {
+          dependencies.push(value.to_string());
+        }
+      }
+      _ => {}
+    }
+  }
+
+  dependencies
 }
