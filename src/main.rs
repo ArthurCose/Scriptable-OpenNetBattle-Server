@@ -120,8 +120,10 @@ fn main() {
     )
     .get_matches();
 
+  let public_ip = async_std::task::block_on(get_public_ip());
+
   let config = net::ServerConfig {
-    public_ip: get_public_ip().unwrap_or_else(|_| IpAddr::from([127, 0, 0, 1])), // default to localhost
+    public_ip: public_ip.unwrap_or_else(|_| IpAddr::from([127, 0, 0, 1])), // default to localhost
     // validators makes these safe to unwrap
     port: matches.value_of("port").unwrap().parse().unwrap(),
     log_connections: matches.is_present("log_connections"),
@@ -148,11 +150,13 @@ fn main() {
   }
 }
 
-fn get_public_ip() -> Result<IpAddr, Box<dyn std::error::Error>> {
+async fn get_public_ip() -> Result<IpAddr, Box<dyn std::error::Error>> {
   use std::str::FromStr;
+  use surf::middleware::Redirect;
 
-  let response = ureq::get("http://checkip.amazonaws.com").call()?;
-  let response_text = response.into_string()?;
+  let request = surf::get("http://checkip.amazonaws.com").middleware(Redirect::default());
+  let mut response = request.send().await?;
+  let response_text = response.body_string().await?;
 
   let ip_string = response_text.replace("\n", "");
 

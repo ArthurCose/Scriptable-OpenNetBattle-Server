@@ -1,7 +1,5 @@
 use super::job_promise::{JobPromise, PromiseValue};
-use std::fs::File;
-use std::io::Write;
-use std::io::{BufRead, BufReader, BufWriter};
+use super::web_request::web_request_internal;
 
 pub fn web_download(
   destination: String,
@@ -14,81 +12,58 @@ pub fn web_download(
   let mut thread_promise = promise.clone();
 
   async_std::task::spawn(async move {
-    // todo: there's more methods than this
-    // can i just set the method in headers?
-    let mut request = match method.as_str() {
-      "post" => ureq::post(&url),
-      "put" => ureq::put(&url),
-      "delete" => ureq::delete(&url),
-      _ => ureq::get(&url),
-    };
-
-    for (key, value) in headers {
-      request = request.set(key.as_str(), value.as_str());
-    }
-
-    let result = if let Some(data) = body {
-      request.send_bytes(&data)
-    } else {
-      request.call()
-    };
-
-    // handling response
-
-    let response = match result {
+    let response = match web_request_internal(url, method, headers, body).await {
       Ok(response) => response,
       Err(err) => {
         println!("{}", err);
-
         thread_promise.set_value(PromiseValue::Success(false));
         return;
       }
     };
-
-    let status = response.status();
-
-    if status != 200 {
-      thread_promise.set_value(PromiseValue::Success(false));
-      return;
-    }
-
-    let mut headers = Vec::new();
-
-    for header_name in &response.headers_names() {
-      let value = response.header(&header_name).unwrap().to_string();
-
-      headers.push((header_name.clone(), value));
-    }
 
     // writing to file
-
-    let file = if let Ok(file) = File::create(destination) {
-      file
-    } else {
+    if let Err(err) = save_response(destination, response).await {
+      println!("{}", err);
       thread_promise.set_value(PromiseValue::Success(false));
       return;
-    };
-
-    let reader = response.into_reader();
-    let mut buf_reader = BufReader::new(reader);
-    let mut buf_writer = BufWriter::new(file);
-
-    let mut length = 1;
-
-    while length > 0 {
-      let buffer = buf_reader.fill_buf().unwrap();
-
-      if buf_writer.write(buffer).is_err() {
-        thread_promise.set_value(PromiseValue::Success(false));
-        return;
-      }
-
-      length = buffer.len();
-      buf_reader.consume(length);
     }
 
     thread_promise.set_value(PromiseValue::Success(true));
   });
 
   promise
+}
+
+// seems to break on mp4s
+// test file:
+// https://cdn.discordapp.com/attachments/820777515995234314/856179686211059712/2021-06-20_09-20-08.mp4
+async fn save_response(
+  destination: String,
+  response: surf::Response,
+) -> Result<(), Box<dyn std::error::Error>> {
+  use async_std::fs::File;
+  use async_std::io::BufWriter;
+  use futures::{AsyncBufReadExt, AsyncWriteExt};
+
+  let mut response = response;
+
+  let file = File::create(destination).await?;
+
+  let mut buf_reader = response.take_body().into_reader();
+  let mut buf_writer = BufWriter::new(file);
+
+  let mut length = 1;
+
+  while length > 0 {
+    let buffer = buf_reader.fill_buf().await?;
+    length = buffer.len();
+
+    buf_writer.write(&buffer).await?;
+
+    buf_reader.consume_unpin(length);
+  }
+
+  buf_writer.flush().await?;
+
+  Ok(())
 }

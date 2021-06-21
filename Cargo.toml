@@ -9,11 +9,11 @@ license = "GPL"
 [dependencies]
 async-std = "1.9"
 futures = "0.3"
+surf = "2.2"
 byteorder = "1.4"
 uuid = { version = "0.8", features = ["v4"] }
 rlua = "0.17"
 clap = "2.33"
 minidom = "0.12"
 itertools = "0.10"
-ureq = "2.0"
 multi_mut = "0.1.3"
