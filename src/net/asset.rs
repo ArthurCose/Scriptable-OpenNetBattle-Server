@@ -214,6 +214,7 @@ fn resolve_tile_dependencies(tile_element: &minidom::Element) -> Vec<String> {
   };
 
   for property_element in properties_element.children() {
+    #[allow(clippy::single_match)]
     match (tile_type, property_element.attr("name")) {
       ("Conveyor", Some("Sound Effect")) => {
         let value = property_element.attr("value").unwrap_or_default();

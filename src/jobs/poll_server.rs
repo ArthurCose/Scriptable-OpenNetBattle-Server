@@ -98,12 +98,7 @@ async fn get_response(socket: &UdpSocket) -> Option<u16> {
       return None;
     }
 
-    let max_payload_size = if let Some(max_payload_size) = read_u16(slice) {
-      max_payload_size
-    } else {
-      // invalid response: missing max_payload_size
-      return None;
-    };
+    let max_payload_size = read_u16(slice)?;
 
     // header size = unreliable byte + packet type u16
     let header_size = 1 + 2;
