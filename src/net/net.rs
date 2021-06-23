@@ -941,6 +941,14 @@ impl Net {
     }
   }
 
+  pub fn is_player_battling(&self, id: &str) -> bool {
+    if let Some(client) = self.clients.get(id) {
+      return client.is_battling;
+    }
+
+    false
+  }
+
   pub fn initiate_pvp(&mut self, player_1_id: &str, player_2_id: &str) {
     use crate::helpers::use_public_ip;
     use multi_mut::HashMapMultiMut;
@@ -951,6 +959,9 @@ impl Net {
       } else {
         return;
       };
+
+    client_1.is_battling = true;
+    client_2.is_battling = true;
 
     // todo: put these clients in slow mode
 
@@ -972,6 +983,14 @@ impl Net {
         address: client_1_addr.to_string(),
       },
     )
+  }
+
+  pub fn is_player_busy(&self, id: &str) -> bool {
+    if let Some(client) = self.clients.get(id) {
+      return client.is_busy();
+    }
+
+    true
   }
 
   pub fn get_player_data(&self, player_id: &str) -> Option<&PlayerData> {

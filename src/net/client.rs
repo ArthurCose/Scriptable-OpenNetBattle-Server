@@ -23,6 +23,7 @@ pub(super) struct Client {
   pub mugshot_animation_buffer: Vec<u8>,
   pub widget_tracker: WidgetTracker<usize>,
   pub player_data: PlayerData,
+  pub is_battling: bool,
 }
 
 impl Client {
@@ -79,11 +80,16 @@ impl Client {
       mugshot_animation_buffer: Vec::new(),
       widget_tracker: WidgetTracker::new(),
       player_data: PlayerData::new(),
+      is_battling: false,
     }
   }
 
   pub fn is_in_widget(&self) -> bool {
     !self.widget_tracker.is_empty()
+  }
+
+  pub fn is_busy(&self) -> bool {
+    self.is_battling || self.is_in_widget()
   }
 }
 

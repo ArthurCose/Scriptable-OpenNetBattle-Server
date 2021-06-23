@@ -420,6 +420,28 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
+  lua_api.add_dynamic_function("Net", "is_player_battling", |api_ctx, lua_ctx, params| {
+    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id_str = player_id.to_str()?;
+
+    let net = api_ctx.net_ref.borrow();
+
+    let is_battling = net.is_player_battling(player_id_str);
+
+    lua_ctx.pack_multi(is_battling)
+  });
+
+  lua_api.add_dynamic_function("Net", "is_player_busy", |api_ctx, lua_ctx, params| {
+    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id_str = player_id.to_str()?;
+
+    let net = api_ctx.net_ref.borrow();
+
+    let is_busy = net.is_player_busy(player_id_str);
+
+    lua_ctx.pack_multi(is_busy)
+  });
+
   lua_api.add_dynamic_function("Net", "transfer_player", |api_ctx, lua_ctx, params| {
     let (player_id, area_id, warp_in_option, x_option, y_option, z_option, direction_option): (
       rlua::String,

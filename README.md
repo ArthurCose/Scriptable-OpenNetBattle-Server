@@ -209,7 +209,7 @@ function handle_board_open(player_id)
 function handle_board_close(player_id)
 function handle_post_selection(player_id, post_id)
 function handle_post_request(player_id) -- bbs post request for infinite scroll
--- function handle_battle_results(player_id, stats) -- stats = { health: number, score: number, time: number, ran: bool, emotion: number }
+function handle_battle_results(player_id, stats) -- stats = { health: number, score: number, time: number, ran: bool, emotion: number }
 function handle_server_message(ip, port, data)
 
 -- For the following functions:
@@ -355,7 +355,7 @@ Net.set_player_emote(player_id, emote_id, use_custom_emotes?)
 Net.exclusive_player_emote(player_id, emoter_id, emote_id, use_custom_emotes?)
 Net.animate_player(player_id, state_name, loop?)
 Net.animate_player_properties(player_id, keyframes) -- unstable
--- Net.is_player_battling(player_id)
+Net.is_player_battling(player_id)
 Net.is_player_busy(player_id)
 Net.provide_asset_for_player(player_id, path)
 Net.play_sound_for_player(player_id, path)
