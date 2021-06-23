@@ -3,7 +3,7 @@
 use super::bytes::*;
 use super::management::{get_reliability, Reliability};
 use super::PacketHeaders;
-use crate::net::Direction;
+use crate::net::{BattleStats, Direction};
 
 #[derive(Debug)]
 pub enum ClientPacket {
@@ -38,7 +38,10 @@ pub enum ClientPacket {
     z: f32,
     direction: Direction,
   },
-  AvatarChange,
+  AvatarChange {
+    name: String,
+    max_health: u32,
+  },
   Emote {
     emote_id: u8,
   },
@@ -67,6 +70,9 @@ pub enum ClientPacket {
   PostRequest,
   PostSelection {
     post_id: String,
+  },
+  BattleResults {
+    battle_stats: BattleStats,
   },
 }
 
@@ -128,7 +134,10 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
       z: read_f32(work_buf)?,
       direction: read_direction(read_byte(work_buf)?),
     }),
-    11 => Some(ClientPacket::AvatarChange),
+    11 => Some(ClientPacket::AvatarChange {
+      name: read_string(work_buf)?,
+      max_health: read_u32(work_buf)?,
+    }),
     12 => Some(ClientPacket::Emote {
       emote_id: read_byte(work_buf)?,
     }),
@@ -157,6 +166,15 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
     21 => Some(ClientPacket::PostRequest),
     22 => Some(ClientPacket::PostSelection {
       post_id: read_string(work_buf)?,
+    }),
+    23 => Some(ClientPacket::BattleResults {
+      battle_stats: BattleStats {
+        health: read_u32(work_buf)?,
+        score: read_u32(work_buf)?,
+        time: read_f32(work_buf)?,
+        ran: read_bool(work_buf)?,
+        emotion: read_byte(work_buf)?,
+      },
     }),
     _ => None,
   }

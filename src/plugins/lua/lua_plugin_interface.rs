@@ -1,6 +1,6 @@
 use super::api::{ApiContext, LuaApi};
 use crate::jobs::JobPromiseManager;
-use crate::net::{Net, WidgetTracker};
+use crate::net::{BattleStats, Net, WidgetTracker};
 use crate::plugins::PluginInterface;
 use rlua::Lua;
 use std::cell::RefCell;
@@ -21,6 +21,7 @@ pub struct LuaPluginInterface {
   object_interaction_listeners: Vec<std::path::PathBuf>,
   actor_interaction_listeners: Vec<std::path::PathBuf>,
   tile_interaction_listeners: Vec<std::path::PathBuf>,
+  battle_results_listeners: Vec<std::path::PathBuf>,
   server_message_listeners: Vec<std::path::PathBuf>,
   widget_trackers: HashMap<String, WidgetTracker<std::path::PathBuf>>,
   promise_manager: JobPromiseManager,
@@ -45,6 +46,7 @@ impl LuaPluginInterface {
       actor_interaction_listeners: Vec::new(),
       tile_interaction_listeners: Vec::new(),
       server_message_listeners: Vec::new(),
+      battle_results_listeners: Vec::new(),
       widget_trackers: HashMap::new(),
       promise_manager: JobPromiseManager::new(),
       lua_api: LuaApi::new(),
@@ -205,6 +207,13 @@ impl LuaPluginInterface {
       }
 
       if globals
+        .get::<_, rlua::Function>("handle_battle_results")
+        .is_ok()
+      {
+        self.battle_results_listeners.push(script_path.clone());
+      }
+
+      if globals
         .get::<_, rlua::Function>("handle_server_message")
         .is_ok()
       {
@@ -331,6 +340,8 @@ impl PluginInterface for LuaPluginInterface {
     player_id: &str,
     texture_path: &str,
     animation_path: &str,
+    name: &str,
+    max_health: u32,
   ) -> bool {
     let mut prevent_default = false;
 
@@ -344,7 +355,7 @@ impl PluginInterface for LuaPluginInterface {
       "handle_player_avatar_change",
       |_, callback| {
         let return_value: Option<bool> =
-          callback.call((player_id, texture_path, animation_path))?;
+          callback.call((player_id, texture_path, animation_path, name, max_health))?;
 
         prevent_default |= return_value.unwrap_or_default();
 
@@ -561,6 +572,28 @@ impl PluginInterface for LuaPluginInterface {
       net,
       "handle_post_selection",
       |_, callback| callback.call((player_id, post_id)),
+    );
+  }
+
+  fn handle_battle_results(&mut self, net: &mut Net, player_id: &str, battle_stats: &BattleStats) {
+    handle_event(
+      &mut self.scripts,
+      &self.battle_results_listeners,
+      &mut self.widget_trackers,
+      &mut self.promise_manager,
+      &mut self.lua_api,
+      net,
+      "handle_battle_results",
+      |lua_ctx, callback| {
+        let table = lua_ctx.create_table()?;
+        table.set("health", battle_stats.health)?;
+        table.set("score", battle_stats.score)?;
+        table.set("time", battle_stats.time)?;
+        table.set("ran", battle_stats.ran)?;
+        table.set("emotion", battle_stats.emotion)?;
+
+        callback.call((player_id, table))
+      },
     );
   }
 

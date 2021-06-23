@@ -981,6 +981,46 @@ impl Net {
       .map(|client| &client.player_data)
   }
 
+  pub fn set_player_health(&mut self, player_id: &str, health: u32) {
+    if let Some(client) = self.clients.get_mut(player_id) {
+      let max_health = client.player_data.max_health;
+
+      client.player_data.health = health;
+
+      client.packet_shipper.send(
+        &self.socket,
+        Reliability::ReliableOrdered,
+        &ServerPacket::Health { health, max_health },
+      );
+    }
+  }
+
+  pub fn set_player_max_health(&mut self, player_id: &str, max_health: u32) {
+    if let Some(client) = self.clients.get_mut(player_id) {
+      let health = client.player_data.health;
+
+      client.player_data.max_health = max_health;
+
+      client.packet_shipper.send(
+        &self.socket,
+        Reliability::ReliableOrdered,
+        &ServerPacket::Health { health, max_health },
+      );
+    }
+  }
+
+  pub fn set_player_emotion(&mut self, player_id: &str, emotion: u8) {
+    if let Some(client) = self.clients.get_mut(player_id) {
+      client.player_data.emotion = emotion;
+
+      client.packet_shipper.send(
+        &self.socket,
+        Reliability::ReliableOrdered,
+        &ServerPacket::Emotion { emotion },
+      );
+    }
+  }
+
   pub fn set_player_money(&mut self, player_id: &str, money: u32) {
     if let Some(client) = self.clients.get_mut(player_id) {
       client.player_data.money = money;

@@ -12,6 +12,10 @@ pub fn read_byte(buf: &mut &[u8]) -> Option<u8> {
   Some(byte)
 }
 
+pub fn read_bool(buf: &mut &[u8]) -> Option<bool> {
+  read_byte(buf).map(|byte| byte != 0)
+}
+
 pub fn read_u16(buf: &mut &[u8]) -> Option<u16> {
   use byteorder::{ByteOrder, LittleEndian};
 

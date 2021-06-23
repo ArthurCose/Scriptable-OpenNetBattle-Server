@@ -209,7 +209,7 @@ function handle_board_open(player_id)
 function handle_board_close(player_id)
 function handle_post_selection(player_id, post_id)
 function handle_post_request(player_id) -- bbs post request for infinite scroll
--- function handle_battle_completion(player_id, results) -- results = { status: "won" | "loss" | "ran", rank? }
+-- function handle_battle_results(player_id, stats) -- stats = { health: number, score: number, time: number, ran: bool, emotion: number }
 function handle_server_message(ip, port, data)
 
 -- For the following functions:
@@ -222,7 +222,7 @@ function handle_player_move(player_id, x, y, z)
 --  default action is not taken until after execution
 --  returning true will prevent the default action
 
-function handle_player_avatar_change(player_id, texture_path, animation_path)
+function handle_player_avatar_change(player_id, texture_path, animation_path, name, max_health)
 function handle_player_emote(player_id, emote)
 ```
 
@@ -394,6 +394,12 @@ Net.close_bbs()
 #### Player Data API
 
 ```lua
+Net.get_player_health(player_id)
+Net.set_player_health(player_id, health)
+Net.get_player_max_health(player_id)
+Net.set_player_max_health(player_id, health)
+Net.get_player_emotion(player_id)
+Net.set_player_emotion(player_id, emotion)
 Net.get_player_money(player_id)
 Net.set_player_money(player_id, money)
 ```

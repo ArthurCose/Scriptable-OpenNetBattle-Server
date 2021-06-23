@@ -1,4 +1,4 @@
-use crate::net::Net;
+use crate::net::{BattleStats, Net};
 
 pub trait PluginInterface {
   fn init(&mut self, net: &mut Net);
@@ -15,6 +15,8 @@ pub trait PluginInterface {
     player_id: &str,
     texture_path: &str,
     animation_path: &str,
+    name: &str,
+    max_health: u32,
   ) -> bool;
   fn handle_player_emote(&mut self, net: &mut Net, player_id: &str, emote_id: u8) -> bool;
   fn handle_custom_warp(&mut self, net: &mut Net, player_id: &str, tile_object_id: u32);
@@ -27,6 +29,7 @@ pub trait PluginInterface {
   fn handle_board_close(&mut self, net: &mut Net, player_id: &str);
   fn handle_post_request(&mut self, net: &mut Net, player_id: &str);
   fn handle_post_selection(&mut self, net: &mut Net, player_id: &str, post_id: &str);
+  fn handle_battle_results(&mut self, net: &mut Net, player_id: &str, battle_stats: &BattleStats);
   fn handle_server_message(
     &mut self,
     net: &mut Net,

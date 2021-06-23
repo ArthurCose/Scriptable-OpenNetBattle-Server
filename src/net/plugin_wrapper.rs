@@ -1,4 +1,4 @@
-use super::Net;
+use super::{BattleStats, Net};
 use crate::plugins::PluginInterface;
 
 pub(super) struct PluginWrapper {
@@ -92,12 +92,20 @@ impl PluginInterface for PluginWrapper {
     player_id: &str,
     texture_path: &str,
     animation_path: &str,
+    name: &str,
+    max_health: u32,
   ) -> bool {
     let mut prevent_default = false;
 
     self.wrap_calls(net, |plugin_interface, net| {
-      prevent_default |=
-        plugin_interface.handle_player_avatar_change(net, player_id, texture_path, animation_path)
+      prevent_default |= plugin_interface.handle_player_avatar_change(
+        net,
+        player_id,
+        texture_path,
+        animation_path,
+        name,
+        max_health,
+      )
     });
 
     prevent_default
@@ -225,6 +233,21 @@ impl PluginInterface for PluginWrapper {
     if let Some(i) = client.widget_tracker.current_board() {
       self.wrap_call(*i, net, |plugin_interface, net| {
         plugin_interface.handle_post_selection(net, player_id, post_id)
+      });
+    }
+  }
+
+  fn handle_battle_results(&mut self, net: &mut Net, player_id: &str, battle_stats: &BattleStats) {
+    let client = net
+      .get_client_mut(player_id)
+      .expect("An internal author should understand how to handle this better");
+
+    // expect the above to be correct
+    // don't expect the client to be correct
+    // otherwise someone can read the source and force a crash :p
+    if let Some(i) = client.widget_tracker.current_board() {
+      self.wrap_call(*i, net, |plugin_interface, net| {
+        plugin_interface.handle_battle_results(net, player_id, battle_stats)
       });
     }
   }

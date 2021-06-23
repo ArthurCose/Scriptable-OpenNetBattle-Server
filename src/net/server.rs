@@ -331,7 +331,7 @@ impl Server {
             .plugin_wrapper
             .handle_custom_warp(net, &player_id, tile_object_id);
         }
-        ClientPacket::AvatarChange => {
+        ClientPacket::AvatarChange { name, max_health } => {
           if self.config.log_packets {
             println!("Received AvatarChange packet from {}", socket_address);
           }
@@ -342,6 +342,8 @@ impl Server {
               player_id,
               &texture_path,
               &animation_path,
+              &name,
+              max_health,
             );
 
             if !prevent_default {
@@ -444,6 +446,15 @@ impl Server {
             Reliability::ReliableOrdered,
             &ServerPacket::PostSelectionAck,
           );
+        }
+        ClientPacket::BattleResults { battle_stats } => {
+          if self.config.log_packets {
+            println!("Received BattleResults packet from {}", socket_address);
+          }
+
+          self
+            .plugin_wrapper
+            .handle_battle_results(net, player_id, &battle_stats);
         }
         ClientPacket::ServerMessage { data } => {
           // this should never happen but 🤷‍♂️

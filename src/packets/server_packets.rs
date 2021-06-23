@@ -22,6 +22,8 @@ enum ServerPacketId {
   Preload,
   CustomEmotesPath,
   MapUpdate,
+  Health,
+  Emotion,
   Money,
   PlaySound,
   ExcludeObject,
@@ -106,6 +108,13 @@ pub enum ServerPacket<'a> {
   },
   MapUpdate {
     map_path: String,
+  },
+  Health {
+    health: u32,
+    max_health: u32,
+  },
+  Emotion {
+    emotion: u8,
   },
   Money {
     money: u32,
@@ -354,6 +363,15 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     ServerPacket::MapUpdate { map_path } => {
       write_u16(&mut buf, ServerPacketId::MapUpdate as u16);
       write_string(&mut buf, map_path);
+    }
+    ServerPacket::Health { health, max_health } => {
+      write_u16(&mut buf, ServerPacketId::Health as u16);
+      write_u32(&mut buf, *health);
+      write_u32(&mut buf, *max_health);
+    }
+    ServerPacket::Emotion { emotion } => {
+      write_u16(&mut buf, ServerPacketId::Emotion as u16);
+      buf.push(*emotion);
     }
     ServerPacket::Money { money } => {
       write_u16(&mut buf, ServerPacketId::Money as u16);
