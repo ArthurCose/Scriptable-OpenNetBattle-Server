@@ -1052,6 +1052,37 @@ impl Net {
     }
   }
 
+  pub fn give_player_item(&mut self, player_id: &str, name: String, description: &str) {
+    if let Some(client) = self.clients.get_mut(player_id) {
+      client.packet_shipper.send(
+        &self.socket,
+        Reliability::ReliableOrdered,
+        &ServerPacket::AddItem {
+          name: &name,
+          description,
+        },
+      );
+
+      client.player_data.items.push(name);
+    }
+  }
+
+  pub fn remove_player_item(&mut self, player_id: &str, name: &str) {
+    if let Some(client) = self.clients.get_mut(player_id) {
+      client.packet_shipper.send(
+        &self.socket,
+        Reliability::ReliableOrdered,
+        &ServerPacket::RemoveItem { name },
+      );
+
+      let items = &mut client.player_data.items;
+
+      if let Some(index) = items.iter().position(|item| *item == name) {
+        items.remove(index);
+      }
+    }
+  }
+
   #[allow(clippy::too_many_arguments)]
   pub fn transfer_player(
     &mut self,

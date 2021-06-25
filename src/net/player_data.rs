@@ -3,6 +3,7 @@ pub struct PlayerData {
   pub max_health: u32,
   pub emotion: u8,
   pub money: u32,
+  pub items: Vec<String>,
 }
 
 impl PlayerData {
@@ -12,6 +13,7 @@ impl PlayerData {
       max_health: 0,
       emotion: 0,
       money: 0,
+      items: Vec::new(),
     }
   }
 }

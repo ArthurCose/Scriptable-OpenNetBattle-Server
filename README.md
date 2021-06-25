@@ -402,6 +402,10 @@ Net.get_player_emotion(player_id)
 Net.set_player_emotion(player_id, emotion)
 Net.get_player_money(player_id)
 Net.set_player_money(player_id, money)
+Net.get_player_items(player_id)
+Net.give_player_item(player_id, name, description)
+Net.remove_player_item(player_id, name)
+Net.player_has_item(player_id, name)
 ```
 
 #### Asset API

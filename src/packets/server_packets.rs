@@ -25,6 +25,8 @@ enum ServerPacketId {
   Health,
   Emotion,
   Money,
+  AddItem,
+  RemoveItem,
   PlaySound,
   ExcludeObject,
   IncludeObject,
@@ -118,6 +120,13 @@ pub enum ServerPacket<'a> {
   },
   Money {
     money: u32,
+  },
+  AddItem {
+    name: &'a str,
+    description: &'a str,
+  },
+  RemoveItem {
+    name: &'a str,
   },
   PlaySound {
     path: String,
@@ -376,6 +385,15 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     ServerPacket::Money { money } => {
       write_u16(&mut buf, ServerPacketId::Money as u16);
       write_u32(&mut buf, *money);
+    }
+    ServerPacket::AddItem { name, description } => {
+      write_u16(&mut buf, ServerPacketId::AddItem as u16);
+      write_string_u8(&mut buf, name);
+      write_string_u16(&mut buf, description);
+    }
+    ServerPacket::RemoveItem { name } => {
+      write_u16(&mut buf, ServerPacketId::RemoveItem as u16);
+      write_string_u8(&mut buf, name);
     }
     ServerPacket::PlaySound { path } => {
       write_u16(&mut buf, ServerPacketId::PlaySound as u16);
