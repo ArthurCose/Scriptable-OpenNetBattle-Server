@@ -681,8 +681,8 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.widget_tracker.track_textbox(self.active_script);
 
-      // reliability + id + type + \0
-      let available_space = self.config.max_payload_size as u16 - 1 - 8 - 2 - 2 - 1;
+      // reliability + id + type + u16 size
+      let available_space = self.config.max_payload_size as u16 - 1 - 8 - 2 - 2 - 2;
 
       let character_limit = std::cmp::min(character_limit, available_space);
 
@@ -742,13 +742,13 @@ impl Net {
       let borrowed_state = chunk_state.borrow();
 
       if borrowed_state.0 == 0 {
-        packet_size += name.len() + 1;
+        packet_size += 2 + name.len();
         packet_size += 3; // color
       } else {
         packet_size += 2; // currentDepth + hasReference
 
         if let Some(last_id) = borrowed_state.1.as_ref() {
-          packet_size += last_id.len() + 1; // reference
+          packet_size += 2 + last_id.len(); // reference
         }
       }
 
@@ -817,7 +817,7 @@ impl Net {
       packet_size += 2; // currentDepth + hasReference
 
       if let Some(last_id) = last_id.borrow().as_ref() {
-        packet_size += last_id.len() + 1; // reference
+        packet_size += 2 + last_id.len(); // reference
       }
 
       max_payload_size - packet_size
@@ -882,7 +882,7 @@ impl Net {
       packet_size += 2; // currentDepth + hasReference
 
       if let Some(last_id) = last_id.borrow().as_ref() {
-        packet_size += last_id.len() + 1; // reference
+        packet_size += 2 + last_id.len(); // reference
       }
 
       max_payload_size - packet_size
@@ -1851,8 +1851,8 @@ fn broadcast_actor_keyframes(
   use super::actor_property_animation::ActorProperty;
   use crate::helpers::iterators::IteratorHelper;
 
-  // reliability + reliability id + type + id + \0 + tail + keyframe size
-  let header_size = 1 + 8 + 2 + id.len() + 1 + 1 + 2;
+  // reliability + reliability id + type + u16 size + id + tail + keyframe size
+  let header_size = 1 + 8 + 2 + 2 + id.len() + 1 + 2;
   let remaining_size = max_payload_size - header_size;
 
   let measure = |keyframe: &KeyFrame| {
@@ -1865,7 +1865,7 @@ fn broadcast_actor_keyframes(
 
       // + value
       match property {
-        ActorProperty::Animation(value) => size += value.len() + 1,
+        ActorProperty::Animation(value) => size += 2 + value.len(),
         ActorProperty::Direction(_) => size += 1,
         _ => size += 4,
       }

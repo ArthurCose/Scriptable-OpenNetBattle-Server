@@ -82,7 +82,7 @@ async fn get_response(socket: &UdpSocket) -> Option<u16> {
       return None;
     }
 
-    if let Some(version_id_optional) = read_string(slice) {
+    if let Some(version_id_optional) = read_string_u16(slice) {
       if version_id_optional != VERSION_ID {
         // invalid response: mismatching VERSION_ID
         return None;

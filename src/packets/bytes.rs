@@ -76,18 +76,30 @@ pub fn read_f32(buf: &mut &[u8]) -> Option<f32> {
   Some(float)
 }
 
-pub fn read_string(buf: &mut &[u8]) -> Option<String> {
-  let terminator_pos = buf.iter().position(|&b| b == 0);
+#[allow(dead_code)]
+pub fn read_string_u8(buf: &mut &[u8]) -> Option<String> {
+  let len = read_byte(buf)? as usize;
+  read_string(buf, len)
+}
 
-  if let Some(index) = terminator_pos {
-    let string_slice = std::str::from_utf8(&buf[0..index]).ok()?;
+pub fn read_string_u16(buf: &mut &[u8]) -> Option<String> {
+  let len = read_u16(buf)? as usize;
+  read_string(buf, len)
+}
 
-    *buf = &buf[index + 1..];
-
-    return Some(String::from(string_slice));
+fn read_string(buf: &mut &[u8], len: usize) -> Option<String> {
+  if buf.len() < len {
+    *buf = &buf[buf.len()..];
+    return None;
   }
 
-  None
+  let string_slice = std::str::from_utf8(&buf[..len]).ok();
+
+  *buf = &buf[len..];
+
+  let string = String::from(string_slice?);
+
+  Some(string)
 }
 
 pub fn read_data(buf: &mut &[u8], size: usize) -> Option<Vec<u8>> {
@@ -140,15 +152,27 @@ pub fn write_f32(buf: &mut Vec<u8>, data: f32) {
   buf.extend(&buf_32);
 }
 
-pub fn write_str(buf: &mut Vec<u8>, data: &str) {
-  buf.extend(data.as_bytes());
-  buf.push(0);
+#[allow(dead_code)]
+pub fn write_string_u8(buf: &mut Vec<u8>, data: &str) {
+  let len = if data.len() < u8::MAX.into() {
+    data.len() as u8
+  } else {
+    u8::MAX
+  };
+
+  buf.push(len);
+  buf.extend(&data.as_bytes()[0..len.into()]);
 }
 
-pub fn write_string(buf: &mut Vec<u8>, data: &str) {
-  // todo: endianness may be an issue
-  buf.extend(data.as_bytes());
-  buf.push(0);
+pub fn write_string_u16(buf: &mut Vec<u8>, data: &str) {
+  let len = if data.len() < u16::MAX.into() {
+    data.len() as u16
+  } else {
+    u16::MAX
+  };
+
+  write_u16(buf, len);
+  buf.extend(&data.as_bytes()[0..len.into()]);
 }
 
 pub fn write_data(buf: &mut Vec<u8>, data: &[u8]) {

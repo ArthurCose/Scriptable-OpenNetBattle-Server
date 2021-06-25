@@ -12,7 +12,7 @@ pub fn message_server(socket: std::net::UdpSocket, address: String, port: u16, d
     let mut data = data;
 
     let mut packet = vec![0]; // unreliable
-    write_u16(&mut packet, 2);
+    write_u16(&mut packet, 2); // server message
     packet.append(&mut data);
 
     let _ = socket.send_to(&packet, socket_addr);

@@ -109,7 +109,7 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
       data: work_buf.to_vec(),
     }),
     3 => Some(ClientPacket::AssetFound {
-      path: read_string(work_buf)?,
+      path: read_string_u16(work_buf)?,
       last_modified: read_u64(work_buf)?,
     }),
     4 => {
@@ -120,8 +120,8 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
       Some(ClientPacket::AssetStream { asset_type, data })
     }
     5 => Some(ClientPacket::Login {
-      username: read_string(work_buf)?,
-      data: read_string(work_buf)?,
+      username: read_string_u16(work_buf)?,
+      data: read_string_u16(work_buf)?,
     }),
     6 => Some(ClientPacket::Logout),
     7 => Some(ClientPacket::RequestJoin),
@@ -135,7 +135,7 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
       direction: read_direction(read_byte(work_buf)?),
     }),
     11 => Some(ClientPacket::AvatarChange {
-      name: read_string(work_buf)?,
+      name: read_string_u16(work_buf)?,
       max_health: read_u32(work_buf)?,
     }),
     12 => Some(ClientPacket::Emote {
@@ -148,7 +148,7 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
       tile_object_id: read_u32(work_buf)?,
     }),
     15 => Some(ClientPacket::ActorInteraction {
-      actor_id: read_string(work_buf)?,
+      actor_id: read_string_u16(work_buf)?,
     }),
     16 => Some(ClientPacket::TileInteraction {
       x: read_f32(work_buf)?,
@@ -159,13 +159,13 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
       response: read_byte(work_buf)?,
     }),
     18 => Some(ClientPacket::PromptResponse {
-      response: read_string(work_buf)?,
+      response: read_string_u16(work_buf)?,
     }),
     19 => Some(ClientPacket::BoardOpen),
     20 => Some(ClientPacket::BoardClose),
     21 => Some(ClientPacket::PostRequest),
     22 => Some(ClientPacket::PostSelection {
-      post_id: read_string(work_buf)?,
+      post_id: read_string_u16(work_buf)?,
     }),
     23 => Some(ClientPacket::BattleResults {
       battle_stats: BattleStats {
