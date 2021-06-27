@@ -236,6 +236,7 @@ impl Server {
         }
         ClientPacket::Login {
           username: _,
+          identity: _,
           data: _,
         } => {
           if self.config.log_packets {
@@ -482,12 +483,16 @@ impl Server {
           });
           let _ = socket.send_to(&buf, socket_address);
         }
-        ClientPacket::Login { username, data } => {
+        ClientPacket::Login {
+          username,
+          identity,
+          data,
+        } => {
           if self.config.log_packets {
             println!("Received Login packet from {}", socket_address);
           }
 
-          let player_id = net.add_client(socket_address, username);
+          let player_id = net.add_client(socket_address, username, identity);
 
           self.player_id_map.insert(socket_address, player_id.clone());
 

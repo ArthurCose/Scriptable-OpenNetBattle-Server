@@ -25,6 +25,7 @@ pub enum ClientPacket {
   },
   Login {
     username: String,
+    identity: String,
     data: String,
   },
   Logout,
@@ -119,9 +120,18 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
 
       Some(ClientPacket::AssetStream { asset_type, data })
     }
-    5 => Some(ClientPacket::Login {
-      username: read_string_u16(work_buf)?,
-      data: read_string_u16(work_buf)?,
+    5 => Some({
+      let username = read_string_u8(work_buf)?;
+      let identity_size = read_byte(work_buf)?;
+      let identity_bytes = read_data(work_buf, identity_size as usize)?;
+      let identity = base64::encode(&identity_bytes);
+      let data = read_string_u16(work_buf)?;
+
+      ClientPacket::Login {
+        username,
+        identity,
+        data,
+      }
     }),
     6 => Some(ClientPacket::Logout),
     7 => Some(ClientPacket::RequestJoin),

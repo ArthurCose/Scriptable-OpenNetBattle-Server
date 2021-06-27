@@ -134,7 +134,9 @@ Server Warp:
   - Address: string
   - Port: number
   - Data: string
-    - Custom data to pass to the other server (can be read through handle_player_request on the other server)
+    - Custom data to pass to the other server
+    - Can be read through handle_player_request on the other server
+    - Try to keep it short! Long data strings may get ignored
 
 Custom Server Warp:
 
@@ -394,6 +396,7 @@ Net.close_bbs()
 #### Player Data API
 
 ```lua
+Net.get_player_secret(player_id) -- the secret identifier for this player
 Net.get_player_health(player_id)
 Net.set_player_health(player_id, health)
 Net.get_player_max_health(player_id)

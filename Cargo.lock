@@ -977,6 +977,7 @@ name = "net_battle_server"
 version = "0.1.0"
 dependencies = [
  "async-std",
+ "base64",
  "byteorder",
  "clap",
  "futures",

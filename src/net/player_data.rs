@@ -1,4 +1,5 @@
 pub struct PlayerData {
+  pub identity: String,
   pub health: u32,
   pub max_health: u32,
   pub emotion: u8,
@@ -7,8 +8,9 @@ pub struct PlayerData {
 }
 
 impl PlayerData {
-  pub fn new() -> PlayerData {
+  pub fn new(identity: String) -> PlayerData {
     PlayerData {
+      identity,
       health: 0,
       max_health: 0,
       emotion: 0,

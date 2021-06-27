@@ -1255,6 +1255,7 @@ impl Net {
     &mut self,
     socket_address: std::net::SocketAddr,
     name: String,
+    identity: String,
   ) -> String {
     let area_id = String::from("default");
     let area = self.get_area_mut(&area_id).unwrap();
@@ -1265,6 +1266,7 @@ impl Net {
     let client = Client::new(
       socket_address,
       name,
+      identity,
       area_id,
       spawn_x,
       spawn_y,

@@ -31,6 +31,7 @@ impl Client {
   pub(super) fn new(
     socket_address: SocketAddr,
     name: String,
+    identity: String,
     area_id: String,
     spawn_x: f32,
     spawn_y: f32,
@@ -79,7 +80,7 @@ impl Client {
       mugshot_texture_buffer: Vec::new(),
       mugshot_animation_buffer: Vec::new(),
       widget_tracker: WidgetTracker::new(),
-      player_data: PlayerData::new(),
+      player_data: PlayerData::new(identity),
       is_battling: false,
     }
   }
