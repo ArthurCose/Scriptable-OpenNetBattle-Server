@@ -11,9 +11,7 @@ pub fn create_listening_thread(
 ) {
   let async_socket = async_std::net::UdpSocket::from(socket);
 
-  std::thread::spawn(move || {
-    async_std::task::block_on(listen_loop(tx, async_socket, max_payload_size, log_packets))
-  });
+  async_std::task::spawn(listen_loop(tx, async_socket, max_payload_size, log_packets));
 }
 
 async fn listen_loop(
