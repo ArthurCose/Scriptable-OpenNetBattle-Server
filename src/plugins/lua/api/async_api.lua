@@ -4,7 +4,7 @@ function _server_internal_tick(delta)
   local completed_indexes = {}
 
   for i, task in ipairs(Async._tasks) do
-    if task() then
+    if task(delta) then
       completed_indexes[#completed_indexes+1] = i
     end
   end
@@ -100,6 +100,27 @@ function Async.create_promise(task)
   end
 
   task(resolve)
+
+  return promise
+end
+
+function Async.sleep(duration)
+  local promise = Async.create_promise(function (resolve)
+    local time = 0
+
+    function update(delta)
+      time = time + delta
+
+      if time >= duration then
+        resolve()
+        return true
+      end
+
+      return false
+    end
+
+    Async._tasks[#Async._tasks+1] = update
+  end)
 
   return promise
 end

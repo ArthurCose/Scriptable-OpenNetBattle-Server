@@ -437,6 +437,7 @@ Async.read_file(path) -- promise, value = string
 Async.write_file(path, content) -- promise, value = bool
 Async.poll_server(address, port) -- promise, value = { max_message_size }?
 Async.message_server(address, port, data) -- you will not know if this succeeds, the other server will need to reply
+Async.sleep(duration) -- promise, value = nil
 ```
 
 ## Building
