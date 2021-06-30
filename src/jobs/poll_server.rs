@@ -107,5 +107,5 @@ async fn get_response(socket: &UdpSocket) -> Option<u16> {
     return Some(max_message_size);
   }
 
-  return None;
+  None
 }

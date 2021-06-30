@@ -469,6 +469,16 @@ impl Net {
     }
   }
 
+  pub fn fade_player_camera(&mut self, id: &str, fade_type: u8, duration: f32, color: (u8, u8, u8, u8)) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.packet_shipper.send(
+        &self.socket,
+        Reliability::ReliableOrdered,
+        &ServerPacket::FadeCamera { fade_type, duration, color },
+      );
+    }
+  }
+
   pub fn track_with_player_camera(&mut self, id: &str, actor_id: Option<String>) {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(

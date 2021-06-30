@@ -33,6 +33,7 @@ enum ServerPacketId {
   MoveCamera,
   SlideCamera,
   ShakeCamera,
+  FadeCamera,
   TrackWithCamera,
   UnlockCamera,
   LockInput,
@@ -152,6 +153,11 @@ pub enum ServerPacket<'a> {
   ShakeCamera {
     strength: f32,
     duration: f32,
+  },
+  FadeCamera {
+    fade_type: u8,
+    duration: f32,
+    color: (u8, u8, u8, u8)
   },
   TrackWithCamera {
     actor_id: Option<String>,
@@ -425,6 +431,15 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_u16(&mut buf, ServerPacketId::ShakeCamera as u16);
       write_f32(&mut buf, *strength);
       write_f32(&mut buf, *duration);
+    }
+    ServerPacket::FadeCamera { fade_type, duration, color: (r, g, b, a) } => {
+      write_u16(&mut buf, ServerPacketId::FadeCamera as u16);
+      buf.push(*fade_type);
+      write_f32(&mut buf, *duration);
+      buf.push(*r);
+      buf.push(*g);
+      buf.push(*b);
+      buf.push(*a);
     }
     ServerPacket::TrackWithCamera { actor_id } => {
       write_u16(&mut buf, ServerPacketId::TrackWithCamera as u16);

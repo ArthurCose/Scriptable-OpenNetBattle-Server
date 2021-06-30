@@ -1,4 +1,6 @@
 local Direction = require("scripts/libs/direction")
+local CameraFade = require("scripts/libs/camera").Fade
+
 local create_custom_bot = require('scripts/bot/create_custom_bot')
 
 local bot = create_custom_bot("test", {
@@ -43,9 +45,13 @@ function bot.on_response(player_id, response)
   end
 
   if response == 1 then
-    bot.message_player(player_id, "THAT'S GREAT!");
+    -- bot.message_player(player_id, "THAT'S GREAT!");
+    bot.message_player(player_id, "IT'S NIGHT TIME!");
+    Net.fade_player_camera(player_id, CameraFade.IN, 0.5, {r=70, g=0, b=255, a=80})
   else
-    bot.message_player(player_id, "OH NO! I HOPE YOUR DAY GETS BETTER.");
+    -- bot.message_player(player_id, "OH NO! I HOPE YOUR DAY GETS BETTER.");
+    bot.message_player(player_id, "OH NO! WAKE UP IT'S DAY TIME!");
+    Net.fade_player_camera(player_id, CameraFade.OUT, 0.5, {r=70, g=0, b=255, a=80})
   end
 
   Net.unlock_player_input(player_id)
