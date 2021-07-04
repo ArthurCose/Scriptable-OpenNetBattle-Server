@@ -51,14 +51,17 @@ pub enum ClientPacket {
   },
   ObjectInteraction {
     tile_object_id: u32,
+    button: u8,
   },
   ActorInteraction {
     actor_id: String,
+    button: u8,
   },
   TileInteraction {
     x: f32,
     y: f32,
     z: f32,
+    button: u8,
   },
   TextBoxResponse {
     response: u8,
@@ -156,14 +159,17 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
     }),
     14 => Some(ClientPacket::ObjectInteraction {
       tile_object_id: read_u32(work_buf)?,
+      button: read_byte(work_buf)?,
     }),
     15 => Some(ClientPacket::ActorInteraction {
       actor_id: read_string_u16(work_buf)?,
+      button: read_byte(work_buf)?,
     }),
     16 => Some(ClientPacket::TileInteraction {
       x: read_f32(work_buf)?,
       y: read_f32(work_buf)?,
       z: read_f32(work_buf)?,
+      button: read_byte(work_buf)?,
     }),
     17 => Some(ClientPacket::TextBoxResponse {
       response: read_byte(work_buf)?,

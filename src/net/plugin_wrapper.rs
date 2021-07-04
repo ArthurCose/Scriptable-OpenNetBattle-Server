@@ -127,21 +127,41 @@ impl PluginInterface for PluginWrapper {
     });
   }
 
-  fn handle_object_interaction(&mut self, net: &mut Net, player_id: &str, tile_object_id: u32) {
+  fn handle_object_interaction(
+    &mut self,
+    net: &mut Net,
+    player_id: &str,
+    tile_object_id: u32,
+    button: u8,
+  ) {
     self.wrap_calls(net, |plugin_interface, net| {
-      plugin_interface.handle_object_interaction(net, player_id, tile_object_id)
+      plugin_interface.handle_object_interaction(net, player_id, tile_object_id, button)
     });
   }
 
-  fn handle_actor_interaction(&mut self, net: &mut Net, player_id: &str, actor_id: &str) {
+  fn handle_actor_interaction(
+    &mut self,
+    net: &mut Net,
+    player_id: &str,
+    actor_id: &str,
+    button: u8,
+  ) {
     self.wrap_calls(net, |plugin_interface, net| {
-      plugin_interface.handle_actor_interaction(net, player_id, actor_id)
+      plugin_interface.handle_actor_interaction(net, player_id, actor_id, button)
     });
   }
 
-  fn handle_tile_interaction(&mut self, net: &mut Net, player_id: &str, x: f32, y: f32, z: f32) {
+  fn handle_tile_interaction(
+    &mut self,
+    net: &mut Net,
+    player_id: &str,
+    x: f32,
+    y: f32,
+    z: f32,
+    button: u8,
+  ) {
     self.wrap_calls(net, |plugin_interface, net| {
-      plugin_interface.handle_tile_interaction(net, player_id, x, y, z)
+      plugin_interface.handle_tile_interaction(net, player_id, x, y, z, button)
     });
   }
 

@@ -365,32 +365,35 @@ impl Server {
             net.set_player_emote(player_id, emote_id, false);
           }
         }
-        ClientPacket::ObjectInteraction { tile_object_id } => {
+        ClientPacket::ObjectInteraction {
+          tile_object_id,
+          button,
+        } => {
           if self.config.log_packets {
             println!("Received ObjectInteraction packet from {}", socket_address);
           }
 
           self
             .plugin_wrapper
-            .handle_object_interaction(net, player_id, tile_object_id);
+            .handle_object_interaction(net, player_id, tile_object_id, button);
         }
-        ClientPacket::ActorInteraction { actor_id } => {
+        ClientPacket::ActorInteraction { actor_id, button } => {
           if self.config.log_packets {
             println!("Received ActorInteraction packet from {}", socket_address);
           }
 
           self
             .plugin_wrapper
-            .handle_actor_interaction(net, player_id, &actor_id);
+            .handle_actor_interaction(net, player_id, &actor_id, button);
         }
-        ClientPacket::TileInteraction { x, y, z } => {
+        ClientPacket::TileInteraction { x, y, z, button } => {
           if self.config.log_packets {
             println!("Received TileInteraction packet from {}", socket_address);
           }
 
           self
             .plugin_wrapper
-            .handle_tile_interaction(net, player_id, x, y, z);
+            .handle_tile_interaction(net, player_id, x, y, z, button);
         }
         ClientPacket::TextBoxResponse { response } => {
           if self.config.log_packets {
