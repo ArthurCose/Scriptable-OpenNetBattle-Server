@@ -1,5 +1,5 @@
-function handle_tile_interaction(player_id, x, y, z)
-  if x < 0 or y < 0 then return end
+function handle_tile_interaction(player_id, x, y, z, button)
+  if button ~= 0 or x < 0 or y < 0 then return end
 
   x = math.floor(x)
   y = math.floor(y)

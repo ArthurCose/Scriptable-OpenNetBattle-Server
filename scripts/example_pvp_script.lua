@@ -10,7 +10,9 @@ function handle_player_disconnect(player_id)
   questioned_requests[player_id] = nil
 end
 
-function handle_actor_interaction(player_id, other_id)
+function handle_actor_interaction(player_id, other_id, button)
+  if button ~= 0 then return end
+
   if requests[other_id] == nil then
     -- other_id is not a player id, since they're not registered in the request list
     return

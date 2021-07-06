@@ -65,7 +65,9 @@ function tick(delta_time)
   bot._tick(delta_time)
 end
 
-function handle_actor_interaction(player_id, other_id)
+function handle_actor_interaction(player_id, other_id, button)
+  if button ~= 0 then return end
+
   bot._handle_actor_interaction(player_id, other_id)
 end
 
