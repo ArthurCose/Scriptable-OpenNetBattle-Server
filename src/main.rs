@@ -83,6 +83,25 @@ fn main() {
         }),
     )
     .arg(
+      clap::Arg::with_name("receiving_drop_rate")
+        .long("receiving-drop-rate")
+        .help("Rate of received packets to randomly drop for simulating an unstable connection")
+        .value_name("PERCENTAGE")
+        .default_value("0.0")
+        .takes_value(true)
+        .validator(|value| {
+          let error_message = "PERCENTAGE must be between 0.0 and 100.0";
+
+          let resend_budget = value.parse::<f32>().map_err(|_| String::from(error_message))?;
+
+          if !(0.0..=100.0).contains(&resend_budget) {
+            Err(String::from(error_message))
+          } else {
+            Ok(())
+          }
+        }),
+    )
+    .arg(
       clap::Arg::with_name("player_asset_limit")
         .long("player-asset-limit")
         .help("Sets the file size limit for avatar files (in KiB)")
@@ -130,6 +149,11 @@ fn main() {
     log_packets: matches.is_present("log_packets"),
     max_payload_size: unwrap_and_parse_or_default(matches.value_of("max_payload_size")),
     resend_budget: matches.value_of("port").unwrap().parse().unwrap(),
+    receiving_drop_rate: matches
+      .value_of("receiving_drop_rate")
+      .unwrap()
+      .parse()
+      .unwrap(),
     player_asset_limit: unwrap_and_parse_or_default::<usize>(
       matches.value_of("player_asset_limit"),
     ) * 1024,

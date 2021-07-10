@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use std::net::UdpSocket;
 use std::rc::Rc;
 
+#[derive(Clone)]
 pub struct ServerConfig {
   pub public_ip: std::net::IpAddr,
   pub port: u16,
@@ -17,6 +18,7 @@ pub struct ServerConfig {
   pub log_packets: bool,
   pub max_payload_size: usize,
   pub resend_budget: usize,
+  pub receiving_drop_rate: f32,
   pub player_asset_limit: usize,
   pub avatar_dimensions_limit: u32,
   pub custom_emotes_path: Option<String>,
@@ -62,12 +64,7 @@ impl Server {
 
     let (tx, rx) = mpsc::channel();
     create_clock_thread(tx.clone());
-    create_listening_thread(
-      tx,
-      socket.try_clone()?,
-      self.config.max_payload_size,
-      self.config.log_packets,
-    );
+    create_listening_thread(tx, socket.try_clone()?, (*self.config).clone());
 
     println!("Server started");
 

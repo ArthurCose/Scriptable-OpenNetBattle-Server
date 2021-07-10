@@ -574,6 +574,7 @@ impl Net {
 
     let client = self.clients.get_mut(id).unwrap();
 
+    #[allow(clippy::float_cmp)]
     let position_changed = client.actor.x != x || client.actor.y != y || client.actor.z != z;
 
     if position_changed || client.actor.direction != direction {

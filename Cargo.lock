@@ -967,6 +967,7 @@ dependencies = [
  "itertools",
  "minidom",
  "multi_mut",
+ "rand 0.8.4",
  "rlua",
  "surf",
  "uuid",
