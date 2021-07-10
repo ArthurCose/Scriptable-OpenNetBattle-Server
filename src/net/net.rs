@@ -57,7 +57,7 @@ impl Net {
     }
 
     if !default_area_provided {
-      panic!("No default (default.txt) area data found");
+      panic!("No default (default.tmx) area data found");
     }
 
     Net {
