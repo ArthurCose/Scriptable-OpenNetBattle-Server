@@ -40,6 +40,7 @@ impl Client {
     resend_budget: usize,
   ) -> Client {
     use super::asset;
+    use std::time::Instant;
     use uuid::Uuid;
 
     let id = Uuid::new_v4().to_string();
@@ -59,6 +60,7 @@ impl Client {
         x: spawn_x,
         y: spawn_y,
         z: spawn_z,
+        last_movement_time: Instant::now(),
         scale_x: 1.0,
         scale_y: 1.0,
         rotation: 0.0,

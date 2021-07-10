@@ -23,6 +23,8 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "create_bot", |api_ctx, lua_ctx, params| {
+    use std::time::Instant;
+
     let (bot_id, table): (String, rlua::Table) = lua_ctx.unpack_multi(params)?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -60,6 +62,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
         x: x.unwrap_or(spawn.0),
         y: y.unwrap_or(spawn.1),
         z: z.unwrap_or(spawn.2),
+        last_movement_time: Instant::now(),
         scale_x: 1.0,
         scale_y: 1.0,
         rotation: 0.0,

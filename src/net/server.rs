@@ -20,6 +20,7 @@ pub struct ServerConfig {
   pub player_asset_limit: usize,
   pub avatar_dimensions_limit: u32,
   pub custom_emotes_path: Option<String>,
+  pub max_idle_packet_duration: f32,
 }
 
 pub struct Server {

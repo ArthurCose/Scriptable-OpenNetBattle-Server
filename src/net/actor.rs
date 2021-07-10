@@ -1,5 +1,6 @@
 use super::Direction;
 use crate::packets::ServerPacket;
+use std::time::Instant;
 
 pub struct Actor {
   pub id: String,
@@ -13,6 +14,7 @@ pub struct Actor {
   pub x: f32,
   pub y: f32,
   pub z: f32,
+  pub last_movement_time: Instant,
   pub scale_x: f32,
   pub scale_y: f32,
   pub rotation: f32,

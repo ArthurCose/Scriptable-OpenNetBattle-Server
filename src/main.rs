@@ -139,6 +139,7 @@ fn main() {
     custom_emotes_path: matches
       .value_of("custom_emotes_path")
       .map(|path| path.to_string()),
+    max_idle_packet_duration: 1.0,
   };
 
   let mut server = net::Server::new(config);

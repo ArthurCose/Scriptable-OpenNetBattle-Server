@@ -570,7 +570,16 @@ impl Net {
     z: f32,
     direction: Direction,
   ) {
+    use std::time::Instant;
+
     let client = self.clients.get_mut(id).unwrap();
+
+    let position_changed = client.actor.x != x || client.actor.y != y || client.actor.z != z;
+
+    if position_changed || client.actor.direction != direction {
+      client.actor.last_movement_time = Instant::now();
+    }
+
     client.actor.x = x;
     client.actor.y = y;
     client.actor.z = z;
@@ -578,6 +587,13 @@ impl Net {
 
     // skip if client has not even been sent to anyone yet
     if !client.ready {
+      return;
+    }
+
+    let idle_duration = client.actor.last_movement_time.elapsed().as_secs_f32();
+
+    // skip if we've been sending idle packets for too long
+    if idle_duration > self.config.max_idle_packet_duration {
       return;
     }
 
@@ -1629,6 +1645,8 @@ impl Net {
   }
 
   pub fn move_bot(&mut self, id: &str, x: f32, y: f32, z: f32) {
+    use std::time::Instant;
+
     if let Some(bot) = self.bots.get_mut(id) {
       let updated_direction = Direction::from_offset(x - bot.x, y - bot.y);
 
@@ -1639,13 +1657,17 @@ impl Net {
       bot.x = x;
       bot.y = y;
       bot.z = z;
+      bot.last_movement_time = Instant::now();
       bot.current_animation = None;
     }
   }
 
   pub fn set_bot_direction(&mut self, id: &str, direction: Direction) {
+    use std::time::Instant;
+
     if let Some(bot) = self.bots.get_mut(id) {
       bot.direction = direction;
+      bot.last_movement_time = Instant::now();
     }
   }
 
@@ -1728,6 +1750,7 @@ impl Net {
 
   pub fn animate_bot_properties(&mut self, id: &str, animation: Vec<KeyFrame>) {
     use super::actor_property_animation::ActorProperty;
+    use std::time::Instant;
 
     if let Some(bot) = self.bots.get_mut(id) {
       // store final values for new players
@@ -1751,6 +1774,8 @@ impl Net {
           }
         }
       }
+
+      bot.last_movement_time = Instant::now();
 
       broadcast_actor_keyframes(
         &self.socket,
@@ -1834,6 +1859,10 @@ impl Net {
 
   fn broadcast_bot_positions(&mut self) {
     for bot in self.bots.values() {
+      if bot.last_movement_time.elapsed().as_secs_f32() > self.config.max_idle_packet_duration {
+        continue;
+      }
+
       let packet = ServerPacket::ActorMove {
         ticket: bot.id.clone(),
         x: bot.x,
