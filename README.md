@@ -162,7 +162,7 @@ Shop:
 
 Conveyor:
 
-- Tile Objects only
+- Tiles only
 - Visible in minimap
 - Custom properties:
 
