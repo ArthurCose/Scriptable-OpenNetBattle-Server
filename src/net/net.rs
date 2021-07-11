@@ -18,6 +18,7 @@ pub struct Net {
   assets: HashMap<String, Asset>,
   active_script: usize,
   kick_list: Vec<Boot>,
+  item_descriptions: HashMap<String, String>,
 }
 
 impl Net {
@@ -69,6 +70,7 @@ impl Net {
       assets,
       active_script: 0,
       kick_list: Vec::new(),
+      item_descriptions: HashMap::new(),
     }
   }
 
@@ -1089,14 +1091,26 @@ impl Net {
     }
   }
 
-  pub fn give_player_item(&mut self, player_id: &str, name: String, description: &str) {
+  pub fn get_item_description(&mut self, name: &str) -> Option<&String> {
+    self.item_descriptions.get(name)
+  }
+
+  pub fn set_item_description(&mut self, name: String, description: String) {
+    self.item_descriptions.insert(name, description);
+  }
+
+  pub fn give_player_item(&mut self, player_id: &str, name: String) {
     if let Some(client) = self.clients.get_mut(player_id) {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
         &ServerPacket::AddItem {
           name: &name,
-          description,
+          description: self
+            .item_descriptions
+            .get(&name)
+            .map(|description| description.as_str())
+            .unwrap_or(""),
         },
       );
 

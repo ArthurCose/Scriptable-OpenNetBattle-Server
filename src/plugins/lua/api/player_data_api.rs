@@ -133,13 +133,12 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "give_player_item", |api_ctx, lua_ctx, params| {
-    let (player_id, name, description): (rlua::String, String, rlua::String) =
-      lua_ctx.unpack_multi(params)?;
-    let (player_id_str, description_str) = (player_id.to_str()?, description.to_str()?);
+    let (player_id, name): (rlua::String, String) = lua_ctx.unpack_multi(params)?;
+    let player_id_str = player_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.give_player_item(player_id_str, name, description_str);
+    net.give_player_item(player_id_str, name);
 
     lua_ctx.pack_multi(())
   });
@@ -166,5 +165,25 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     } else {
       Err(create_player_error(player_id_str))
     }
+  });
+
+  lua_api.add_dynamic_function("Net", "get_item_description", |api_ctx, lua_ctx, params| {
+    let name: rlua::String = lua_ctx.unpack_multi(params)?;
+
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    net.get_item_description(name.to_str()?);
+
+    lua_ctx.pack_multi(())
+  });
+
+  lua_api.add_dynamic_function("Net", "set_item_description", |api_ctx, lua_ctx, params| {
+    let (name, description): (String, String) = lua_ctx.unpack_multi(params)?;
+
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    net.set_item_description(name, description);
+
+    lua_ctx.pack_multi(())
   });
 }

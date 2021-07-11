@@ -396,7 +396,7 @@ Net.close_bbs()
 #### Player Data API
 
 ```lua
-Net.get_player_secret(player_id) -- the secret identifier for this player
+Net.get_player_secret(player_id) -- the secret identifier for this player. similar to a password, do not share
 Net.get_player_health(player_id)
 Net.set_player_health(player_id, health)
 Net.get_player_max_health(player_id)
@@ -405,10 +405,12 @@ Net.get_player_emotion(player_id)
 Net.set_player_emotion(player_id, emotion)
 Net.get_player_money(player_id)
 Net.set_player_money(player_id, money)
-Net.get_player_items(player_id)
+Net.get_player_items(player_id) -- string[]
 Net.give_player_item(player_id, name, description)
 Net.remove_player_item(player_id, name)
 Net.player_has_item(player_id, name)
+Net.get_item_description(name)
+Net.set_item_description(name, description)
 ```
 
 #### Asset API
