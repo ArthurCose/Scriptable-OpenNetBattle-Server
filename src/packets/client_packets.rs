@@ -30,7 +30,9 @@ pub enum ClientPacket {
   },
   Logout,
   RequestJoin,
-  Ready,
+  Ready {
+    time: u64,
+  },
   TransferredOut,
   Position {
     creation_time: u64,
@@ -138,7 +140,9 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
     }),
     6 => Some(ClientPacket::Logout),
     7 => Some(ClientPacket::RequestJoin),
-    8 => Some(ClientPacket::Ready),
+    8 => Some(ClientPacket::Ready {
+      time: read_u64(work_buf)?,
+    }),
     9 => Some(ClientPacket::TransferredOut),
     10 => Some(ClientPacket::Position {
       creation_time: read_u64(work_buf)?,

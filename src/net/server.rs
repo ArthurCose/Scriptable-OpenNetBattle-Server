@@ -292,16 +292,14 @@ impl Server {
             net.update_player_position(player_id, x, y, z, direction);
           }
         }
-        ClientPacket::Ready => {
+        ClientPacket::Ready { time } => {
           if self.config.log_packets {
             println!("Received Ready packet from {}", socket_address);
           }
 
-          use std::time::UNIX_EPOCH;
-
           let client = net.get_client_mut(player_id).unwrap();
 
-          client.area_join_time = UNIX_EPOCH.elapsed().unwrap().as_millis() as u64;
+          client.area_join_time = time;
           client.actor.x = client.warp_x;
           client.actor.y = client.warp_y;
           client.actor.z = client.warp_z;
