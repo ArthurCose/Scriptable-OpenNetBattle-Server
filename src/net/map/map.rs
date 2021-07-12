@@ -113,10 +113,22 @@ impl Map {
           // map name might be missing if the file wasn't generated
           map.indicate_layer_offset_issues(name.as_str(), map.layers.len(), child);
 
-          // actual handling
-          let data: Vec<u32> = child
+          let data_element = child
             .get_child("data", minidom::NSChoice::Any)
-            .unwrap()
+            .expect(&format!(
+              "{}: Missing data element for layer \"{}\"!",
+              map.name, name
+            ));
+
+          if data_element.attr("encoding") != Some("csv") {
+            println!(
+              "{}: Layer \"{}\" is using incorrect format, only CSV format is supported! (Check map properties)",
+              map.name, name
+            );
+          }
+
+          // actual handling
+          let data: Vec<u32> = data_element
             .text()
             .split(',')
             .map(|value| value.trim().parse().unwrap_or_default())
@@ -169,6 +181,18 @@ impl Map {
         }
         _ => {}
       }
+    }
+
+    if map_element.attr("orientation") != Some("isometric") {
+      println!("{}: Only Isometric orientation is supported!", map.name);
+    }
+
+    if map_element.attr("infinite") == Some("1") {
+      println!("{}: Infinite maps are not supported!", map.name);
+    }
+
+    if map_element.attr("staggerindex") != Some("odd") {
+      println!("{}: Stagger Index must be set to Odd!", map.name);
     }
 
     map
