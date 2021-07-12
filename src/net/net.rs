@@ -3,7 +3,7 @@ use super::boot::Boot;
 use super::client::Client;
 use super::map::Map;
 use super::server::ServerConfig;
-use super::{Actor, Area, Asset, AssetData, BbsPost, Direction, PlayerData};
+use super::{Actor, Area, Asset, AssetData, BbsPost, Direction, Item, PlayerData};
 use crate::packets::{create_asset_stream, Reliability, ServerPacket};
 use std::collections::HashMap;
 use std::net::UdpSocket;
@@ -18,7 +18,7 @@ pub struct Net {
   assets: HashMap<String, Asset>,
   active_script: usize,
   kick_list: Vec<Boot>,
-  item_descriptions: HashMap<String, String>,
+  items: HashMap<String, Item>,
 }
 
 impl Net {
@@ -70,7 +70,7 @@ impl Net {
       assets,
       active_script: 0,
       kick_list: Vec::new(),
-      item_descriptions: HashMap::new(),
+      items: HashMap::new(),
     }
   }
 
@@ -1091,31 +1091,38 @@ impl Net {
     }
   }
 
-  pub fn get_item_description(&mut self, name: &str) -> Option<&String> {
-    self.item_descriptions.get(name)
+  pub fn get_item(&mut self, item_id: &str) -> Option<&Item> {
+    self.items.get(item_id)
   }
 
-  pub fn set_item_description(&mut self, name: String, description: String) {
-    self.item_descriptions.insert(name, description);
+  pub fn set_item(&mut self, item_id: String, item: Item) {
+    self.items.insert(item_id, item);
   }
 
-  pub fn give_player_item(&mut self, player_id: &str, name: String) {
-    if let Some(client) = self.clients.get_mut(player_id) {
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        &ServerPacket::AddItem {
-          name: &name,
-          description: self
-            .item_descriptions
-            .get(&name)
-            .map(|description| description.as_str())
-            .unwrap_or(""),
-        },
-      );
+  pub fn give_player_item(&mut self, player_id: &str, item_id: String) {
+    let client = if let Some(client) = self.clients.get_mut(player_id) {
+      client
+    } else {
+      return;
+    };
 
-      client.player_data.items.push(name);
-    }
+    let item = if let Some(item) = self.items.get(player_id) {
+      item
+    } else {
+      println!("No item found with id \"{}\"", item_id);
+      return;
+    };
+
+    client.packet_shipper.send(
+      &self.socket,
+      Reliability::ReliableOrdered,
+      &ServerPacket::AddItem {
+        name: &item.name,
+        description: &item.description,
+      },
+    );
+
+    client.player_data.items.push(item_id);
   }
 
   pub fn remove_player_item(&mut self, player_id: &str, name: &str) {

@@ -406,11 +406,13 @@ Net.set_player_emotion(player_id, emotion)
 Net.get_player_money(player_id)
 Net.set_player_money(player_id, money)
 Net.get_player_items(player_id) -- string[]
-Net.give_player_item(player_id, name, description)
-Net.remove_player_item(player_id, name)
-Net.player_has_item(player_id, name)
-Net.get_item_description(name)
-Net.set_item_description(name, description)
+Net.give_player_item(player_id, item_id)
+Net.remove_player_item(player_id, item_id)
+Net.player_has_item(player_id, item_id)
+
+Net.create_item(item_id, { name, description })
+Net.get_item_name(item_id)
+Net.get_item_description(item_id)
 ```
 
 #### Asset API
