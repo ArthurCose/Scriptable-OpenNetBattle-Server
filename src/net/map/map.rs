@@ -115,10 +115,9 @@ impl Map {
 
           let data_element = child
             .get_child("data", minidom::NSChoice::Any)
-            .expect(&format!(
-              "{}: Missing data element for layer \"{}\"!",
-              map.name, name
-            ));
+            .unwrap_or_else(|| {
+              panic!("{}: Missing data element for layer \"{}\"!", map.name, name)
+            });
 
           if data_element.attr("encoding") != Some("csv") {
             println!(
@@ -191,7 +190,7 @@ impl Map {
       println!("{}: Infinite maps are not supported!", map.name);
     }
 
-    if map_element.attr("staggerindex") != Some("odd") {
+    if !matches!(map_element.attr("staggerindex"), None | Some("odd")) {
       println!("{}: Stagger Index must be set to Odd!", map.name);
     }
 
