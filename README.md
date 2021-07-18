@@ -390,7 +390,7 @@ Net.open_board(player_id, board_name, color, posts) -- color = { r: 0-255, g: 0-
 Net.prepend_posts(player_id, posts, post_id?) -- unstable, issues arise when multiple scripts create boards at the same time
 Net.append_posts(player_id, posts, post_id?) -- unstable, issues arise when multiple scripts create boards at the same time
 Net.remove_post(player_id, post_id) -- unstable, issues arise when multiple scripts create boards at the same time
-Net.close_bbs()
+Net.close_bbs(player_id)
 ```
 
 #### Player Data API
