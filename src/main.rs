@@ -164,6 +164,8 @@ fn main() {
       .value_of("custom_emotes_path")
       .map(|path| path.to_string()),
     max_idle_packet_duration: 1.0,
+    max_silence_duration: 5.0,
+    heartbeat_rate: 0.5,
   };
 
   let mut server = net::Server::new(config);

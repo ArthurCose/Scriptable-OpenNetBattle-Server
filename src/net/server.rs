@@ -23,6 +23,8 @@ pub struct ServerConfig {
   pub avatar_dimensions_limit: u32,
   pub custom_emotes_path: Option<String>,
   pub max_idle_packet_duration: f32,
+  pub max_silence_duration: f32,
+  pub heartbeat_rate: f32,
 }
 
 pub struct Server {
@@ -69,6 +71,7 @@ impl Server {
     println!("Server started");
 
     let mut time = Instant::now();
+    let mut last_heartbeat = Instant::now();
 
     loop {
       match rx.recv()? {
@@ -84,12 +87,11 @@ impl Server {
 
           // kick silent clients
           let mut kick_list = Vec::new();
-          let max_silence = std::time::Duration::from_secs(5);
 
           for (socket_address, packet_sorter) in &mut self.packet_sorter_map {
             let last_message = packet_sorter.get_last_message_time();
 
-            if last_message.elapsed() > max_silence {
+            if last_message.elapsed().as_secs_f32() > self.config.max_silence_duration {
               kick_list.push(Boot {
                 socket_address: *socket_address,
                 reason: String::from("packet silence"),
@@ -114,6 +116,11 @@ impl Server {
           }
 
           net.tick();
+
+          if last_heartbeat.elapsed().as_secs_f32() >= self.config.heartbeat_rate {
+            net.broadcast(Reliability::Reliable, ServerPacket::Heartbeat);
+            last_heartbeat = time;
+          }
         }
         ThreadMessage::ClientPacket {
           socket_address,
@@ -166,6 +173,11 @@ impl Server {
             max_payload_size: self.config.max_payload_size,
           });
           let _ = socket.send_to(&buf, socket_address);
+        }
+        ClientPacket::Heartbeat => {
+          if self.config.log_packets {
+            println!("Received Heartbeat packet from {}", socket_address);
+          }
         }
         ClientPacket::AssetFound {
           path,

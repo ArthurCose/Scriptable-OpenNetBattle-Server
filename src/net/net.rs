@@ -1846,6 +1846,10 @@ impl Net {
     self.active_script = active_script;
   }
 
+  pub(super) fn broadcast(&mut self, reliability: Reliability, packet: ServerPacket) {
+    broadcast(&self.socket, &mut self.clients, reliability, packet);
+  }
+
   pub(super) fn tick(&mut self) {
     self.resend_backed_up_packets();
     self.broadcast_bot_positions();
@@ -2080,6 +2084,17 @@ fn assert_asset(
           .send(socket, Reliability::ReliableOrdered, &packet);
       }
     }
+  }
+}
+
+fn broadcast(
+  socket: &UdpSocket,
+  clients: &mut HashMap<String, Client>,
+  reliability: Reliability,
+  packet: ServerPacket,
+) {
+  for client in clients.values_mut() {
+    client.packet_shipper.send(socket, reliability, &packet);
   }
 }
 

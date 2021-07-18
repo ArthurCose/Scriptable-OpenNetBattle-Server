@@ -9,6 +9,7 @@ use crate::net::{Asset, AssetData, BbsPost, Direction};
 enum ServerPacketId {
   Pong,
   Ack,
+  Heartbeat,
   Login,
   CompleteConnection,
   TransferWarp,
@@ -69,6 +70,7 @@ pub enum ServerPacket<'a> {
     reliability: u8,
     id: u64,
   },
+  Heartbeat,
   Login {
     ticket: String,
     warp_in: bool,
@@ -291,6 +293,9 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_u16(buf, ServerPacketId::Ack as u16);
       buf.push(*reliability);
       write_u64(buf, *id);
+    }
+    ServerPacket::Heartbeat => {
+      write_u16(buf, ServerPacketId::Heartbeat as u16);
     }
     ServerPacket::Login {
       ticket,
