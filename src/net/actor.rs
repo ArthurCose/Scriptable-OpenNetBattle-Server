@@ -47,4 +47,30 @@ impl Actor {
       animation: self.current_animation.clone(),
     }
   }
+
+  /// helper function that updates last_movement_time and current_animation if anything has changed
+  pub fn set_position(&mut self, x: f32, y: f32, z: f32) {
+    #[allow(clippy::float_cmp)]
+    let position_changed = self.x != x || self.y != y || self.z != z;
+
+    if !position_changed {
+      return;
+    }
+
+    self.x = x;
+    self.y = y;
+    self.z = z;
+    self.current_animation = None;
+    self.last_movement_time = Instant::now();
+  }
+
+  /// helper function that updates last_movement_time if anything has changed
+  pub fn set_direction(&mut self, direction: Direction) {
+    if self.direction == direction {
+      return;
+    }
+
+    self.direction = direction;
+    self.last_movement_time = Instant::now();
+  }
 }

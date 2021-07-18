@@ -471,20 +471,12 @@ impl Net {
     }
   }
 
-  pub fn fade_player_camera(
-    &mut self,
-    id: &str,
-    color: (u8, u8, u8, u8),
-    duration: f32,
-  ) {
+  pub fn fade_player_camera(&mut self, id: &str, color: (u8, u8, u8, u8), duration: f32) {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::FadeCamera {
-          duration,
-          color,
-        },
+        &ServerPacket::FadeCamera { duration, color },
       );
     }
   }
@@ -570,21 +562,10 @@ impl Net {
     z: f32,
     direction: Direction,
   ) {
-    use std::time::Instant;
-
     let client = self.clients.get_mut(id).unwrap();
 
-    #[allow(clippy::float_cmp)]
-    let position_changed = client.actor.x != x || client.actor.y != y || client.actor.z != z;
-
-    if position_changed || client.actor.direction != direction {
-      client.actor.last_movement_time = Instant::now();
-    }
-
-    client.actor.x = x;
-    client.actor.y = y;
-    client.actor.z = z;
-    client.actor.direction = direction;
+    client.actor.set_position(x, y, z);
+    client.actor.set_direction(direction);
 
     // skip if client has not even been sent to anyone yet
     if !client.ready {
@@ -1665,29 +1646,20 @@ impl Net {
   }
 
   pub fn move_bot(&mut self, id: &str, x: f32, y: f32, z: f32) {
-    use std::time::Instant;
-
     if let Some(bot) = self.bots.get_mut(id) {
       let updated_direction = Direction::from_offset(x - bot.x, y - bot.y);
 
       if !matches!(updated_direction, Direction::None) {
-        bot.direction = updated_direction;
+        bot.set_direction(updated_direction);
       }
 
-      bot.x = x;
-      bot.y = y;
-      bot.z = z;
-      bot.last_movement_time = Instant::now();
-      bot.current_animation = None;
+      bot.set_position(x, y, z);
     }
   }
 
   pub fn set_bot_direction(&mut self, id: &str, direction: Direction) {
-    use std::time::Instant;
-
     if let Some(bot) = self.bots.get_mut(id) {
-      bot.direction = direction;
-      bot.last_movement_time = Instant::now();
+      bot.set_direction(direction);
     }
   }
 
@@ -1770,7 +1742,6 @@ impl Net {
 
   pub fn animate_bot_properties(&mut self, id: &str, animation: Vec<KeyFrame>) {
     use super::actor_property_animation::ActorProperty;
-    use std::time::Instant;
 
     if let Some(bot) = self.bots.get_mut(id) {
       // store final values for new players
@@ -1779,13 +1750,17 @@ impl Net {
         None => return,
       };
 
+      let mut final_x = 0.0;
+      let mut final_y = 0.0;
+      let mut final_z = 0.0;
+
       for keyframe in &animation {
         for (property, _) in &keyframe.property_steps {
           match property {
             ActorProperty::Animation(value) => bot.current_animation = Some(value.clone()),
-            ActorProperty::X(value) => bot.x = *value,
-            ActorProperty::Y(value) => bot.y = *value,
-            ActorProperty::Z(value) => bot.z = *value,
+            ActorProperty::X(value) => final_x = *value,
+            ActorProperty::Y(value) => final_y = *value,
+            ActorProperty::Z(value) => final_z = *value,
             ActorProperty::ScaleX(value) => bot.scale_x = *value,
             ActorProperty::ScaleY(value) => bot.scale_y = *value,
             ActorProperty::Rotation(value) => bot.rotation = *value,
@@ -1795,7 +1770,7 @@ impl Net {
         }
       }
 
-      bot.last_movement_time = Instant::now();
+      bot.set_position(final_x, final_y, final_z);
 
       broadcast_actor_keyframes(
         &self.socket,
