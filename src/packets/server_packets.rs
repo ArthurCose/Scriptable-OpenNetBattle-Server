@@ -155,7 +155,6 @@ pub enum ServerPacket<'a> {
     duration: f32,
   },
   FadeCamera {
-    fade_type: u8,
     duration: f32,
     color: (u8, u8, u8, u8),
   },
@@ -434,12 +433,10 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_f32(buf, *duration);
     }
     ServerPacket::FadeCamera {
-      fade_type,
       duration,
       color: (r, g, b, a),
     } => {
       write_u16(buf, ServerPacketId::FadeCamera as u16);
-      buf.push(*fade_type);
       write_f32(buf, *duration);
       buf.push(*r);
       buf.push(*g);

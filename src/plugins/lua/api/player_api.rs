@@ -342,12 +342,12 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "fade_player_camera", |api_ctx, lua_ctx, params| {
-    let (player_id, fade_type, duration, color): (rlua::String, u8, f32, rlua::Table) = lua_ctx.unpack_multi(params)?;
+    let (player_id, color, duration): (rlua::String, rlua::Table, f32) = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.fade_player_camera(player_id_str, fade_type, duration, (color.get("r")?, color.get("g")?, color.get("b")?, color.get("a")?));
+    net.fade_player_camera(player_id_str, (color.get("r")?, color.get("g")?, color.get("b")?, color.get("a")?), duration);
 
     lua_ctx.pack_multi(())
   });

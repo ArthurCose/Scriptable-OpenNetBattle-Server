@@ -364,6 +364,7 @@ Net.play_sound_for_player(player_id, path)
 Net.exclude_object_for_player(player_id, object_id)
 Net.include_object_for_player(player_id, object_id)
 Net.move_player_camera(player_id, x, y, z, holdTimeInSeconds?)
+Net.fade_player_camera(player_id, color, durationInSeconds) -- color = { r: 0-255, g: 0-255, b: 0-255, a:0-255 }
 Net.slide_player_camera(player_id, x, y, z, durationInSeconds)
 Net.shake_player_camera(player_id, strength, durationInSeconds)
 Net.track_with_player_camera(player_id, actor_id?)
