@@ -125,11 +125,12 @@ pub enum ServerPacket<'a> {
     money: u32,
   },
   AddItem {
+    id: &'a str,
     name: &'a str,
     description: &'a str,
   },
   RemoveItem {
-    name: &'a str,
+    id: &'a str,
   },
   PlaySound {
     path: String,
@@ -397,14 +398,19 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_u16(buf, ServerPacketId::Money as u16);
       write_u32(buf, *money);
     }
-    ServerPacket::AddItem { name, description } => {
+    ServerPacket::AddItem {
+      id,
+      name,
+      description,
+    } => {
       write_u16(buf, ServerPacketId::AddItem as u16);
+      write_string_u8(buf, id);
       write_string_u8(buf, name);
       write_string_u16(buf, description);
     }
-    ServerPacket::RemoveItem { name } => {
+    ServerPacket::RemoveItem { id } => {
       write_u16(buf, ServerPacketId::RemoveItem as u16);
-      write_string_u8(buf, name);
+      write_string_u8(buf, id);
     }
     ServerPacket::PlaySound { path } => {
       write_u16(buf, ServerPacketId::PlaySound as u16);

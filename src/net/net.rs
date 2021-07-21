@@ -1096,6 +1096,7 @@ impl Net {
       &self.socket,
       Reliability::ReliableOrdered,
       &ServerPacket::AddItem {
+        id: &item_id,
         name: &item.name,
         description: &item.description,
       },
@@ -1104,17 +1105,17 @@ impl Net {
     client.player_data.items.push(item_id);
   }
 
-  pub fn remove_player_item(&mut self, player_id: &str, name: &str) {
+  pub fn remove_player_item(&mut self, player_id: &str, item_id: &str) {
     if let Some(client) = self.clients.get_mut(player_id) {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::RemoveItem { name },
+        &ServerPacket::RemoveItem { id: item_id },
       );
 
       let items = &mut client.player_data.items;
 
-      if let Some(index) = items.iter().position(|item| *item == name) {
+      if let Some(index) = items.iter().position(|item| *item == item_id) {
         items.remove(index);
       }
     }
