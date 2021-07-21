@@ -1085,7 +1085,7 @@ impl Net {
       return;
     };
 
-    let item = if let Some(item) = self.items.get(player_id) {
+    let item = if let Some(item) = self.items.get(&item_id) {
       item
     } else {
       println!("No item found with id \"{}\"", item_id);
