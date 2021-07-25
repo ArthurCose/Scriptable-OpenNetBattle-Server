@@ -78,6 +78,10 @@ pub enum ClientPacket {
   PostSelection {
     post_id: String,
   },
+  ShopClose,
+  ShopPurchase {
+    item_name: String,
+  },
   BattleResults {
     battle_stats: BattleStats,
   },
@@ -189,7 +193,11 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
     23 => Some(ClientPacket::PostSelection {
       post_id: read_string_u16(work_buf)?,
     }),
-    24 => Some(ClientPacket::BattleResults {
+    24 => Some(ClientPacket::ShopClose),
+    25 => Some(ClientPacket::ShopPurchase {
+      item_name: read_string_u8(work_buf)?,
+    }),
+    26 => Some(ClientPacket::BattleResults {
       battle_stats: BattleStats {
         health: read_u32(work_buf)?,
         score: read_u32(work_buf)?,

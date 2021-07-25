@@ -459,6 +459,22 @@ impl Server {
             &ServerPacket::PostSelectionAck,
           );
         }
+        ClientPacket::ShopClose => {
+          if self.config.log_packets {
+            println!("Received ShopClose packet from {}", socket_address);
+          }
+
+          self.plugin_wrapper.handle_shop_close(net, player_id);
+        }
+        ClientPacket::ShopPurchase { item_name } => {
+          if self.config.log_packets {
+            println!("Received ShopPurchase packet from {}", socket_address);
+          }
+
+          self
+            .plugin_wrapper
+            .handle_shop_purchase(net, player_id, &item_name);
+        }
         ClientPacket::BattleResults { battle_stats } => {
           if self.config.log_packets {
             println!("Received BattleResults packet from {}", socket_address);

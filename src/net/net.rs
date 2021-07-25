@@ -3,7 +3,7 @@ use super::boot::Boot;
 use super::client::Client;
 use super::map::Map;
 use super::server::ServerConfig;
-use super::{Actor, Area, Asset, AssetData, BbsPost, Direction, Item, PlayerData};
+use super::{Actor, Area, Asset, AssetData, BbsPost, Direction, Item, PlayerData, ShopItem};
 use crate::packets::{create_asset_stream, Reliability, ServerPacket};
 use std::collections::HashMap;
 use std::net::UdpSocket;
@@ -383,6 +383,14 @@ impl Net {
   pub fn is_player_in_widget(&self, id: &str) -> bool {
     if let Some(client) = self.clients.get(id) {
       return client.is_in_widget();
+    }
+
+    false
+  }
+
+  pub fn is_player_shopping(&self, id: &str) -> bool {
+    if let Some(client) = self.clients.get(id) {
+      return client.is_shopping();
     }
 
     false
@@ -957,6 +965,64 @@ impl Net {
         &ServerPacket::CloseBBS,
       );
     }
+  }
+
+  pub fn open_shop(
+    &mut self,
+    player_id: &str,
+    items: Vec<ShopItem>,
+    mug_texture_path: String,
+    mug_animation_path: String,
+  ) {
+    use super::shop_item::calc_size;
+    use crate::helpers::iterators::IteratorHelper;
+
+    if self.is_player_shopping(player_id) {
+      println!(
+        "Player \"{}\" is already in a shop, issues may occur!",
+        player_id
+      );
+    }
+
+    let client = if let Some(client) = self.clients.get_mut(player_id) {
+      client
+    } else {
+      return;
+    };
+
+    client.widget_tracker.track_shop(self.active_script);
+
+    let max_payload_size = self.config.max_payload_size;
+
+    let calc_chunk_limit = |_| {
+      // reliability + id + type
+      let header_size = 1 + 8 + 2;
+
+      max_payload_size - header_size
+    };
+
+    let chunks = items
+      .into_iter()
+      .pack_chunks_lossy(calc_chunk_limit, calc_size);
+
+    for chunk in chunks {
+      client.packet_shipper.send(
+        &self.socket,
+        Reliability::ReliableOrdered,
+        &ServerPacket::ShopInventory {
+          items: chunk.as_slice(),
+        },
+      );
+    }
+
+    client.packet_shipper.send(
+      &self.socket,
+      Reliability::ReliableOrdered,
+      &ServerPacket::OpenShop {
+        mug_texture_path,
+        mug_animation_path,
+      },
+    );
   }
 
   pub fn is_player_battling(&self, id: &str) -> bool {

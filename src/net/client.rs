@@ -91,6 +91,10 @@ impl Client {
     !self.widget_tracker.is_empty()
   }
 
+  pub fn is_shopping(&self) -> bool {
+    self.widget_tracker.current_shop().is_some()
+  }
+
   pub fn is_busy(&self) -> bool {
     self.is_battling || self.is_in_widget()
   }

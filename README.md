@@ -211,6 +211,8 @@ function handle_board_open(player_id)
 function handle_board_close(player_id)
 function handle_post_selection(player_id, post_id)
 function handle_post_request(player_id) -- bbs post request for infinite scroll
+function handle_shop_close(player_id)
+function handle_shop_purchase(player_id, item_name)
 function handle_battle_results(player_id, stats) -- stats = { health: number, score: number, time: number, ran: bool, emotion: number }
 function handle_server_message(ip, port, data)
 
@@ -383,6 +385,7 @@ Net.kick_player(player_id, reason, warp_out?)
 
 ```lua
 Net.is_player_in_widget(player_id)
+Net.is_player_shopping(player_id)
 Net.message_player(player_id, message, mug_texture_path?, mug_animation_path?)
 Net.question_player(player_id, question, mug_texture_path?, mug_animation_path?)
 Net.quiz_player(player_id, option_a?, option_b?, option_c?, mug_texture_path?, mug_animation_path?)
@@ -392,6 +395,7 @@ Net.prepend_posts(player_id, posts, post_id?) -- unstable, issues arise when mul
 Net.append_posts(player_id, posts, post_id?) -- unstable, issues arise when multiple scripts create boards at the same time
 Net.remove_post(player_id, post_id) -- unstable, issues arise when multiple scripts create boards at the same time
 Net.close_bbs(player_id)
+Net.open_shop(player_id, items, mug_texture_path?, mug_animation_path?) -- items = { name: string, description: string, price: number }[]
 ```
 
 #### Player Data API

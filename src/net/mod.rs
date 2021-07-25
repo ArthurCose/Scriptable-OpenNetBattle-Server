@@ -15,6 +15,7 @@ pub mod map;
 mod player_data;
 mod plugin_wrapper;
 mod server;
+mod shop_item;
 mod widget_tracker;
 
 pub use actor::Actor;
@@ -27,4 +28,5 @@ pub use item::Item;
 pub use net::Net;
 pub use player_data::PlayerData;
 pub use server::*;
+pub use shop_item::ShopItem;
 pub use widget_tracker::WidgetTracker;

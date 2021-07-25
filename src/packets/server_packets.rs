@@ -3,7 +3,7 @@
 use super::bytes::*;
 use super::{VERSION_ID, VERSION_ITERATION};
 use crate::net::actor_property_animation::{ActorProperty, Ease, KeyFrame};
-use crate::net::{Asset, AssetData, BbsPost, Direction};
+use crate::net::{Asset, AssetData, BbsPost, Direction, ShopItem};
 
 #[repr(u16)]
 enum ServerPacketId {
@@ -50,6 +50,8 @@ enum ServerPacketId {
   RemovePost,
   PostSelectionAck,
   CloseBBS,
+  ShopInventory,
+  OpenShop,
   InitiatePvp,
   ActorConnected,
   ActorDisconnected,
@@ -217,6 +219,13 @@ pub enum ServerPacket<'a> {
   },
   PostSelectionAck,
   CloseBBS,
+  ShopInventory {
+    items: &'a [ShopItem],
+  },
+  OpenShop {
+    mug_texture_path: String,
+    mug_animation_path: String,
+  },
   InitiatePvp {
     address: String,
   },
@@ -606,6 +615,25 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     }
     ServerPacket::CloseBBS => {
       write_u16(buf, ServerPacketId::CloseBBS as u16);
+    }
+    ServerPacket::ShopInventory { items } => {
+      write_u16(buf, ServerPacketId::ShopInventory as u16);
+
+      write_u16(buf, items.len() as u16);
+
+      for item in *items {
+        write_string_u8(buf, &item.name);
+        write_string_u8(buf, &item.description);
+        write_u32(buf, item.price);
+      }
+    }
+    ServerPacket::OpenShop {
+      mug_texture_path,
+      mug_animation_path,
+    } => {
+      write_u16(buf, ServerPacketId::OpenShop as u16);
+      write_string_u16(buf, mug_texture_path);
+      write_string_u16(buf, mug_animation_path);
     }
     ServerPacket::InitiatePvp { address } => {
       write_u16(buf, ServerPacketId::InitiatePvp as u16);

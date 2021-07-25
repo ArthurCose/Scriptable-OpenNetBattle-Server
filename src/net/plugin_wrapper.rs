@@ -257,6 +257,36 @@ impl PluginInterface for PluginWrapper {
     }
   }
 
+  fn handle_shop_close(&mut self, net: &mut Net, player_id: &str) {
+    let client = net
+      .get_client_mut(player_id)
+      .expect("An internal author should understand how to handle this better");
+
+    // expect the above to be correct
+    // don't expect the client to be correct
+    // otherwise someone can read the source and force a crash :p
+    if let Some(i) = client.widget_tracker.close_shop() {
+      self.wrap_call(i, net, |plugin_interface, net| {
+        plugin_interface.handle_shop_close(net, player_id);
+      });
+    }
+  }
+
+  fn handle_shop_purchase(&mut self, net: &mut Net, player_id: &str, item_name: &str) {
+    let client = net
+      .get_client_mut(player_id)
+      .expect("An internal author should understand how to handle this better");
+
+    // expect the above to be correct
+    // don't expect the client to be correct
+    // otherwise someone can read the source and force a crash :p
+    if let Some(i) = client.widget_tracker.current_shop() {
+      self.wrap_call(*i, net, |plugin_interface, net| {
+        plugin_interface.handle_shop_purchase(net, player_id, item_name)
+      });
+    }
+  }
+
   fn handle_battle_results(&mut self, net: &mut Net, player_id: &str, battle_stats: &BattleStats) {
     let client = net
       .get_client_mut(player_id)

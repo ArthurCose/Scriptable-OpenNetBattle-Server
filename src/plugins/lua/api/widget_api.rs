@@ -13,6 +13,17 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(is_in_widget)
   });
 
+  lua_api.add_dynamic_function("Net", "is_player_shopping", |api_ctx, lua_ctx, params| {
+    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id_str = player_id.to_str()?;
+
+    let net = api_ctx.net_ref.borrow();
+
+    let is_shopping = net.is_player_shopping(player_id_str);
+
+    lua_ctx.pack_multi(is_shopping)
+  });
+
   lua_api.add_dynamic_function("Net", "message_player", |api_ctx, lua_ctx, params| {
     let (player_id, message, mug_texture_path, mug_animation_path): (
       rlua::String,
@@ -250,6 +261,52 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let mut net = api_ctx.net_ref.borrow_mut();
 
     net.close_bbs(player_id_str);
+
+    lua_ctx.pack_multi(())
+  });
+
+  lua_api.add_dynamic_function("Net", "open_shop", |api_ctx, lua_ctx, params| {
+    use super::lua_errors::create_shop_error;
+    use crate::net::ShopItem;
+
+    let (player_id, item_tables, mug_texture_path, mug_animation_path): (
+      rlua::String,
+      Vec<rlua::Table>,
+      Option<String>,
+      Option<String>,
+    ) = lua_ctx.unpack_multi(params)?;
+    let player_id_str = player_id.to_str()?;
+
+    if let Some(tracker) = api_ctx
+      .widget_tracker_ref
+      .borrow_mut()
+      .get_mut(player_id_str)
+    {
+      tracker.track_shop(api_ctx.script_path.clone());
+      let mut net = api_ctx.net_ref.borrow_mut();
+
+      let mut items = Vec::new();
+      items.reserve(item_tables.len());
+
+      for item_table in item_tables {
+        let name: String = item_table.get("name")?;
+        let description: String = item_table.get("description")?;
+        let price: u32 = item_table.get("price")?;
+
+        items.push(ShopItem {
+          name,
+          description,
+          price,
+        });
+      }
+
+      net.open_shop(
+        player_id_str,
+        items,
+        mug_texture_path.unwrap_or_default(),
+        mug_animation_path.unwrap_or_default(),
+      );
+    }
 
     lua_ctx.pack_multi(())
   });

@@ -7,10 +7,10 @@ pub struct BbsPost {
 }
 
 pub fn calc_size(post: &BbsPost) -> usize {
-  let id_size = post.id.len() + 1;
-  let read_size = 1;
-  let title_size = post.title.len() + 1;
-  let author_size = post.author.len() + 1;
+  let id_size = 2 + post.id.len(); // u16 size + characters
+  let read_size = 1; // bool
+  let title_size = 2 + post.title.len(); // u16 size + characters
+  let author_size = 2 + post.author.len(); // u16 size + characters
 
   id_size + read_size + title_size + author_size
 }

@@ -595,6 +595,50 @@ impl PluginInterface for LuaPluginInterface {
     );
   }
 
+  fn handle_shop_close(&mut self, net: &mut Net, player_id: &str) {
+    let tracker = self.widget_trackers.get_mut(player_id).unwrap();
+
+    let script_path = if let Some(script_path) = tracker.close_shop() {
+      script_path
+    } else {
+      // protect against attackers
+      return;
+    };
+
+    handle_event(
+      &mut self.scripts,
+      &[script_path],
+      &mut self.widget_trackers,
+      &mut self.promise_manager,
+      &mut self.lua_api,
+      net,
+      "handle_shop_close",
+      |_, callback| callback.call(player_id),
+    );
+  }
+
+  fn handle_shop_purchase(&mut self, net: &mut Net, player_id: &str, item_name: &str) {
+    let tracker = self.widget_trackers.get_mut(player_id).unwrap();
+
+    let script_path = if let Some(script_path) = tracker.current_shop() {
+      script_path.clone()
+    } else {
+      // protect against attackers
+      return;
+    };
+
+    handle_event(
+      &mut self.scripts,
+      &[script_path],
+      &mut self.widget_trackers,
+      &mut self.promise_manager,
+      &mut self.lua_api,
+      net,
+      "handle_shop_purchase",
+      |_, callback| callback.call((player_id, item_name)),
+    );
+  }
+
   fn handle_battle_results(&mut self, net: &mut Net, player_id: &str, battle_stats: &BattleStats) {
     handle_event(
       &mut self.scripts,
