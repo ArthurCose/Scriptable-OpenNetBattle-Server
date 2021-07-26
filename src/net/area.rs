@@ -57,7 +57,7 @@ impl Area {
       .connected_players
       .iter()
       .position(|id| id == player_id)
-      .map(|position| self.connected_players.remove(position));
+      .map(|position| self.connected_players.swap_remove(position));
   }
 
   pub fn get_connected_bots(&self) -> &Vec<String> {
@@ -73,6 +73,6 @@ impl Area {
       .connected_bots
       .iter()
       .position(|id| id == bot_id)
-      .map(|position| self.connected_bots.remove(position));
+      .map(|position| self.connected_bots.swap_remove(position));
   }
 }
