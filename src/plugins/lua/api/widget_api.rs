@@ -266,7 +266,6 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "open_shop", |api_ctx, lua_ctx, params| {
-    use super::lua_errors::create_shop_error;
     use crate::net::ShopItem;
 
     let (player_id, item_tables, mug_texture_path, mug_animation_path): (
