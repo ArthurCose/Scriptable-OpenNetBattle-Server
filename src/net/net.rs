@@ -1347,12 +1347,12 @@ impl Net {
     }
   }
 
-  pub(super) fn get_kick_list(&self) -> &Vec<Boot> {
-    &self.kick_list
-  }
+  pub(super) fn take_kick_list(&mut self) -> Vec<Boot> {
+    let mut out = Vec::new();
 
-  pub(super) fn clear_kick_list(&mut self) {
-    self.kick_list.clear();
+    std::mem::swap(&mut self.kick_list, &mut out);
+
+    out
   }
 
   pub(super) fn add_client(

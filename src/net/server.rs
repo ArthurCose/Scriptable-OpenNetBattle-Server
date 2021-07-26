@@ -100,8 +100,7 @@ impl Server {
             }
           }
 
-          kick_list.extend(net.get_kick_list().iter().cloned());
-          net.clear_kick_list();
+          kick_list.extend(net.take_kick_list());
 
           // actually kick clients
           for boot in kick_list {
