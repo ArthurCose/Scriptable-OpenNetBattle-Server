@@ -31,6 +31,8 @@ enum ServerPacketId {
   PlaySound,
   ExcludeObject,
   IncludeObject,
+  ExcludeActor,
+  IncludeActor,
   MoveCamera,
   SlideCamera,
   ShakeCamera,
@@ -142,6 +144,12 @@ pub enum ServerPacket<'a> {
   },
   IncludeObject {
     id: u32,
+  },
+  ExcludeActor {
+    actor_id: &'a str,
+  },
+  IncludeActor {
+    actor_id: &'a str,
   },
   MoveCamera {
     x: f32,
@@ -432,6 +440,14 @@ pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     ServerPacket::IncludeObject { id } => {
       write_u16(buf, ServerPacketId::IncludeObject as u16);
       write_u32(buf, *id);
+    }
+    ServerPacket::ExcludeActor { actor_id } => {
+      write_u16(buf, ServerPacketId::ExcludeActor as u16);
+      write_string_u16(buf, *actor_id);
+    }
+    ServerPacket::IncludeActor { actor_id } => {
+      write_u16(buf, ServerPacketId::IncludeActor as u16);
+      write_string_u16(buf, *actor_id);
     }
     ServerPacket::MoveCamera { x, y, z, hold_time } => {
       write_u16(buf, ServerPacketId::MoveCamera as u16);

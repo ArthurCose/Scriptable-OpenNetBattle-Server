@@ -306,6 +306,36 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     },
   );
 
+  lua_api.add_dynamic_function(
+    "Net",
+    "exclude_actor_for_player",
+    |api_ctx, lua_ctx, params| {
+      let (player_id, actor_id): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+      let (player_id_str, actor_id_str) = (player_id.to_str()?, actor_id.to_str()?);
+
+      let mut net = api_ctx.net_ref.borrow_mut();
+
+      net.exclude_actor_for_player(player_id_str, actor_id_str);
+
+      lua_ctx.pack_multi(())
+    },
+  );
+
+  lua_api.add_dynamic_function(
+    "Net",
+    "include_actor_for_player",
+    |api_ctx, lua_ctx, params| {
+      let (player_id, actor_id): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+      let (player_id_str, actor_id_str) = (player_id.to_str()?, actor_id.to_str()?);
+
+      let mut net = api_ctx.net_ref.borrow_mut();
+
+      net.include_actor_for_player(player_id_str, actor_id_str);
+
+      lua_ctx.pack_multi(())
+    },
+  );
+
   lua_api.add_dynamic_function("Net", "move_player_camera", |api_ctx, lua_ctx, params| {
     let (player_id, x, y, z, duration): (rlua::String, f32, f32, f32, Option<f32>) =
       lua_ctx.unpack_multi(params)?;
@@ -342,12 +372,22 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "fade_player_camera", |api_ctx, lua_ctx, params| {
-    let (player_id, color, duration): (rlua::String, rlua::Table, f32) = lua_ctx.unpack_multi(params)?;
+    let (player_id, color, duration): (rlua::String, rlua::Table, f32) =
+      lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.fade_player_camera(player_id_str, (color.get("r")?, color.get("g")?, color.get("b")?, color.get("a")?), duration);
+    net.fade_player_camera(
+      player_id_str,
+      (
+        color.get("r")?,
+        color.get("g")?,
+        color.get("b")?,
+        color.get("a")?,
+      ),
+      duration,
+    );
 
     lua_ctx.pack_multi(())
   });

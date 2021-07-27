@@ -449,6 +449,26 @@ impl Net {
     }
   }
 
+  pub fn exclude_actor_for_player(&mut self, id: &str, actor_id: &str) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.packet_shipper.send(
+        &self.socket,
+        Reliability::ReliableOrdered,
+        &ServerPacket::ExcludeActor { actor_id },
+      );
+    }
+  }
+
+  pub fn include_actor_for_player(&mut self, id: &str, actor_id: &str) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.packet_shipper.send(
+        &self.socket,
+        Reliability::ReliableOrdered,
+        &ServerPacket::IncludeActor { actor_id },
+      );
+    }
+  }
+
   pub fn move_player_camera(&mut self, id: &str, x: f32, y: f32, z: f32, hold_time: f32) {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
