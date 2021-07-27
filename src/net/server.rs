@@ -339,7 +339,11 @@ impl Server {
             .plugin_wrapper
             .handle_custom_warp(net, &player_id, tile_object_id);
         }
-        ClientPacket::AvatarChange { name, max_health } => {
+        ClientPacket::AvatarChange {
+          name,
+          element,
+          max_health,
+        } => {
           if self.config.log_packets {
             println!("Received AvatarChange packet from {}", socket_address);
           }
@@ -351,6 +355,7 @@ impl Server {
               &texture_path,
               &animation_path,
               &name,
+              &element,
               max_health,
             );
 

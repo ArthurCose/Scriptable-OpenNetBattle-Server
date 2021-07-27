@@ -341,6 +341,7 @@ impl PluginInterface for LuaPluginInterface {
     texture_path: &str,
     animation_path: &str,
     name: &str,
+    element: &str,
     max_health: u32,
   ) -> bool {
     let mut prevent_default = false;
@@ -353,9 +354,16 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.lua_api,
       net,
       "handle_player_avatar_change",
-      |_, callback| {
-        let return_value: Option<bool> =
-          callback.call((player_id, texture_path, animation_path, name, max_health))?;
+      |lua_ctx, callback| {
+        let details_table = lua_ctx.create_table()?;
+
+        details_table.set("texture_path", texture_path)?;
+        details_table.set("animation_path", animation_path)?;
+        details_table.set("name", name)?;
+        details_table.set("element", element)?;
+        details_table.set("max_health", max_health)?;
+
+        let return_value: Option<bool> = callback.call((player_id, details_table))?;
 
         prevent_default |= return_value.unwrap_or_default();
 

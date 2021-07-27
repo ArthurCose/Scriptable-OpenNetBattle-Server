@@ -44,6 +44,7 @@ pub enum ClientPacket {
   },
   AvatarChange {
     name: String,
+    element: String,
     max_health: u32,
   },
   Emote {
@@ -158,7 +159,8 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
       direction: read_direction(read_byte(work_buf)?),
     }),
     12 => Some(ClientPacket::AvatarChange {
-      name: read_string_u16(work_buf)?,
+      name: read_string_u8(work_buf)?,
+      element: read_string_u8(work_buf)?,
       max_health: read_u32(work_buf)?,
     }),
     13 => Some(ClientPacket::Emote {

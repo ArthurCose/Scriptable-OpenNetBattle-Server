@@ -93,6 +93,7 @@ impl PluginInterface for PluginWrapper {
     texture_path: &str,
     animation_path: &str,
     name: &str,
+    element: &str,
     max_health: u32,
   ) -> bool {
     let mut prevent_default = false;
@@ -104,6 +105,7 @@ impl PluginInterface for PluginWrapper {
         texture_path,
         animation_path,
         name,
+        element,
         max_health,
       )
     });

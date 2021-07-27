@@ -226,7 +226,7 @@ function handle_player_move(player_id, x, y, z)
 --  default action is not taken until after execution
 --  returning true will prevent the default action
 
-function handle_player_avatar_change(player_id, texture_path, animation_path, name, max_health)
+function handle_player_avatar_change(player_id, details) -- details = { texture_path: string, animation_path: string, name: string, element: string, max_health: number }
 function handle_player_emote(player_id, emote)
 ```
 
