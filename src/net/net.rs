@@ -1944,8 +1944,14 @@ impl Net {
   }
 
   fn broadcast_bot_positions(&mut self) {
+    use std::time::Instant;
+
+    let now = Instant::now();
+
     for bot in self.bots.values() {
-      if bot.last_movement_time.elapsed().as_secs_f32() > self.config.max_idle_packet_duration {
+      let time_since_last_movement = now - bot.last_movement_time;
+
+      if time_since_last_movement.as_secs_f32() > self.config.max_idle_packet_duration {
         continue;
       }
 
