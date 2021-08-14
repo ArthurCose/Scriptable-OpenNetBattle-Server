@@ -172,7 +172,7 @@ pub enum ServerPacket<'a> {
     color: (u8, u8, u8, u8),
   },
   TrackWithCamera {
-    actor_id: Option<String>,
+    actor_id: Option<&'a str>,
   },
   UnlockCamera,
   LockInput,
@@ -203,7 +203,7 @@ pub enum ServerPacket<'a> {
   },
   Prompt {
     character_limit: u16,
-    default_text: Option<String>,
+    default_text: Option<&'a str>,
   },
   OpenBoard {
     current_depth: u8,
@@ -213,12 +213,12 @@ pub enum ServerPacket<'a> {
   },
   PrependPosts {
     current_depth: u8,
-    reference: Option<String>,
+    reference: Option<&'a str>,
     posts: &'a [BbsPost],
   },
   AppendPosts {
     current_depth: u8,
-    reference: Option<String>,
+    reference: Option<&'a str>,
     posts: &'a [BbsPost],
   },
   RemovePost {
@@ -551,7 +551,7 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       write_u16(buf, ServerPacketId::Prompt as u16);
       write_u16(buf, character_limit);
       match default_text {
-        Some(value) => write_string_u16(buf, &value),
+        Some(value) => write_string_u16(buf, value),
         _ => buf.push(0),
       }
     }

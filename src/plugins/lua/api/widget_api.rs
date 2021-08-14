@@ -1,3 +1,4 @@
+use super::lua_helpers::*;
 use super::LuaApi;
 
 #[allow(clippy::type_complexity)]
@@ -28,8 +29,8 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let (player_id, message, mug_texture_path, mug_animation_path): (
       rlua::String,
       rlua::String,
-      Option<String>,
-      Option<String>,
+      Option<rlua::String>,
+      Option<rlua::String>,
     ) = lua_ctx.unpack_multi(params)?;
     let (player_id_str, message_str) = (player_id.to_str()?, message.to_str()?);
 
@@ -45,8 +46,8 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       net.message_player(
         player_id_str,
         message_str,
-        &mug_texture_path.unwrap_or_default(),
-        &mug_animation_path.unwrap_or_default(),
+        optional_lua_string_to_str(&mug_texture_path)?,
+        optional_lua_string_to_str(&mug_animation_path)?,
       );
     }
 
@@ -57,8 +58,8 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let (player_id, message, mug_texture_path, mug_animation_path): (
       rlua::String,
       rlua::String,
-      Option<String>,
-      Option<String>,
+      Option<rlua::String>,
+      Option<rlua::String>,
     ) = lua_ctx.unpack_multi(params)?;
     let (player_id_str, message_str) = (player_id.to_str()?, message.to_str()?);
 
@@ -74,8 +75,8 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       net.question_player(
         player_id_str,
         message_str,
-        &mug_texture_path.unwrap_or_default(),
-        &mug_animation_path.unwrap_or_default(),
+        optional_lua_string_to_str(&mug_texture_path)?,
+        optional_lua_string_to_str(&mug_animation_path)?,
       );
     }
 
@@ -85,11 +86,11 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Net", "quiz_player", |api_ctx, lua_ctx, params| {
     let (player_id, option_a, option_b, option_c, mug_texture_path, mug_animation_path): (
       rlua::String,
-      Option<String>,
-      Option<String>,
-      Option<String>,
-      Option<String>,
-      Option<String>,
+      Option<rlua::String>,
+      Option<rlua::String>,
+      Option<rlua::String>,
+      Option<rlua::String>,
+      Option<rlua::String>,
     ) = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
@@ -104,11 +105,11 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
       net.quiz_player(
         player_id_str,
-        &option_a.unwrap_or_default(),
-        &option_b.unwrap_or_default(),
-        &option_c.unwrap_or_default(),
-        &mug_texture_path.unwrap_or_default(),
-        &mug_animation_path.unwrap_or_default(),
+        optional_lua_string_to_str(&option_a)?,
+        optional_lua_string_to_str(&option_b)?,
+        optional_lua_string_to_str(&option_c)?,
+        optional_lua_string_to_str(&mug_texture_path)?,
+        optional_lua_string_to_str(&mug_animation_path)?,
       );
     }
 
@@ -116,7 +117,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "prompt_player", |api_ctx, lua_ctx, params| {
-    let (player_id, character_limit, message): (rlua::String, Option<u16>, Option<String>) =
+    let (player_id, character_limit, message): (rlua::String, Option<u16>, Option<rlua::String>) =
       lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
@@ -129,7 +130,11 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     {
       tracker.track_textbox(api_ctx.script_path.clone());
 
-      net.prompt_player(player_id_str, character_limit.unwrap_or(u16::MAX), message);
+      net.prompt_player(
+        player_id_str,
+        character_limit.unwrap_or(u16::MAX),
+        optional_lua_string_to_optional_str(&message)?,
+      );
     }
 
     lua_ctx.pack_multi(())
@@ -186,8 +191,11 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Net", "prepend_posts", |api_ctx, lua_ctx, params| {
     use crate::net::BbsPost;
 
-    let (player_id, post_tables, reference): (rlua::String, Vec<rlua::Table>, Option<String>) =
-      lua_ctx.unpack_multi(params)?;
+    let (player_id, post_tables, reference): (
+      rlua::String,
+      Vec<rlua::Table>,
+      Option<rlua::String>,
+    ) = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -208,7 +216,11 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       });
     }
 
-    net.prepend_posts(player_id_str, reference, posts);
+    net.prepend_posts(
+      player_id_str,
+      optional_lua_string_to_optional_str(&reference)?,
+      posts,
+    );
 
     lua_ctx.pack_multi(())
   });
@@ -216,8 +228,11 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Net", "append_posts", |api_ctx, lua_ctx, params| {
     use crate::net::BbsPost;
 
-    let (player_id, post_tables, reference): (rlua::String, Vec<rlua::Table>, Option<String>) =
-      lua_ctx.unpack_multi(params)?;
+    let (player_id, post_tables, reference): (
+      rlua::String,
+      Vec<rlua::Table>,
+      Option<rlua::String>,
+    ) = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -238,7 +253,11 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       });
     }
 
-    net.append_posts(player_id_str, reference, posts);
+    net.append_posts(
+      player_id_str,
+      optional_lua_string_to_optional_str(&reference)?,
+      posts,
+    );
 
     lua_ctx.pack_multi(())
   });
@@ -302,16 +321,8 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       net.open_shop(
         player_id_str,
         items,
-        mug_texture_path
-          .as_ref()
-          .map(|lua_string| lua_string.to_str())
-          .transpose()?
-          .unwrap_or_default(),
-        mug_animation_path
-          .as_ref()
-          .map(|lua_string| lua_string.to_str())
-          .transpose()?
-          .unwrap_or_default(),
+        optional_lua_string_to_str(&mug_texture_path)?,
+        optional_lua_string_to_str(&mug_animation_path)?,
       );
     }
 

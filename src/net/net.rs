@@ -500,7 +500,7 @@ impl Net {
     }
   }
 
-  pub fn track_with_player_camera(&mut self, id: &str, actor_id: Option<String>) {
+  pub fn track_with_player_camera(&mut self, id: &str, actor_id: Option<&str>) {
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
         &self.socket,
@@ -714,7 +714,7 @@ impl Net {
     }
   }
 
-  pub fn prompt_player(&mut self, id: &str, character_limit: u16, default_text: Option<String>) {
+  pub fn prompt_player(&mut self, id: &str, character_limit: u16, default_text: Option<&str>) {
     if let Some(client) = self.clients.get_mut(id) {
       client.widget_tracker.track_textbox(self.active_script);
 
@@ -820,7 +820,7 @@ impl Net {
       } else {
         ServerPacket::AppendPosts {
           current_depth,
-          reference: ref_id,
+          reference: ref_id.as_deref(),
           posts: chunk.as_slice(),
         }
       };
@@ -833,7 +833,7 @@ impl Net {
     }
   }
 
-  pub fn prepend_posts(&mut self, player_id: &str, reference: Option<String>, posts: Vec<BbsPost>) {
+  pub fn prepend_posts(&mut self, player_id: &str, reference: Option<&str>, posts: Vec<BbsPost>) {
     use super::bbs_post::calc_size;
     use crate::helpers::iterators::IteratorHelper;
     use std::cell::RefCell;
@@ -846,6 +846,7 @@ impl Net {
 
     let max_payload_size = self.config.max_payload_size;
 
+    let reference = reference.map(|reference_str| reference_str.to_string());
     let last_id = Rc::new(RefCell::new(reference.clone()));
 
     let calc_chunk_limit = |_| {
@@ -879,13 +880,13 @@ impl Net {
       let packet = if i == 0 {
         ServerPacket::PrependPosts {
           current_depth,
-          reference: ref_id,
+          reference: ref_id.as_deref(),
           posts: chunk.as_slice(),
         }
       } else {
         ServerPacket::AppendPosts {
           current_depth,
-          reference: ref_id,
+          reference: ref_id.as_deref(),
           posts: chunk.as_slice(),
         }
       };
@@ -898,7 +899,7 @@ impl Net {
     }
   }
 
-  pub fn append_posts(&mut self, player_id: &str, reference: Option<String>, posts: Vec<BbsPost>) {
+  pub fn append_posts(&mut self, player_id: &str, reference: Option<&str>, posts: Vec<BbsPost>) {
     use super::bbs_post::calc_size;
     use crate::helpers::iterators::IteratorHelper;
     use std::cell::RefCell;
@@ -911,6 +912,7 @@ impl Net {
 
     let max_payload_size = self.config.max_payload_size;
 
+    let reference = reference.map(|reference_str| reference_str.to_string());
     let last_id = Rc::new(RefCell::new(reference.clone()));
 
     let calc_chunk_limit = |_| {
@@ -943,7 +945,7 @@ impl Net {
 
       let packet = ServerPacket::AppendPosts {
         current_depth,
-        reference: ref_id,
+        reference: ref_id.as_deref(),
         posts: chunk.as_slice(),
       };
 

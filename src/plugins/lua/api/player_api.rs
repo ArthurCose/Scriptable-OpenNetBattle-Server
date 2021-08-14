@@ -1,4 +1,5 @@
 use super::lua_errors::{create_area_error, create_player_error};
+use super::lua_helpers::*;
 use super::LuaApi;
 use crate::net::Direction;
 
@@ -399,11 +400,15 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "track_with_player_camera",
     |api_ctx, lua_ctx, params| {
-      let (player_id, actor_id): (rlua::String, Option<String>) = lua_ctx.unpack_multi(params)?;
+      let (player_id, actor_id): (rlua::String, Option<rlua::String>) =
+        lua_ctx.unpack_multi(params)?;
       let player_id_str = player_id.to_str()?;
 
       let mut net = api_ctx.net_ref.borrow_mut();
-      net.track_with_player_camera(player_id_str, actor_id);
+      net.track_with_player_camera(
+        player_id_str,
+        optional_lua_string_to_optional_str(&actor_id)?,
+      );
 
       lua_ctx.pack_multi(())
     },
@@ -449,13 +454,13 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       f32,
       f32,
       f32,
-      Option<String>,
+      Option<rlua::String>,
     ) = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    let direction = Direction::from(direction_option.unwrap_or_default().as_str());
+    let direction = Direction::from(optional_lua_string_to_str(&direction_option)?);
 
     net.teleport_player(player_id_str, warp, x, y, z, direction);
 
@@ -504,7 +509,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       Option<f32>,
       Option<f32>,
       Option<f32>,
-      Option<String>,
+      Option<rlua::String>,
     ) = lua_ctx.unpack_multi(params)?;
     let (player_id_str, area_id_str) = (player_id.to_str()?, area_id.to_str()?);
 
@@ -522,7 +527,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       return Err(create_player_error(player_id_str));
     }
 
-    let direction = Direction::from(direction_option.unwrap_or_default().as_str());
+    let direction = Direction::from(optional_lua_string_to_str(&direction_option)?);
 
     net.transfer_player(player_id_str, area_id_str, warp_in, x, y, z, direction);
 
@@ -535,16 +540,16 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       rlua::String,
       u16,
       Option<bool>,
-      Option<String>,
+      Option<rlua::String>,
     ) = lua_ctx.unpack_multi(params)?;
     let (player_id_str, address_str) = (player_id.to_str()?, address.to_str()?);
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
     let warp = warp_out_option.unwrap_or_default();
-    let data = data_option.unwrap_or_default();
+    let data = optional_lua_string_to_str(&data_option)?;
 
-    net.transfer_server(player_id_str, address_str, port, &data, warp);
+    net.transfer_server(player_id_str, address_str, port, data, warp);
 
     lua_ctx.pack_multi(())
   });

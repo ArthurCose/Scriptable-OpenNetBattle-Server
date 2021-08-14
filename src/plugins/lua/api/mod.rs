@@ -4,6 +4,7 @@ mod asset_api;
 mod async_api;
 mod bot_api;
 mod lua_errors;
+mod lua_helpers;
 mod object_api;
 mod player_api;
 mod player_data_api;
