@@ -204,9 +204,7 @@ impl Net {
         &mut self.clients,
         area,
         Reliability::Reliable,
-        ServerPacket::PlaySound {
-          path: path.to_string(),
-        },
+        ServerPacket::PlaySound { path },
       )
     }
   }
@@ -407,9 +405,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        ServerPacket::Preload {
-          asset_path: asset_path.to_string(),
-        },
+        ServerPacket::Preload { asset_path },
       );
     }
   }
@@ -419,9 +415,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        ServerPacket::PlaySound {
-          path: path.to_string(),
-        },
+        ServerPacket::PlaySound { path },
       );
     }
   }
@@ -646,9 +640,9 @@ impl Net {
         &self.socket,
         Reliability::ReliableOrdered,
         ServerPacket::Message {
-          message: message.to_string(),
-          mug_texture_path: mug_texture_path.to_string(),
-          mug_animation_path: mug_animation_path.to_string(),
+          message,
+          mug_texture_path,
+          mug_animation_path,
         },
       );
     }
@@ -677,9 +671,9 @@ impl Net {
         &self.socket,
         Reliability::ReliableOrdered,
         ServerPacket::Question {
-          message: message.to_string(),
-          mug_texture_path: mug_texture_path.to_string(),
-          mug_animation_path: mug_animation_path.to_string(),
+          message,
+          mug_texture_path,
+          mug_animation_path,
         },
       );
     }
@@ -710,11 +704,11 @@ impl Net {
         &self.socket,
         Reliability::ReliableOrdered,
         ServerPacket::Quiz {
-          option_a: option_a.to_string(),
-          option_b: option_b.to_string(),
-          option_c: option_c.to_string(),
-          mug_texture_path: mug_texture_path.to_string(),
-          mug_animation_path: mug_animation_path.to_string(),
+          option_a,
+          option_b,
+          option_c,
+          mug_texture_path,
+          mug_animation_path,
         },
       );
     }
@@ -743,7 +737,7 @@ impl Net {
   pub fn open_board(
     &mut self,
     player_id: &str,
-    name: String,
+    name: &str,
     color: (u8, u8, u8),
     posts: Vec<BbsPost>,
   ) {
@@ -768,7 +762,7 @@ impl Net {
         Reliability::ReliableOrdered,
         ServerPacket::OpenBoard {
           current_depth: start_depth,
-          name: name.clone(),
+          name,
           color,
           posts: &[],
         },
@@ -819,7 +813,7 @@ impl Net {
       let packet = if i == 0 {
         ServerPacket::OpenBoard {
           current_depth: start_depth,
-          name: name.clone(),
+          name,
           color,
           posts: chunk.as_slice(),
         }
@@ -968,7 +962,7 @@ impl Net {
         Reliability::ReliableOrdered,
         ServerPacket::RemovePost {
           current_depth: client.widget_tracker.get_board_count() as u8,
-          id: post_id.to_string(),
+          id: post_id,
         },
       );
     }
@@ -988,8 +982,8 @@ impl Net {
     &mut self,
     player_id: &str,
     items: Vec<ShopItem>,
-    mug_texture_path: String,
-    mug_animation_path: String,
+    mug_texture_path: &str,
+    mug_animation_path: &str,
   ) {
     use super::shop_item::calc_size;
     use crate::helpers::iterators::IteratorHelper;
@@ -1073,7 +1067,7 @@ impl Net {
       &self.socket,
       Reliability::ReliableOrdered,
       ServerPacket::InitiatePvp {
-        address: client_2_addr.to_string(),
+        address: &client_2_addr.to_string(),
       },
     );
 
@@ -1081,7 +1075,7 @@ impl Net {
       &self.socket,
       Reliability::ReliableOrdered,
       ServerPacket::InitiatePvp {
-        address: client_1_addr.to_string(),
+        address: &client_1_addr.to_string(),
       },
     )
   }
@@ -1343,9 +1337,9 @@ impl Net {
         &self.socket,
         Reliability::ReliableOrdered,
         ServerPacket::TransferServer {
-          address: address.to_string(),
+          address,
           port,
-          data: data.to_string(),
+          data,
           warp_out,
         },
       );
@@ -1491,7 +1485,7 @@ impl Net {
     let client = self.clients.get_mut(player_id).unwrap();
 
     let packet = ServerPacket::Login {
-      ticket: player_id.to_string(),
+      ticket: player_id,
       warp_in: client.warp_in,
       spawn_x: client.warp_x,
       spawn_y: client.warp_y,
@@ -1525,7 +1519,9 @@ impl Net {
     // send map
     let map_path = get_map_path(area_id);
     asset_paths.push(map_path.clone());
-    packets.push(ServerPacket::MapUpdate { map_path });
+    packets.push(ServerPacket::MapUpdate {
+      map_path: &map_path,
+    });
 
     // send clients
     for other_player_id in area.get_connected_players() {
@@ -1555,7 +1551,7 @@ impl Net {
     if let Some(custom_emotes_path) = &self.config.custom_emotes_path {
       asset_paths.push(custom_emotes_path.clone());
       packets.push(ServerPacket::CustomEmotesPath {
-        asset_path: custom_emotes_path.clone(),
+        asset_path: custom_emotes_path,
       });
     }
 
@@ -1995,7 +1991,9 @@ impl Net {
           &map_path,
         );
 
-        let packet = ServerPacket::MapUpdate { map_path };
+        let packet = ServerPacket::MapUpdate {
+          map_path: &map_path,
+        };
 
         broadcast_to_area(
           &self.socket,

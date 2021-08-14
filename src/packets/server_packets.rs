@@ -76,7 +76,7 @@ pub enum ServerPacket<'a> {
   },
   Heartbeat,
   Login {
-    ticket: String,
+    ticket: &'a str,
     warp_in: bool,
     spawn_x: f32,
     spawn_y: f32,
@@ -91,32 +91,32 @@ pub enum ServerPacket<'a> {
     direction: Direction,
   },
   TransferServer {
-    address: String,
+    address: &'a str,
     port: u16,
-    data: String,
+    data: &'a str,
     warp_out: bool,
   },
   Kick {
-    reason: String,
+    reason: &'a str,
   },
   RemoveAsset {
-    path: String,
+    path: &'a str,
   },
   AssetStreamStart {
-    name: String,
+    name: &'a str,
     asset: &'a Asset,
   },
   AssetStream {
     data: &'a [u8],
   },
   Preload {
-    asset_path: String,
+    asset_path: &'a str,
   },
   CustomEmotesPath {
-    asset_path: String,
+    asset_path: &'a str,
   },
   MapUpdate {
-    map_path: String,
+    map_path: &'a str,
   },
   Health {
     health: u32,
@@ -137,7 +137,7 @@ pub enum ServerPacket<'a> {
     id: &'a str,
   },
   PlaySound {
-    path: String,
+    path: &'a str,
   },
   ExcludeObject {
     id: u32,
@@ -185,21 +185,21 @@ pub enum ServerPacket<'a> {
     direction: Direction,
   },
   Message {
-    message: String,
-    mug_texture_path: String,
-    mug_animation_path: String,
+    message: &'a str,
+    mug_texture_path: &'a str,
+    mug_animation_path: &'a str,
   },
   Question {
-    message: String,
-    mug_texture_path: String,
-    mug_animation_path: String,
+    message: &'a str,
+    mug_texture_path: &'a str,
+    mug_animation_path: &'a str,
   },
   Quiz {
-    option_a: String,
-    option_b: String,
-    option_c: String,
-    mug_texture_path: String,
-    mug_animation_path: String,
+    option_a: &'a str,
+    option_b: &'a str,
+    option_c: &'a str,
+    mug_texture_path: &'a str,
+    mug_animation_path: &'a str,
   },
   Prompt {
     character_limit: u16,
@@ -207,7 +207,7 @@ pub enum ServerPacket<'a> {
   },
   OpenBoard {
     current_depth: u8,
-    name: String,
+    name: &'a str,
     color: (u8, u8, u8),
     posts: &'a [BbsPost],
   },
@@ -223,7 +223,7 @@ pub enum ServerPacket<'a> {
   },
   RemovePost {
     current_depth: u8,
-    id: String,
+    id: &'a str,
   },
   PostSelectionAck,
   CloseBBS,
@@ -231,11 +231,11 @@ pub enum ServerPacket<'a> {
     items: &'a [ShopItem],
   },
   OpenShop {
-    mug_texture_path: String,
-    mug_animation_path: String,
+    mug_texture_path: &'a str,
+    mug_animation_path: &'a str,
   },
   InitiatePvp {
-    address: String,
+    address: &'a str,
   },
   ActorConnected {
     ticket: &'a str,
@@ -324,7 +324,7 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       spawn_direction,
     } => {
       write_u16(buf, ServerPacketId::Login as u16);
-      write_string_u16(buf, &ticket);
+      write_string_u16(buf, ticket);
       write_bool(buf, warp_in);
       write_f32(buf, spawn_x);
       write_f32(buf, spawn_y);
@@ -352,22 +352,22 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       warp_out,
     } => {
       write_u16(buf, ServerPacketId::TransferServer as u16);
-      write_string_u16(buf, &address);
+      write_string_u16(buf, address);
       write_u16(buf, port);
-      write_string_u16(buf, &data);
+      write_string_u16(buf, data);
       write_bool(buf, warp_out);
     }
     ServerPacket::Kick { reason } => {
       write_u16(buf, ServerPacketId::Kick as u16);
-      write_string_u16(buf, &reason);
+      write_string_u16(buf, reason);
     }
     ServerPacket::RemoveAsset { path } => {
       write_u16(buf, ServerPacketId::RemoveAsset as u16);
-      write_string_u16(buf, &path);
+      write_string_u16(buf, path);
     }
     ServerPacket::AssetStreamStart { name, asset } => {
       write_u16(buf, ServerPacketId::AssetStreamStart as u16);
-      write_string_u16(buf, &name);
+      write_string_u16(buf, name);
       write_u64(buf, asset.last_modified);
       write_bool(buf, asset.cachable);
 
@@ -392,15 +392,15 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
     }
     ServerPacket::Preload { asset_path } => {
       write_u16(buf, ServerPacketId::Preload as u16);
-      write_string_u16(buf, &asset_path);
+      write_string_u16(buf, asset_path);
     }
     ServerPacket::CustomEmotesPath { asset_path } => {
       write_u16(buf, ServerPacketId::CustomEmotesPath as u16);
-      write_string_u16(buf, &asset_path);
+      write_string_u16(buf, asset_path);
     }
     ServerPacket::MapUpdate { map_path } => {
       write_u16(buf, ServerPacketId::MapUpdate as u16);
-      write_string_u16(buf, &map_path);
+      write_string_u16(buf, map_path);
     }
     ServerPacket::Health { health, max_health } => {
       write_u16(buf, ServerPacketId::Health as u16);
@@ -431,7 +431,7 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
     }
     ServerPacket::PlaySound { path } => {
       write_u16(buf, ServerPacketId::PlaySound as u16);
-      write_string_u16(buf, &path);
+      write_string_u16(buf, path);
     }
     ServerPacket::ExcludeObject { id } => {
       write_u16(buf, ServerPacketId::ExcludeObject as u16);
@@ -516,9 +516,9 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       mug_animation_path,
     } => {
       write_u16(buf, ServerPacketId::Message as u16);
-      write_string_u16(buf, &message);
-      write_string_u16(buf, &mug_texture_path);
-      write_string_u16(buf, &mug_animation_path);
+      write_string_u16(buf, message);
+      write_string_u16(buf, mug_texture_path);
+      write_string_u16(buf, mug_animation_path);
     }
     ServerPacket::Question {
       message,
@@ -526,9 +526,9 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       mug_animation_path,
     } => {
       write_u16(buf, ServerPacketId::Question as u16);
-      write_string_u16(buf, &message);
-      write_string_u16(buf, &mug_texture_path);
-      write_string_u16(buf, &mug_animation_path);
+      write_string_u16(buf, message);
+      write_string_u16(buf, mug_texture_path);
+      write_string_u16(buf, mug_animation_path);
     }
     ServerPacket::Quiz {
       option_a,
@@ -538,11 +538,11 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       mug_animation_path,
     } => {
       write_u16(buf, ServerPacketId::Quiz as u16);
-      write_string_u16(buf, &option_a);
-      write_string_u16(buf, &option_b);
-      write_string_u16(buf, &option_c);
-      write_string_u16(buf, &mug_texture_path);
-      write_string_u16(buf, &mug_animation_path);
+      write_string_u16(buf, option_a);
+      write_string_u16(buf, option_b);
+      write_string_u16(buf, option_c);
+      write_string_u16(buf, mug_texture_path);
+      write_string_u16(buf, mug_animation_path);
     }
     ServerPacket::Prompt {
       character_limit,
@@ -563,7 +563,7 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
     } => {
       write_u16(buf, ServerPacketId::OpenBoard as u16);
       buf.push(current_depth);
-      write_string_u16(buf, &name);
+      write_string_u16(buf, name);
       buf.push(color.0);
       buf.push(color.1);
       buf.push(color.2);
@@ -624,7 +624,7 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
     ServerPacket::RemovePost { current_depth, id } => {
       write_u16(buf, ServerPacketId::RemovePost as u16);
       buf.push(current_depth);
-      write_string_u16(buf, &id);
+      write_string_u16(buf, id);
     }
     ServerPacket::PostSelectionAck => {
       write_u16(buf, ServerPacketId::PostSelectionAck as u16);
@@ -648,12 +648,12 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       mug_animation_path,
     } => {
       write_u16(buf, ServerPacketId::OpenShop as u16);
-      write_string_u16(buf, &mug_texture_path);
-      write_string_u16(buf, &mug_animation_path);
+      write_string_u16(buf, mug_texture_path);
+      write_string_u16(buf, mug_animation_path);
     }
     ServerPacket::InitiatePvp { address } => {
       write_u16(buf, ServerPacketId::InitiatePvp as u16);
-      write_string_u16(buf, &address);
+      write_string_u16(buf, address);
     }
     ServerPacket::ActorConnected {
       ticket,
@@ -785,16 +785,13 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
 
 pub fn create_asset_stream<'a>(
   max_payload_size: usize,
-  name: &str,
+  name: &'a str,
   asset: &'a Asset,
 ) -> Vec<ServerPacket<'a>> {
   // reliability type + id + packet type + data size
   const HEADER_SIZE: usize = 1 + 8 + 2 + 2 + 16;
 
-  let mut packets = vec![ServerPacket::AssetStreamStart {
-    name: name.to_string(),
-    asset,
-  }];
+  let mut packets = vec![ServerPacket::AssetStreamStart { name, asset }];
 
   let mut bytes = match &asset.data {
     AssetData::Text(data) => data.as_bytes(),

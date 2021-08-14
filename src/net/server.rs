@@ -108,7 +108,7 @@ impl Server {
 
             // send reason
             let buf = build_unreliable_packet(ServerPacket::Kick {
-              reason: boot.reason.clone(),
+              reason: &boot.reason,
             });
 
             let _ = socket.send_to(&buf, boot.socket_address);
@@ -199,7 +199,7 @@ impl Server {
               client.packet_shipper.send(
                 socket,
                 Reliability::ReliableOrdered,
-                ServerPacket::RemoveAsset { path },
+                ServerPacket::RemoveAsset { path: &path },
               );
             }
           }

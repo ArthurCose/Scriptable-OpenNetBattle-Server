@@ -140,7 +140,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
     let (player_id, name, color_table, post_tables): (
       rlua::String,
-      String,
+      rlua::String,
       rlua::Table,
       Vec<rlua::Table>,
     ) = lua_ctx.unpack_multi(params)?;
@@ -177,7 +177,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
         });
       }
 
-      net.open_board(player_id_str, name, color, posts);
+      net.open_board(player_id_str, name.to_str()?, color, posts);
     }
 
     lua_ctx.pack_multi(())
@@ -271,8 +271,8 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let (player_id, item_tables, mug_texture_path, mug_animation_path): (
       rlua::String,
       Vec<rlua::Table>,
-      Option<String>,
-      Option<String>,
+      Option<rlua::String>,
+      Option<rlua::String>,
     ) = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
@@ -302,8 +302,16 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       net.open_shop(
         player_id_str,
         items,
-        mug_texture_path.unwrap_or_default(),
-        mug_animation_path.unwrap_or_default(),
+        mug_texture_path
+          .as_ref()
+          .map(|lua_string| lua_string.to_str())
+          .transpose()?
+          .unwrap_or_default(),
+        mug_animation_path
+          .as_ref()
+          .map(|lua_string| lua_string.to_str())
+          .transpose()?
+          .unwrap_or_default(),
       );
     }
 
