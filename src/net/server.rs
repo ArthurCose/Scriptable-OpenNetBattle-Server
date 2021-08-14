@@ -107,7 +107,7 @@ impl Server {
             self.disconnect_client(&mut net, &boot.socket_address, &boot.reason, boot.warp_out);
 
             // send reason
-            let buf = build_unreliable_packet(&ServerPacket::Kick {
+            let buf = build_unreliable_packet(ServerPacket::Kick {
               reason: boot.reason.clone(),
             });
 
@@ -168,7 +168,7 @@ impl Server {
             println!("Received bad Ping packet from {}", socket_address);
           }
 
-          let buf = build_unreliable_packet(&ServerPacket::Pong {
+          let buf = build_unreliable_packet(ServerPacket::Pong {
             max_payload_size: self.config.max_payload_size,
           });
           let _ = socket.send_to(&buf, socket_address);
@@ -199,7 +199,7 @@ impl Server {
               client.packet_shipper.send(
                 socket,
                 Reliability::ReliableOrdered,
-                &ServerPacket::RemoveAsset { path },
+                ServerPacket::RemoveAsset { path },
               );
             }
           }
@@ -460,7 +460,7 @@ impl Server {
           client.packet_shipper.send(
             &socket,
             Reliability::ReliableOrdered,
-            &ServerPacket::PostSelectionAck,
+            ServerPacket::PostSelectionAck,
           );
         }
         ClientPacket::ShopClose => {
@@ -509,7 +509,7 @@ impl Server {
             println!("Received Ping packet from {}", socket_address);
           }
 
-          let buf = build_unreliable_packet(&ServerPacket::Pong {
+          let buf = build_unreliable_packet(ServerPacket::Pong {
             max_payload_size: self.config.max_payload_size,
           });
           let _ = socket.send_to(&buf, socket_address);

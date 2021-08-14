@@ -33,7 +33,7 @@ impl PacketShipper {
     }
   }
 
-  pub fn send(&mut self, socket: &UdpSocket, reliability: Reliability, packet: &ServerPacket) {
+  pub fn send(&mut self, socket: &UdpSocket, reliability: Reliability, packet: ServerPacket) {
     self.send_bytes(socket, reliability, &build_packet(packet));
   }
 

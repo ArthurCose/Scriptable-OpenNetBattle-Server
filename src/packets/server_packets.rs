@@ -290,13 +290,13 @@ pub enum ServerPacket<'a> {
   },
 }
 
-pub fn build_unreliable_packet(packet: &ServerPacket) -> Vec<u8> {
+pub fn build_unreliable_packet(packet: ServerPacket) -> Vec<u8> {
   let mut buf = build_packet(packet);
   buf.insert(0, 0);
   buf
 }
 
-pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
+pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
   let mut vec = Vec::new();
   let buf = &mut vec;
 
@@ -305,12 +305,12 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_u16(buf, ServerPacketId::Pong as u16);
       write_string_u16(buf, VERSION_ID);
       write_u64(buf, VERSION_ITERATION);
-      write_u16(buf, *max_payload_size as u16);
+      write_u16(buf, max_payload_size as u16);
     }
     ServerPacket::Ack { reliability, id } => {
       write_u16(buf, ServerPacketId::Ack as u16);
-      buf.push(*reliability);
-      write_u64(buf, *id);
+      buf.push(reliability);
+      write_u64(buf, id);
     }
     ServerPacket::Heartbeat => {
       write_u16(buf, ServerPacketId::Heartbeat as u16);
@@ -324,12 +324,12 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       spawn_direction,
     } => {
       write_u16(buf, ServerPacketId::Login as u16);
-      write_string_u16(buf, ticket);
-      write_bool(buf, *warp_in);
-      write_f32(buf, *spawn_x);
-      write_f32(buf, *spawn_y);
-      write_f32(buf, *spawn_z);
-      buf.push(translate_direction(*spawn_direction));
+      write_string_u16(buf, &ticket);
+      write_bool(buf, warp_in);
+      write_f32(buf, spawn_x);
+      write_f32(buf, spawn_y);
+      write_f32(buf, spawn_z);
+      buf.push(translate_direction(spawn_direction));
     }
     ServerPacket::CompleteConnection => {
       write_u16(buf, ServerPacketId::CompleteConnection as u16);
@@ -342,8 +342,8 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     }
     ServerPacket::TransferComplete { warp_in, direction } => {
       write_u16(buf, ServerPacketId::TransferComplete as u16);
-      write_bool(buf, *warp_in);
-      buf.push(translate_direction(*direction));
+      write_bool(buf, warp_in);
+      buf.push(translate_direction(direction));
     }
     ServerPacket::TransferServer {
       address,
@@ -352,22 +352,22 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       warp_out,
     } => {
       write_u16(buf, ServerPacketId::TransferServer as u16);
-      write_string_u16(buf, address);
-      write_u16(buf, *port);
-      write_string_u16(buf, data);
-      write_bool(buf, *warp_out);
+      write_string_u16(buf, &address);
+      write_u16(buf, port);
+      write_string_u16(buf, &data);
+      write_bool(buf, warp_out);
     }
     ServerPacket::Kick { reason } => {
       write_u16(buf, ServerPacketId::Kick as u16);
-      write_string_u16(buf, reason);
+      write_string_u16(buf, &reason);
     }
     ServerPacket::RemoveAsset { path } => {
       write_u16(buf, ServerPacketId::RemoveAsset as u16);
-      write_string_u16(buf, path);
+      write_string_u16(buf, &path);
     }
     ServerPacket::AssetStreamStart { name, asset } => {
       write_u16(buf, ServerPacketId::AssetStreamStart as u16);
-      write_string_u16(buf, name);
+      write_string_u16(buf, &name);
       write_u64(buf, asset.last_modified);
       write_bool(buf, asset.cachable);
 
@@ -392,28 +392,28 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     }
     ServerPacket::Preload { asset_path } => {
       write_u16(buf, ServerPacketId::Preload as u16);
-      write_string_u16(buf, asset_path);
+      write_string_u16(buf, &asset_path);
     }
     ServerPacket::CustomEmotesPath { asset_path } => {
       write_u16(buf, ServerPacketId::CustomEmotesPath as u16);
-      write_string_u16(buf, asset_path);
+      write_string_u16(buf, &asset_path);
     }
     ServerPacket::MapUpdate { map_path } => {
       write_u16(buf, ServerPacketId::MapUpdate as u16);
-      write_string_u16(buf, map_path);
+      write_string_u16(buf, &map_path);
     }
     ServerPacket::Health { health, max_health } => {
       write_u16(buf, ServerPacketId::Health as u16);
-      write_u32(buf, *health);
-      write_u32(buf, *max_health);
+      write_u32(buf, health);
+      write_u32(buf, max_health);
     }
     ServerPacket::Emotion { emotion } => {
       write_u16(buf, ServerPacketId::Emotion as u16);
-      buf.push(*emotion);
+      buf.push(emotion);
     }
     ServerPacket::Money { money } => {
       write_u16(buf, ServerPacketId::Money as u16);
-      write_u32(buf, *money);
+      write_u32(buf, money);
     }
     ServerPacket::AddItem {
       id,
@@ -431,53 +431,53 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     }
     ServerPacket::PlaySound { path } => {
       write_u16(buf, ServerPacketId::PlaySound as u16);
-      write_string_u16(buf, path);
+      write_string_u16(buf, &path);
     }
     ServerPacket::ExcludeObject { id } => {
       write_u16(buf, ServerPacketId::ExcludeObject as u16);
-      write_u32(buf, *id);
+      write_u32(buf, id);
     }
     ServerPacket::IncludeObject { id } => {
       write_u16(buf, ServerPacketId::IncludeObject as u16);
-      write_u32(buf, *id);
+      write_u32(buf, id);
     }
     ServerPacket::ExcludeActor { actor_id } => {
       write_u16(buf, ServerPacketId::ExcludeActor as u16);
-      write_string_u16(buf, *actor_id);
+      write_string_u16(buf, actor_id);
     }
     ServerPacket::IncludeActor { actor_id } => {
       write_u16(buf, ServerPacketId::IncludeActor as u16);
-      write_string_u16(buf, *actor_id);
+      write_string_u16(buf, actor_id);
     }
     ServerPacket::MoveCamera { x, y, z, hold_time } => {
       write_u16(buf, ServerPacketId::MoveCamera as u16);
-      write_f32(buf, *x);
-      write_f32(buf, *y);
-      write_f32(buf, *z);
-      write_f32(buf, *hold_time);
+      write_f32(buf, x);
+      write_f32(buf, y);
+      write_f32(buf, z);
+      write_f32(buf, hold_time);
     }
     ServerPacket::SlideCamera { x, y, z, duration } => {
       write_u16(buf, ServerPacketId::SlideCamera as u16);
-      write_f32(buf, *x);
-      write_f32(buf, *y);
-      write_f32(buf, *z);
-      write_f32(buf, *duration);
+      write_f32(buf, x);
+      write_f32(buf, y);
+      write_f32(buf, z);
+      write_f32(buf, duration);
     }
     ServerPacket::ShakeCamera { strength, duration } => {
       write_u16(buf, ServerPacketId::ShakeCamera as u16);
-      write_f32(buf, *strength);
-      write_f32(buf, *duration);
+      write_f32(buf, strength);
+      write_f32(buf, duration);
     }
     ServerPacket::FadeCamera {
       duration,
       color: (r, g, b, a),
     } => {
       write_u16(buf, ServerPacketId::FadeCamera as u16);
-      write_f32(buf, *duration);
-      buf.push(*r);
-      buf.push(*g);
-      buf.push(*b);
-      buf.push(*a);
+      write_f32(buf, duration);
+      buf.push(r);
+      buf.push(g);
+      buf.push(b);
+      buf.push(a);
     }
     ServerPacket::TrackWithCamera { actor_id } => {
       write_u16(buf, ServerPacketId::TrackWithCamera as u16);
@@ -504,11 +504,11 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       direction,
     } => {
       write_u16(buf, ServerPacketId::Teleport as u16);
-      write_bool(buf, *warp);
-      write_f32(buf, *x);
-      write_f32(buf, *y);
-      write_f32(buf, *z);
-      buf.push(translate_direction(*direction));
+      write_bool(buf, warp);
+      write_f32(buf, x);
+      write_f32(buf, y);
+      write_f32(buf, z);
+      buf.push(translate_direction(direction));
     }
     ServerPacket::Message {
       message,
@@ -516,9 +516,9 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       mug_animation_path,
     } => {
       write_u16(buf, ServerPacketId::Message as u16);
-      write_string_u16(buf, message);
-      write_string_u16(buf, mug_texture_path);
-      write_string_u16(buf, mug_animation_path);
+      write_string_u16(buf, &message);
+      write_string_u16(buf, &mug_texture_path);
+      write_string_u16(buf, &mug_animation_path);
     }
     ServerPacket::Question {
       message,
@@ -526,9 +526,9 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       mug_animation_path,
     } => {
       write_u16(buf, ServerPacketId::Question as u16);
-      write_string_u16(buf, message);
-      write_string_u16(buf, mug_texture_path);
-      write_string_u16(buf, mug_animation_path);
+      write_string_u16(buf, &message);
+      write_string_u16(buf, &mug_texture_path);
+      write_string_u16(buf, &mug_animation_path);
     }
     ServerPacket::Quiz {
       option_a,
@@ -538,18 +538,18 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       mug_animation_path,
     } => {
       write_u16(buf, ServerPacketId::Quiz as u16);
-      write_string_u16(buf, option_a);
-      write_string_u16(buf, option_b);
-      write_string_u16(buf, option_c);
-      write_string_u16(buf, mug_texture_path);
-      write_string_u16(buf, mug_animation_path);
+      write_string_u16(buf, &option_a);
+      write_string_u16(buf, &option_b);
+      write_string_u16(buf, &option_c);
+      write_string_u16(buf, &mug_texture_path);
+      write_string_u16(buf, &mug_animation_path);
     }
     ServerPacket::Prompt {
       character_limit,
       default_text,
     } => {
       write_u16(buf, ServerPacketId::Prompt as u16);
-      write_u16(buf, *character_limit);
+      write_u16(buf, character_limit);
       match default_text {
         Some(value) => write_string_u16(buf, &value),
         _ => buf.push(0),
@@ -562,15 +562,15 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       posts,
     } => {
       write_u16(buf, ServerPacketId::OpenBoard as u16);
-      buf.push(*current_depth);
-      write_string_u16(buf, name);
+      buf.push(current_depth);
+      write_string_u16(buf, &name);
       buf.push(color.0);
       buf.push(color.1);
       buf.push(color.2);
 
       write_u16(buf, posts.len() as u16);
 
-      for post in *posts {
+      for post in posts {
         write_string_u16(buf, &post.id);
         write_bool(buf, post.read);
         write_string_u16(buf, &post.title);
@@ -583,7 +583,7 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       posts,
     } => {
       write_u16(buf, ServerPacketId::PrependPosts as u16);
-      buf.push(*current_depth);
+      buf.push(current_depth);
       write_bool(buf, reference.is_some());
 
       if reference.is_some() {
@@ -592,7 +592,7 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
 
       write_u16(buf, posts.len() as u16);
 
-      for post in *posts {
+      for post in posts {
         write_string_u16(buf, &post.id);
         write_bool(buf, post.read);
         write_string_u16(buf, &post.title);
@@ -605,7 +605,7 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       posts,
     } => {
       write_u16(buf, ServerPacketId::AppendPosts as u16);
-      buf.push(*current_depth);
+      buf.push(current_depth);
       write_bool(buf, reference.is_some());
 
       if reference.is_some() {
@@ -614,7 +614,7 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
 
       write_u16(buf, posts.len() as u16);
 
-      for post in *posts {
+      for post in posts {
         write_string_u16(buf, &post.id);
         write_bool(buf, post.read);
         write_string_u16(buf, &post.title);
@@ -623,8 +623,8 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     }
     ServerPacket::RemovePost { current_depth, id } => {
       write_u16(buf, ServerPacketId::RemovePost as u16);
-      buf.push(*current_depth);
-      write_string_u16(buf, id);
+      buf.push(current_depth);
+      write_string_u16(buf, &id);
     }
     ServerPacket::PostSelectionAck => {
       write_u16(buf, ServerPacketId::PostSelectionAck as u16);
@@ -637,7 +637,7 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
 
       write_u16(buf, items.len() as u16);
 
-      for item in *items {
+      for item in items {
         write_string_u8(buf, &item.name);
         write_string_u8(buf, &item.description);
         write_u32(buf, item.price);
@@ -648,8 +648,8 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       mug_animation_path,
     } => {
       write_u16(buf, ServerPacketId::OpenShop as u16);
-      write_string_u16(buf, mug_texture_path);
-      write_string_u16(buf, mug_animation_path);
+      write_string_u16(buf, &mug_texture_path);
+      write_string_u16(buf, &mug_animation_path);
     }
     ServerPacket::InitiatePvp { address } => {
       write_u16(buf, ServerPacketId::InitiatePvp as u16);
@@ -676,15 +676,15 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_string_u16(buf, name);
       write_string_u16(buf, texture_path);
       write_string_u16(buf, animation_path);
-      buf.push(translate_direction(*direction));
-      write_f32(buf, *x);
-      write_f32(buf, *y);
-      write_f32(buf, *z);
-      write_bool(buf, *solid);
-      write_bool(buf, *warp_in);
-      write_f32(buf, *scale_x);
-      write_f32(buf, *scale_y);
-      write_f32(buf, *rotation);
+      buf.push(translate_direction(direction));
+      write_f32(buf, x);
+      write_f32(buf, y);
+      write_f32(buf, z);
+      write_bool(buf, solid);
+      write_bool(buf, warp_in);
+      write_f32(buf, scale_x);
+      write_f32(buf, scale_y);
+      write_f32(buf, rotation);
       write_bool(buf, animation.is_some());
 
       if let Some(animation) = animation {
@@ -694,7 +694,7 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     ServerPacket::ActorDisconnected { ticket, warp_out } => {
       write_u16(buf, ServerPacketId::ActorDisconnected as u16);
       write_string_u16(buf, ticket);
-      write_bool(buf, *warp_out);
+      write_bool(buf, warp_out);
     }
     ServerPacket::ActorSetName { ticket, name } => {
       write_u16(buf, ServerPacketId::ActorSetName as u16);
@@ -710,10 +710,10 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     } => {
       write_u16(buf, ServerPacketId::ActorMove as u16);
       write_string_u16(buf, ticket);
-      write_f32(buf, *x);
-      write_f32(buf, *y);
-      write_f32(buf, *z);
-      buf.push(translate_direction(*direction));
+      write_f32(buf, x);
+      write_f32(buf, y);
+      write_f32(buf, z);
+      buf.push(translate_direction(direction));
     }
     ServerPacket::ActorSetAvatar {
       ticket,
@@ -732,8 +732,8 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     } => {
       write_u16(buf, ServerPacketId::ActorEmote as u16);
       write_string_u16(buf, ticket);
-      buf.push(*emote_id);
-      write_bool(buf, *use_custom_emotes);
+      buf.push(emote_id);
+      write_bool(buf, use_custom_emotes);
     }
     ServerPacket::ActorAnimate {
       ticket,
@@ -743,7 +743,7 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
       write_u16(buf, ServerPacketId::ActorAnimate as u16);
       write_string_u16(buf, ticket);
       write_string_u16(buf, state);
-      write_bool(buf, *loop_animation)
+      write_bool(buf, loop_animation)
     }
     ServerPacket::ActorPropertyKeyFrames {
       ticket,
@@ -752,7 +752,7 @@ pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
     } => {
       write_u16(buf, ServerPacketId::ActorPropertyKeyFrames as u16);
       write_string_u16(buf, ticket);
-      write_bool(buf, *tail);
+      write_bool(buf, tail);
       write_u16(buf, keyframes.len() as u16);
 
       for keyframe in keyframes {

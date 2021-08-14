@@ -146,7 +146,7 @@ impl PacketSorter {
   fn send_ack(&self, socket: &UdpSocket, headers: &PacketHeaders) {
     let mut buf = vec![0];
 
-    buf.extend(build_packet(&ServerPacket::Ack {
+    buf.extend(build_packet(ServerPacket::Ack {
       reliability: get_reliability_byte(&headers.reliability),
       id: headers.id,
     }));

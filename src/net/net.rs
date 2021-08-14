@@ -304,7 +304,7 @@ impl Net {
 
       client
         .packet_shipper
-        .send(&self.socket, Reliability::Reliable, &packet);
+        .send(&self.socket, Reliability::Reliable, packet);
     }
   }
 
@@ -407,7 +407,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::Preload {
+        ServerPacket::Preload {
           asset_path: asset_path.to_string(),
         },
       );
@@ -419,7 +419,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::PlaySound {
+        ServerPacket::PlaySound {
           path: path.to_string(),
         },
       );
@@ -431,7 +431,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::ExcludeObject { id: object_id },
+        ServerPacket::ExcludeObject { id: object_id },
       );
     }
   }
@@ -441,7 +441,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::IncludeObject { id: object_id },
+        ServerPacket::IncludeObject { id: object_id },
       );
     }
   }
@@ -451,7 +451,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::ExcludeActor { actor_id },
+        ServerPacket::ExcludeActor { actor_id },
       );
     }
   }
@@ -461,7 +461,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::IncludeActor { actor_id },
+        ServerPacket::IncludeActor { actor_id },
       );
     }
   }
@@ -471,7 +471,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::MoveCamera { x, y, z, hold_time },
+        ServerPacket::MoveCamera { x, y, z, hold_time },
       );
     }
   }
@@ -481,7 +481,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::SlideCamera { x, y, z, duration },
+        ServerPacket::SlideCamera { x, y, z, duration },
       );
     }
   }
@@ -491,7 +491,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::ShakeCamera { strength, duration },
+        ServerPacket::ShakeCamera { strength, duration },
       );
     }
   }
@@ -501,7 +501,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::FadeCamera { duration, color },
+        ServerPacket::FadeCamera { duration, color },
       );
     }
   }
@@ -511,7 +511,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::TrackWithCamera { actor_id },
+        ServerPacket::TrackWithCamera { actor_id },
       );
     }
   }
@@ -521,7 +521,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::UnlockCamera,
+        ServerPacket::UnlockCamera,
       );
     }
   }
@@ -531,7 +531,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::LockInput,
+        ServerPacket::LockInput,
       );
     }
   }
@@ -541,7 +541,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::UnlockInput,
+        ServerPacket::UnlockInput,
       );
     }
   }
@@ -559,7 +559,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::Teleport {
+        ServerPacket::Teleport {
           warp,
           x,
           y,
@@ -645,7 +645,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::Message {
+        ServerPacket::Message {
           message: message.to_string(),
           mug_texture_path: mug_texture_path.to_string(),
           mug_animation_path: mug_animation_path.to_string(),
@@ -676,7 +676,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::Question {
+        ServerPacket::Question {
           message: message.to_string(),
           mug_texture_path: mug_texture_path.to_string(),
           mug_animation_path: mug_animation_path.to_string(),
@@ -709,7 +709,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::Quiz {
+        ServerPacket::Quiz {
           option_a: option_a.to_string(),
           option_b: option_b.to_string(),
           option_c: option_c.to_string(),
@@ -732,7 +732,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::Prompt {
+        ServerPacket::Prompt {
           character_limit,
           default_text,
         },
@@ -766,7 +766,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::OpenBoard {
+        ServerPacket::OpenBoard {
           current_depth: start_depth,
           name: name.clone(),
           color,
@@ -833,7 +833,7 @@ impl Net {
 
       client
         .packet_shipper
-        .send(&self.socket, Reliability::ReliableOrdered, &packet);
+        .send(&self.socket, Reliability::ReliableOrdered, packet);
 
       last_id = chunk.pop().map(|post| post.id);
     }
@@ -898,7 +898,7 @@ impl Net {
 
       client
         .packet_shipper
-        .send(&self.socket, Reliability::ReliableOrdered, &packet);
+        .send(&self.socket, Reliability::ReliableOrdered, packet);
 
       last_id = chunk.pop().map(|post| post.id);
     }
@@ -955,7 +955,7 @@ impl Net {
 
       client
         .packet_shipper
-        .send(&self.socket, Reliability::ReliableOrdered, &packet);
+        .send(&self.socket, Reliability::ReliableOrdered, packet);
 
       last_id = chunk.pop().map(|post| post.id);
     }
@@ -966,7 +966,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::RemovePost {
+        ServerPacket::RemovePost {
           current_depth: client.widget_tracker.get_board_count() as u8,
           id: post_id.to_string(),
         },
@@ -979,7 +979,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::CloseBBS,
+        ServerPacket::CloseBBS,
       );
     }
   }
@@ -1026,7 +1026,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::ShopInventory {
+        ServerPacket::ShopInventory {
           items: chunk.as_slice(),
         },
       );
@@ -1035,7 +1035,7 @@ impl Net {
     client.packet_shipper.send(
       &self.socket,
       Reliability::ReliableOrdered,
-      &ServerPacket::OpenShop {
+      ServerPacket::OpenShop {
         mug_texture_path,
         mug_animation_path,
       },
@@ -1072,7 +1072,7 @@ impl Net {
     client_1.packet_shipper.send(
       &self.socket,
       Reliability::ReliableOrdered,
-      &ServerPacket::InitiatePvp {
+      ServerPacket::InitiatePvp {
         address: client_2_addr.to_string(),
       },
     );
@@ -1080,7 +1080,7 @@ impl Net {
     client_2.packet_shipper.send(
       &self.socket,
       Reliability::ReliableOrdered,
-      &ServerPacket::InitiatePvp {
+      ServerPacket::InitiatePvp {
         address: client_1_addr.to_string(),
       },
     )
@@ -1110,7 +1110,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::Health { health, max_health },
+        ServerPacket::Health { health, max_health },
       );
     }
   }
@@ -1124,7 +1124,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::Health { health, max_health },
+        ServerPacket::Health { health, max_health },
       );
     }
   }
@@ -1136,7 +1136,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::Emotion { emotion },
+        ServerPacket::Emotion { emotion },
       );
     }
   }
@@ -1148,7 +1148,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::Money { money },
+        ServerPacket::Money { money },
       );
     }
   }
@@ -1178,7 +1178,7 @@ impl Net {
     client.packet_shipper.send(
       &self.socket,
       Reliability::ReliableOrdered,
-      &ServerPacket::AddItem {
+      ServerPacket::AddItem {
         id: &item_id,
         name: &item.name,
         description: &item.description,
@@ -1193,7 +1193,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::RemoveItem { id: item_id },
+        ServerPacket::RemoveItem { id: item_id },
       );
 
       let items = &mut client.player_data.items;
@@ -1265,7 +1265,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::TransferWarp,
+        ServerPacket::TransferWarp,
       );
     } else {
       self.complete_transfer(id)
@@ -1282,7 +1282,7 @@ impl Net {
     client.packet_shipper.send(
       &self.socket,
       Reliability::ReliableOrdered,
-      &ServerPacket::TransferStart,
+      ServerPacket::TransferStart,
     );
 
     let area_id = client.warp_area.clone();
@@ -1311,7 +1311,7 @@ impl Net {
     client.packet_shipper.send(
       &self.socket,
       Reliability::ReliableOrdered,
-      &ServerPacket::Teleport {
+      ServerPacket::Teleport {
         warp: false,
         x: client.warp_x,
         y: client.warp_y,
@@ -1323,7 +1323,7 @@ impl Net {
     client.packet_shipper.send(
       &self.socket,
       Reliability::ReliableOrdered,
-      &ServerPacket::TransferComplete {
+      ServerPacket::TransferComplete {
         warp_in: client.warp_in,
         direction: client.warp_direction,
       },
@@ -1342,7 +1342,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        &ServerPacket::TransferServer {
+        ServerPacket::TransferServer {
           address: address.to_string(),
           port,
           data: data.to_string(),
@@ -1501,7 +1501,7 @@ impl Net {
 
     client
       .packet_shipper
-      .send(&self.socket, Reliability::ReliableOrdered, &packet);
+      .send(&self.socket, Reliability::ReliableOrdered, packet);
   }
 
   pub(super) fn connect_client(&mut self, player_id: &str) {
@@ -1510,7 +1510,7 @@ impl Net {
     client.packet_shipper.send(
       &self.socket,
       Reliability::ReliableOrdered,
-      &ServerPacket::CompleteConnection,
+      ServerPacket::CompleteConnection,
     );
   }
 
@@ -1561,7 +1561,7 @@ impl Net {
 
     // build and collect packets to avoid lifetime overlap
     use crate::packets::build_packet;
-    let packets: Vec<Vec<u8>> = packets.iter().map(|packet| build_packet(&packet)).collect();
+    let packets: Vec<Vec<u8>> = packets.into_iter().map(build_packet).collect();
 
     // send asset_packets before anything else
     let asset_recievers = vec![player_id.to_string()];
@@ -1602,7 +1602,7 @@ impl Net {
       );
 
       let area = self.areas.get_mut(&client.actor.area_id).unwrap();
-      let packet_bytes = build_packet(&packet);
+      let packet_bytes = build_packet(packet);
 
       broadcast_bytes_to_area(
         &self.socket,
@@ -2096,6 +2096,8 @@ fn update_cached_clients(
   asset_path: &str,
 ) {
   use super::get_flattened_dependency_chain;
+  use crate::packets::build_packet;
+
   let mut dependencies = get_flattened_dependency_chain(assets, asset_path);
   dependencies.pop();
 
@@ -2109,7 +2111,7 @@ fn update_cached_clients(
   // asserting dependencies
   for asset_path in dependencies {
     if let Some(asset) = assets.get(asset_path) {
-      let mut packets = Vec::new();
+      let mut byte_vecs = Vec::new();
 
       for client in &mut clients_to_update {
         if client.cached_assets.contains(asset_path) {
@@ -2119,12 +2121,15 @@ fn update_cached_clients(
         client.cached_assets.insert(asset_path.to_string());
 
         // lazily create stream
-        if packets.is_empty() {
-          packets = create_asset_stream(max_payload_size, asset_path, &asset);
+        if byte_vecs.is_empty() {
+          byte_vecs = create_asset_stream(max_payload_size, asset_path, &asset)
+            .into_iter()
+            .map(build_packet)
+            .collect();
         }
 
-        for packet in &packets {
-          client.packet_shipper.send(socket, reliability, &packet);
+        for bytes in &byte_vecs {
+          client.packet_shipper.send_bytes(socket, reliability, bytes);
         }
       }
     }
@@ -2132,11 +2137,14 @@ fn update_cached_clients(
 
   // updating clients who have this asset
   if let Some(asset) = assets.get(asset_path) {
-    let packets = create_asset_stream(max_payload_size, asset_path, &asset);
+    let byte_vecs: Vec<Vec<u8>> = create_asset_stream(max_payload_size, asset_path, &asset)
+      .into_iter()
+      .map(build_packet)
+      .collect();
 
     for client in &mut clients_to_update {
-      for packet in &packets {
-        client.packet_shipper.send(socket, reliability, &packet);
+      for bytes in &byte_vecs {
+        client.packet_shipper.send_bytes(socket, reliability, bytes);
       }
     }
   }
@@ -2156,7 +2164,7 @@ fn assert_asset(
   for asset_path in assets_to_send {
     let asset = assets.get(asset_path).unwrap();
 
-    let mut packets: Vec<ServerPacket> = Vec::new();
+    let mut byte_vecs = Vec::new();
 
     for player_id in player_ids {
       let client = clients.get_mut(player_id).unwrap();
@@ -2166,16 +2174,21 @@ fn assert_asset(
       }
 
       // lazily create stream
-      if packets.is_empty() {
-        packets = create_asset_stream(max_payload_size, asset_path, asset);
+      if byte_vecs.is_empty() {
+        use crate::packets::build_packet;
+
+        byte_vecs = create_asset_stream(max_payload_size, asset_path, asset)
+          .into_iter()
+          .map(build_packet)
+          .collect();
       }
 
       client.cached_assets.insert(asset_path.to_string());
 
-      for packet in &packets {
+      for bytes in &byte_vecs {
         client
           .packet_shipper
-          .send(socket, Reliability::ReliableOrdered, &packet);
+          .send_bytes(socket, Reliability::ReliableOrdered, &bytes);
       }
     }
   }
@@ -2187,8 +2200,14 @@ fn broadcast(
   reliability: Reliability,
   packet: ServerPacket,
 ) {
+  use crate::packets::build_packet;
+
+  let bytes = build_packet(packet);
+
   for client in clients.values_mut() {
-    client.packet_shipper.send(socket, reliability, &packet);
+    client
+      .packet_shipper
+      .send_bytes(socket, reliability, &bytes);
   }
 }
 
@@ -2200,7 +2219,7 @@ fn broadcast_to_area(
   packet: ServerPacket,
 ) {
   use crate::packets::build_packet;
-  broadcast_bytes_to_area(socket, clients, area, reliability, build_packet(&packet));
+  broadcast_bytes_to_area(socket, clients, area, reliability, build_packet(packet));
 }
 
 fn broadcast_bytes_to_area(
