@@ -23,13 +23,7 @@ pub struct Actor {
 }
 
 impl Actor {
-  pub fn create_spawn_packet<'a>(
-    &'a self,
-    x: f32,
-    y: f32,
-    z: f32,
-    warp_in: bool,
-  ) -> ServerPacket<'a> {
+  pub fn create_spawn_packet(&self, x: f32, y: f32, z: f32, warp_in: bool) -> ServerPacket {
     ServerPacket::ActorConnected {
       ticket: &self.id,
       name: &self.name,

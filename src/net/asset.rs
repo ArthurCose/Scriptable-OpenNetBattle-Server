@@ -108,7 +108,7 @@ pub fn resolve_asset_data(path: &std::path::Path, data: &[u8]) -> AssetData {
     "png" | "bmp" => AssetData::Texture(data.to_vec()),
     "tsx" => {
       let original_data = String::from_utf8_lossy(data);
-      let translated_data = translate_tsx(&path, &original_data);
+      let translated_data = translate_tsx(path, &original_data);
 
       if translated_data == None {
         println!("Invalid .tsx file: {:?}", path);

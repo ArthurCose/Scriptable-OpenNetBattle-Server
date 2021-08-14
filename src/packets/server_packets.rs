@@ -760,11 +760,11 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
         write_u16(buf, keyframe.property_steps.len() as u16);
 
         for (property, ease) in &keyframe.property_steps {
-          buf.push(get_ease_identifier(&ease));
-          buf.push(get_actor_property_identifier(&property));
+          buf.push(get_ease_identifier(ease));
+          buf.push(get_actor_property_identifier(property));
 
           match property {
-            ActorProperty::Animation(value) => write_string_u16(buf, &value),
+            ActorProperty::Animation(value) => write_string_u16(buf, value),
             ActorProperty::X(value) => write_f32(buf, *value),
             ActorProperty::Y(value) => write_f32(buf, *value),
             ActorProperty::Z(value) => write_f32(buf, *value),
@@ -772,8 +772,8 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
             ActorProperty::ScaleY(value) => write_f32(buf, *value),
             ActorProperty::Rotation(value) => write_f32(buf, *value),
             ActorProperty::Direction(value) => buf.push(translate_direction(*value)),
-            ActorProperty::SoundEffect(value) => write_string_u16(buf, &value),
-            ActorProperty::SoundEffectLoop(value) => write_string_u16(buf, &value),
+            ActorProperty::SoundEffect(value) => write_string_u16(buf, value),
+            ActorProperty::SoundEffectLoop(value) => write_string_u16(buf, value),
           }
         }
       }
@@ -798,8 +798,8 @@ pub fn create_asset_stream<'a>(
 
   let mut bytes = match &asset.data {
     AssetData::Text(data) => data.as_bytes(),
-    AssetData::Texture(data) => &data,
-    AssetData::Audio(data) => &data,
+    AssetData::Texture(data) => data,
+    AssetData::Audio(data) => data,
   };
 
   let mut remaining_bytes = bytes.len();

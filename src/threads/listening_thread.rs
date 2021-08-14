@@ -41,7 +41,7 @@ async fn listen_loop(
       println!("Received packet from {}", src_addr);
     }
 
-    if let Some((headers, packet)) = parse_client_packet(&filled_buf) {
+    if let Some((headers, packet)) = parse_client_packet(filled_buf) {
       tx.send(ThreadMessage::ClientPacket {
         socket_address: src_addr,
         headers,

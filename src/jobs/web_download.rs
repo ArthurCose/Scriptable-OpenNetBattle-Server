@@ -58,7 +58,7 @@ async fn save_response(
     let buffer = buf_reader.fill_buf().await?;
     length = buffer.len();
 
-    buf_writer.write(&buffer).await?;
+    buf_writer.write(buffer).await?;
 
     buf_reader.consume_unpin(length);
   }

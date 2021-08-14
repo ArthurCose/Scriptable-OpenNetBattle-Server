@@ -27,7 +27,7 @@ impl Net {
     use std::fs::{read_dir, read_to_string};
 
     let mut assets = HashMap::new();
-    Net::load_assets_from_dir(&mut assets, &std::path::Path::new("assets"));
+    Net::load_assets_from_dir(&mut assets, std::path::Path::new("assets"));
 
     let mut areas = HashMap::new();
     let mut default_area_provided = false;
@@ -180,7 +180,7 @@ impl Net {
         self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
-        &area.get_connected_players(),
+        area.get_connected_players(),
         asset_path,
       );
 
@@ -195,7 +195,7 @@ impl Net {
         self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
-        &area.get_connected_players(),
+        area.get_connected_players(),
         path,
       );
 
@@ -1246,7 +1246,7 @@ impl Net {
     client.warp_area = area_id.to_string();
 
     let previous_area = self.areas.get_mut(&client.actor.area_id).unwrap();
-    previous_area.remove_player(&id);
+    previous_area.remove_player(id);
 
     broadcast_to_area(
       &self.socket,
@@ -1572,7 +1572,7 @@ impl Net {
         self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
-        &&asset_recievers[..],
+        &asset_recievers[..],
         &asset_path,
       );
     }
@@ -1763,7 +1763,7 @@ impl Net {
         self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
-        &texture_path,
+        texture_path,
       );
 
       update_cached_clients(
@@ -1771,7 +1771,7 @@ impl Net {
         self.config.max_payload_size,
         &self.assets,
         &mut self.clients,
-        &animation_path,
+        animation_path,
       );
 
       let packet = ServerPacket::ActorSetAvatar {
@@ -1879,7 +1879,7 @@ impl Net {
 
     if let Some(bot) = self.bots.get_mut(id) {
       let previous_area = self.areas.get_mut(&bot.area_id).unwrap();
-      previous_area.remove_bot(&id);
+      previous_area.remove_bot(id);
 
       broadcast_to_area(
         &self.socket,
@@ -2122,7 +2122,7 @@ fn update_cached_clients(
 
         // lazily create stream
         if byte_vecs.is_empty() {
-          byte_vecs = create_asset_stream(max_payload_size, asset_path, &asset)
+          byte_vecs = create_asset_stream(max_payload_size, asset_path, asset)
             .into_iter()
             .map(build_packet)
             .collect();
@@ -2137,7 +2137,7 @@ fn update_cached_clients(
 
   // updating clients who have this asset
   if let Some(asset) = assets.get(asset_path) {
-    let byte_vecs: Vec<Vec<u8>> = create_asset_stream(max_payload_size, asset_path, &asset)
+    let byte_vecs: Vec<Vec<u8>> = create_asset_stream(max_payload_size, asset_path, asset)
       .into_iter()
       .map(build_packet)
       .collect();
@@ -2188,7 +2188,7 @@ fn assert_asset(
       for bytes in &byte_vecs {
         client
           .packet_shipper
-          .send_bytes(socket, Reliability::ReliableOrdered, &bytes);
+          .send_bytes(socket, Reliability::ReliableOrdered, bytes);
       }
     }
   }

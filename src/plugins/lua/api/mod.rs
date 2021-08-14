@@ -105,7 +105,7 @@ impl LuaApi {
     for (table_name, function_name) in &self.dynamic_function_table_and_name_pairs {
       let table: rlua::Table = globals.get(table_name.as_str())?;
 
-      let function_id = table_name.clone() + "." + &function_name;
+      let function_id = table_name.clone() + "." + function_name;
 
       table.set(
         function_name.as_str(),

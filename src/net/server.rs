@@ -316,9 +316,9 @@ impl Server {
           client.actor.z = client.warp_z;
 
           if client.transferring {
-            self.plugin_wrapper.handle_player_transfer(net, &player_id);
+            self.plugin_wrapper.handle_player_transfer(net, player_id);
           } else {
-            self.plugin_wrapper.handle_player_join(net, &player_id);
+            self.plugin_wrapper.handle_player_join(net, player_id);
           }
 
           net.mark_client_ready(player_id);
@@ -337,7 +337,7 @@ impl Server {
 
           self
             .plugin_wrapper
-            .handle_custom_warp(net, &player_id, tile_object_id);
+            .handle_custom_warp(net, player_id, tile_object_id);
         }
         ClientPacket::AvatarChange {
           name,
@@ -458,7 +458,7 @@ impl Server {
           let client = net.get_client_mut(player_id).unwrap();
 
           client.packet_shipper.send(
-            &socket,
+            socket,
             Reliability::ReliableOrdered,
             ServerPacket::PostSelectionAck,
           );
@@ -554,7 +554,7 @@ impl Server {
     reason: &str,
     warp_out: bool,
   ) {
-    if let Some(player_id) = self.player_id_map.remove(&socket_address) {
+    if let Some(player_id) = self.player_id_map.remove(socket_address) {
       self
         .plugin_wrapper
         .handle_player_disconnect(net, &player_id);
