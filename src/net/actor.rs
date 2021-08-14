@@ -23,18 +23,18 @@ pub struct Actor {
 }
 
 impl Actor {
-  pub fn create_spawn_packet<'a, 'b>(
+  pub fn create_spawn_packet<'a>(
     &'a self,
     x: f32,
     y: f32,
     z: f32,
     warp_in: bool,
-  ) -> ServerPacket<'b> {
+  ) -> ServerPacket<'a> {
     ServerPacket::ActorConnected {
-      ticket: self.id.clone(),
-      name: self.name.clone(),
-      texture_path: self.texture_path.clone(),
-      animation_path: self.animation_path.clone(),
+      ticket: &self.id,
+      name: &self.name,
+      texture_path: &self.texture_path,
+      animation_path: &self.animation_path,
       direction: self.direction,
       x,
       y,
@@ -44,7 +44,7 @@ impl Actor {
       scale_x: self.scale_x,
       scale_y: self.scale_y,
       rotation: self.rotation,
-      animation: self.current_animation.clone(),
+      animation: self.current_animation.as_deref(),
     }
   }
 

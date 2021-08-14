@@ -127,12 +127,12 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "set_bot_name", |api_ctx, lua_ctx, params| {
-    let (bot_id, name): (rlua::String, String) = lua_ctx.unpack_multi(params)?;
+    let (bot_id, name): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
     let bot_id_str = bot_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.set_bot_name(bot_id_str, name);
+    net.set_bot_name(bot_id_str, name.to_str()?);
 
     lua_ctx.pack_multi(())
   });
@@ -226,13 +226,13 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   );
 
   lua_api.add_dynamic_function("Net", "set_bot_avatar", |api_ctx, lua_ctx, params| {
-    let (bot_id, texture_path, animation_path): (rlua::String, String, String) =
+    let (bot_id, texture_path, animation_path): (rlua::String, rlua::String, rlua::String) =
       lua_ctx.unpack_multi(params)?;
     let bot_id_str = bot_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.set_bot_avatar(bot_id_str, texture_path, animation_path);
+    net.set_bot_avatar(bot_id_str, texture_path.to_str()?, animation_path.to_str()?);
 
     lua_ctx.pack_multi(())
   });

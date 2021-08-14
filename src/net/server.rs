@@ -360,7 +360,7 @@ impl Server {
             );
 
             if !prevent_default {
-              net.set_player_avatar(player_id, texture_path, animation_path);
+              net.set_player_avatar(player_id, &texture_path, &animation_path);
             }
           }
         }

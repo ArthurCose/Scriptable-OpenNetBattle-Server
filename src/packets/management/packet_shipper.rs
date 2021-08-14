@@ -34,10 +34,14 @@ impl PacketShipper {
   }
 
   pub fn send(&mut self, socket: &UdpSocket, reliability: Reliability, packet: &ServerPacket) {
+    self.send_bytes(socket, reliability, &build_packet(packet));
+  }
+
+  pub fn send_bytes(&mut self, socket: &UdpSocket, reliability: Reliability, bytes: &[u8]) {
     match reliability {
       Reliability::Unreliable => {
         let mut data = vec![0];
-        data.extend(build_packet(packet));
+        data.extend(bytes);
 
         self.send_with_silenced_errors(socket, &data);
       }
@@ -45,7 +49,7 @@ impl PacketShipper {
       Reliability::UnreliableSequenced => {
         let mut data = vec![1];
         write_u64(&mut data, self.next_unreliable_sequenced);
-        data.extend(build_packet(packet));
+        data.extend(bytes);
 
         self.send_with_silenced_errors(socket, &data);
 
@@ -54,7 +58,7 @@ impl PacketShipper {
       Reliability::Reliable => {
         let mut data = vec![2];
         write_u64(&mut data, self.next_reliable);
-        data.extend(build_packet(packet));
+        data.extend(bytes);
 
         self.send_with_silenced_errors(socket, &data);
 
@@ -70,7 +74,7 @@ impl PacketShipper {
       Reliability::ReliableOrdered => {
         let mut data = vec![4];
         write_u64(&mut data, self.next_reliable_ordered);
-        data.extend(build_packet(packet));
+        data.extend(bytes);
 
         self.send_with_silenced_errors(socket, &data);
 

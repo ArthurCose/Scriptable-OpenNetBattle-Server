@@ -211,16 +211,13 @@ impl Net {
     }
   }
 
-  pub fn set_player_name(&mut self, id: &str, name: String) {
+  pub fn set_player_name(&mut self, id: &str, name: &str) {
     if let Some(client) = self.clients.get_mut(id) {
-      client.actor.name = name.clone();
+      client.actor.name = name.to_string();
 
       // skip if client has not even been sent to anyone yet
       if client.ready {
-        let packet = ServerPacket::ActorSetName {
-          ticket: id.to_string(),
-          name,
-        };
+        let packet = ServerPacket::ActorSetName { ticket: id, name };
 
         let area = self.areas.get(&client.actor.area_id).unwrap();
 
@@ -235,10 +232,10 @@ impl Net {
     }
   }
 
-  pub fn set_player_avatar(&mut self, id: &str, texture_path: String, animation_path: String) {
+  pub fn set_player_avatar(&mut self, id: &str, texture_path: &str, animation_path: &str) {
     if let Some(client) = self.clients.get_mut(id) {
-      client.actor.texture_path = texture_path.clone();
-      client.actor.animation_path = animation_path.clone();
+      client.actor.texture_path = texture_path.to_string();
+      client.actor.animation_path = animation_path.to_string();
 
       let area = self.areas.get(&client.actor.area_id).unwrap();
 
@@ -252,11 +249,11 @@ impl Net {
         &self.assets,
         &mut self.clients,
         area.get_connected_players(),
-        [texture_path.as_str(), animation_path.as_str()].iter(),
+        [texture_path, animation_path].iter(),
       );
 
       let packet = ServerPacket::ActorSetAvatar {
-        ticket: id.to_string(),
+        ticket: id,
         texture_path,
         animation_path,
       };
@@ -274,7 +271,7 @@ impl Net {
   pub fn set_player_emote(&mut self, id: &str, emote_id: u8, use_custom_emotes: bool) {
     if let Some(client) = self.clients.get(id) {
       let packet = ServerPacket::ActorEmote {
-        ticket: id.to_string(),
+        ticket: id,
         emote_id,
         use_custom_emotes,
       };
@@ -300,7 +297,7 @@ impl Net {
   ) {
     if let Some(client) = self.clients.get_mut(target_id) {
       let packet = ServerPacket::ActorEmote {
-        ticket: emoter_id.to_string(),
+        ticket: emoter_id,
         emote_id,
         use_custom_emotes,
       };
@@ -321,8 +318,8 @@ impl Net {
         area,
         Reliability::Reliable,
         ServerPacket::ActorAnimate {
-          ticket: id.to_string(),
-          state: name.to_string(),
+          ticket: id,
+          state: name,
           loop_animation,
         },
       );
@@ -608,7 +605,7 @@ impl Net {
     }
 
     let packet = ServerPacket::ActorMove {
-      ticket: id.to_string(),
+      ticket: id,
       x,
       y,
       z,
@@ -1257,7 +1254,7 @@ impl Net {
       previous_area,
       Reliability::ReliableOrdered,
       ServerPacket::ActorDisconnected {
-        ticket: id.to_string(),
+        ticket: id,
         warp_out: warp_in,
       },
     );
@@ -1562,6 +1559,10 @@ impl Net {
       });
     }
 
+    // build and collect packets to avoid lifetime overlap
+    use crate::packets::build_packet;
+    let packets: Vec<Vec<u8>> = packets.iter().map(|packet| build_packet(&packet)).collect();
+
     // send asset_packets before anything else
     let asset_recievers = vec![player_id.to_string()];
 
@@ -1581,12 +1582,14 @@ impl Net {
     for packet in packets {
       client
         .packet_shipper
-        .send(&self.socket, Reliability::ReliableOrdered, &packet);
+        .send_bytes(&self.socket, Reliability::ReliableOrdered, &packet);
     }
   }
 
   // handles first join and completed transfer
   pub(super) fn mark_client_ready(&mut self, id: &str) {
+    use crate::packets::build_packet;
+
     if let Some(client) = self.clients.get_mut(id) {
       client.ready = true;
       client.transferring = false;
@@ -1599,13 +1602,14 @@ impl Net {
       );
 
       let area = self.areas.get_mut(&client.actor.area_id).unwrap();
+      let packet_bytes = build_packet(&packet);
 
-      broadcast_to_area(
+      broadcast_bytes_to_area(
         &self.socket,
         &mut self.clients,
         area,
         Reliability::ReliableOrdered,
-        packet,
+        packet_bytes,
       );
     }
   }
@@ -1632,7 +1636,7 @@ impl Net {
       area.remove_player(&client.actor.id);
 
       let packet = ServerPacket::ActorDisconnected {
-        ticket: id.to_string(),
+        ticket: id,
         warp_out,
       };
 
@@ -1697,7 +1701,7 @@ impl Net {
       area.remove_bot(&bot.id);
 
       let packet = ServerPacket::ActorDisconnected {
-        ticket: id.to_string(),
+        ticket: id,
         warp_out: true,
       };
 
@@ -1711,14 +1715,11 @@ impl Net {
     }
   }
 
-  pub fn set_bot_name(&mut self, id: &str, name: String) {
+  pub fn set_bot_name(&mut self, id: &str, name: &str) {
     if let Some(bot) = self.bots.get_mut(id) {
-      bot.name = name.clone();
+      bot.name = name.to_string();
 
-      let packet = ServerPacket::ActorSetName {
-        ticket: id.to_string(),
-        name,
-      };
+      let packet = ServerPacket::ActorSetName { ticket: id, name };
 
       let area = self.areas.get(&bot.area_id).unwrap();
 
@@ -1750,10 +1751,10 @@ impl Net {
     }
   }
 
-  pub fn set_bot_avatar(&mut self, id: &str, texture_path: String, animation_path: String) {
+  pub fn set_bot_avatar(&mut self, id: &str, texture_path: &str, animation_path: &str) {
     if let Some(bot) = self.bots.get_mut(id) {
-      bot.texture_path = texture_path.clone();
-      bot.animation_path = animation_path.clone();
+      bot.texture_path = texture_path.to_string();
+      bot.animation_path = animation_path.to_string();
 
       let area = self.areas.get(&bot.area_id).unwrap();
 
@@ -1774,7 +1775,7 @@ impl Net {
       );
 
       let packet = ServerPacket::ActorSetAvatar {
-        ticket: id.to_string(),
+        ticket: id,
         texture_path,
         animation_path,
       };
@@ -1792,7 +1793,7 @@ impl Net {
   pub fn set_bot_emote(&mut self, id: &str, emote_id: u8, use_custom_emotes: bool) {
     if let Some(bot) = self.bots.get(id) {
       let packet = ServerPacket::ActorEmote {
-        ticket: id.to_string(),
+        ticket: id,
         emote_id,
         use_custom_emotes,
       };
@@ -1819,8 +1820,8 @@ impl Net {
         area,
         Reliability::Reliable,
         ServerPacket::ActorAnimate {
-          ticket: id.to_string(),
-          state: name.to_string(),
+          ticket: id,
+          state: name,
           loop_animation,
         },
       );
@@ -1886,7 +1887,7 @@ impl Net {
         previous_area,
         Reliability::Reliable,
         ServerPacket::ActorDisconnected {
-          ticket: id.to_string(),
+          ticket: id,
           warp_out: warp_in,
         },
       );
@@ -1956,7 +1957,7 @@ impl Net {
       }
 
       let packet = ServerPacket::ActorMove {
-        ticket: bot.id.clone(),
+        ticket: &bot.id,
         x: bot.x,
         y: bot.y,
         z: bot.z,
@@ -2062,7 +2063,7 @@ fn broadcast_actor_keyframes(
         area,
         Reliability::ReliableOrdered,
         ServerPacket::ActorPropertyKeyFrames {
-          ticket: id.to_string(),
+          ticket: id,
           tail: false,
           keyframes: chunk,
         },
@@ -2079,7 +2080,7 @@ fn broadcast_actor_keyframes(
       area,
       Reliability::ReliableOrdered,
       ServerPacket::ActorPropertyKeyFrames {
-        ticket: id.to_string(),
+        ticket: id,
         tail: true,
         keyframes: chunk,
       },
@@ -2198,10 +2199,23 @@ fn broadcast_to_area(
   reliability: Reliability,
   packet: ServerPacket,
 ) {
+  use crate::packets::build_packet;
+  broadcast_bytes_to_area(socket, clients, area, reliability, build_packet(&packet));
+}
+
+fn broadcast_bytes_to_area(
+  socket: &UdpSocket,
+  clients: &mut HashMap<String, Client>,
+  area: &Area,
+  reliability: Reliability,
+  bytes: Vec<u8>,
+) {
   for player_id in area.get_connected_players() {
     let client = clients.get_mut(player_id).unwrap();
 
-    client.packet_shipper.send(socket, reliability, &packet);
+    client
+      .packet_shipper
+      .send_bytes(socket, reliability, &bytes);
   }
 }
 

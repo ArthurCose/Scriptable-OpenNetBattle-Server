@@ -238,10 +238,10 @@ pub enum ServerPacket<'a> {
     address: String,
   },
   ActorConnected {
-    ticket: String,
-    name: String,
-    texture_path: String,
-    animation_path: String,
+    ticket: &'a str,
+    name: &'a str,
+    texture_path: &'a str,
+    animation_path: &'a str,
     direction: Direction,
     x: f32,
     y: f32,
@@ -251,40 +251,40 @@ pub enum ServerPacket<'a> {
     scale_x: f32,
     scale_y: f32,
     rotation: f32,
-    animation: Option<String>,
+    animation: Option<&'a str>,
   },
   ActorDisconnected {
-    ticket: String,
+    ticket: &'a str,
     warp_out: bool,
   },
   ActorSetName {
-    ticket: String,
-    name: String,
+    ticket: &'a str,
+    name: &'a str,
   },
   ActorMove {
-    ticket: String,
+    ticket: &'a str,
     x: f32,
     y: f32,
     z: f32,
     direction: Direction,
   },
   ActorSetAvatar {
-    ticket: String,
-    texture_path: String,
-    animation_path: String,
+    ticket: &'a str,
+    texture_path: &'a str,
+    animation_path: &'a str,
   },
   ActorEmote {
-    ticket: String,
+    ticket: &'a str,
     emote_id: u8,
     use_custom_emotes: bool,
   },
   ActorAnimate {
-    ticket: String,
-    state: String,
+    ticket: &'a str,
+    state: &'a str,
     loop_animation: bool,
   },
   ActorPropertyKeyFrames {
-    ticket: String,
+    ticket: &'a str,
     tail: bool,
     keyframes: Vec<KeyFrame>,
   },
@@ -296,7 +296,7 @@ pub fn build_unreliable_packet(packet: &ServerPacket) -> Vec<u8> {
   buf
 }
 
-pub(super) fn build_packet(packet: &ServerPacket) -> Vec<u8> {
+pub fn build_packet(packet: &ServerPacket) -> Vec<u8> {
   let mut vec = Vec::new();
   let buf = &mut vec;
 
