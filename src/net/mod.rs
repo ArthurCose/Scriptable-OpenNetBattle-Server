@@ -5,6 +5,7 @@ mod actor;
 pub mod actor_property_animation;
 mod area;
 pub mod asset;
+mod asset_manager;
 mod battle_stats;
 pub mod bbs_post;
 mod boot;

@@ -1,4 +1,5 @@
 use super::actor_property_animation::KeyFrame;
+use super::asset_manager::AssetManager;
 use super::boot::Boot;
 use super::client::Client;
 use super::map::Map;
@@ -15,7 +16,7 @@ pub struct Net {
   areas: HashMap<String, Area>,
   clients: HashMap<String, Client>,
   bots: HashMap<String, Actor>,
-  assets: HashMap<String, Asset>,
+  asset_manager: AssetManager,
   active_script: usize,
   kick_list: Vec<Boot>,
   items: HashMap<String, Item>,
@@ -26,8 +27,8 @@ impl Net {
     use super::asset::get_map_path;
     use std::fs::{read_dir, read_to_string};
 
-    let mut assets = HashMap::new();
-    Net::load_assets_from_dir(&mut assets, std::path::Path::new("assets"));
+    let mut asset_manager = AssetManager::new();
+    asset_manager.load_assets_from_dir(std::path::Path::new("assets"));
 
     let mut areas = HashMap::new();
     let mut default_area_provided = false;
@@ -50,9 +51,10 @@ impl Net {
           default_area_provided = true
         }
 
+        let map_path = get_map_path(&area_id);
         let map_asset = map.generate_asset();
 
-        assets.insert(get_map_path(&area_id), map_asset);
+        asset_manager.set_asset(map_path, map_asset);
         areas.insert(area_id.clone(), Area::new(area_id, map));
       }
     }
@@ -67,46 +69,24 @@ impl Net {
       areas,
       clients: HashMap::new(),
       bots: HashMap::new(),
-      assets,
+      asset_manager,
       active_script: 0,
       kick_list: Vec::new(),
       items: HashMap::new(),
     }
   }
 
-  fn load_assets_from_dir(assets: &mut HashMap<String, Asset>, dir: &std::path::Path) {
-    use super::load_asset;
-    use std::fs::read_dir;
-
-    if let Ok(entries) = read_dir(dir) {
-      for entry in entries.flatten() {
-        let path = entry.path();
-
-        if path.is_dir() {
-          Net::load_assets_from_dir(assets, &path);
-        } else {
-          let mut path_string = String::from("/server/") + path.to_str().unwrap_or_default();
-
-          // adjust windows paths
-          path_string = path_string.replace('\\', "/");
-
-          assets.insert(path_string, load_asset(path));
-        }
-      }
-    }
-  }
-
   pub fn get_asset(&self, path: &str) -> Option<&Asset> {
-    self.assets.get(path)
+    self.asset_manager.get_asset(path)
   }
 
   pub fn set_asset(&mut self, path: String, asset: Asset) {
-    self.assets.insert(path.clone(), asset);
+    self.asset_manager.set_asset(path.clone(), asset);
 
     update_cached_clients(
       &self.socket,
       self.config.max_payload_size,
-      &self.assets,
+      &self.asset_manager,
       &mut self.clients,
       &path,
     );
@@ -125,14 +105,15 @@ impl Net {
   }
 
   pub fn add_area(&mut self, id: String, map: Map) {
-    use super::asset::get_map_path;
-
     let mut map = map;
 
     if let Some(area) = self.areas.get_mut(&id) {
       area.set_map(map);
     } else {
-      self.assets.insert(get_map_path(&id), map.generate_asset());
+      use super::asset::get_map_path;
+
+      let map_path = get_map_path(&id);
+      self.asset_manager.set_asset(map_path, map.generate_asset());
       self.areas.insert(id.clone(), Area::new(id, map));
     }
   }
@@ -140,10 +121,10 @@ impl Net {
   pub fn remove_area(&mut self, id: &str) {
     use super::asset::get_map_path;
 
-    let area_optional = self.areas.remove(id);
-    self.assets.remove(&get_map_path(id));
+    let map_path = get_map_path(id);
+    self.asset_manager.remove_asset(&map_path);
 
-    if let Some(area) = area_optional {
+    if let Some(area) = self.areas.remove(id) {
       let player_ids = area.get_connected_players();
 
       for player_id in player_ids {
@@ -153,7 +134,7 @@ impl Net {
   }
 
   pub fn remove_asset(&mut self, path: &str) {
-    self.assets.remove(path);
+    self.asset_manager.remove_asset(path);
   }
 
   pub fn get_player(&self, id: &str) -> Option<&Actor> {
@@ -178,7 +159,7 @@ impl Net {
       assert_asset(
         &self.socket,
         self.config.max_payload_size,
-        &self.assets,
+        &self.asset_manager,
         &mut self.clients,
         area.get_connected_players(),
         asset_path,
@@ -193,7 +174,7 @@ impl Net {
       assert_asset(
         &self.socket,
         self.config.max_payload_size,
-        &self.assets,
+        &self.asset_manager,
         &mut self.clients,
         area.get_connected_players(),
         path,
@@ -244,7 +225,7 @@ impl Net {
       assert_assets(
         &self.socket,
         self.config.max_payload_size,
-        &self.assets,
+        &self.asset_manager,
         &mut self.clients,
         area.get_connected_players(),
         [texture_path, animation_path].iter(),
@@ -358,7 +339,7 @@ impl Net {
       assert_assets(
         &self.socket,
         self.config.max_payload_size,
-        &self.assets,
+        &self.asset_manager,
         &mut self.clients,
         &[id.to_string()],
         asset_paths.iter(),
@@ -395,7 +376,7 @@ impl Net {
     assert_asset(
       &self.socket,
       self.config.max_payload_size,
-      &self.assets,
+      &self.asset_manager,
       &mut self.clients,
       &[String::from(id)],
       asset_path,
@@ -627,7 +608,7 @@ impl Net {
     assert_assets(
       &self.socket,
       self.config.max_payload_size,
-      &self.assets,
+      &self.asset_manager,
       &mut self.clients,
       &[id.to_string()],
       [mug_texture_path, mug_animation_path].iter(),
@@ -658,7 +639,7 @@ impl Net {
     assert_assets(
       &self.socket,
       self.config.max_payload_size,
-      &self.assets,
+      &self.asset_manager,
       &mut self.clients,
       &[id.to_string()],
       [mug_texture_path, mug_animation_path].iter(),
@@ -691,7 +672,7 @@ impl Net {
     assert_assets(
       &self.socket,
       self.config.max_payload_size,
-      &self.assets,
+      &self.asset_manager,
       &mut self.clients,
       &[id.to_string()],
       [mug_texture_path, mug_animation_path].iter(),
@@ -1289,7 +1270,7 @@ impl Net {
     assert_assets(
       &self.socket,
       self.config.max_payload_size,
-      &self.assets,
+      &self.asset_manager,
       &mut self.clients,
       area.get_connected_players(),
       [texture_path.as_str(), animation_path.as_str()].iter(),
@@ -1476,7 +1457,7 @@ impl Net {
     assert_assets(
       &self.socket,
       self.config.max_payload_size,
-      &self.assets,
+      &self.asset_manager,
       &mut self.clients,
       area.get_connected_players(),
       [texture_path.as_str(), animation_path.as_str()].iter(),
@@ -1568,7 +1549,7 @@ impl Net {
       assert_asset(
         &self.socket,
         self.config.max_payload_size,
-        &self.assets,
+        &self.asset_manager,
         &mut self.clients,
         &asset_recievers[..],
         &asset_path,
@@ -1614,6 +1595,7 @@ impl Net {
 
   pub(super) fn remove_player(&mut self, id: &str, warp_out: bool) {
     use super::asset;
+
     if let Some(client) = self.clients.remove(id) {
       let remove_list = [
         asset::get_player_texture_path(id),
@@ -1623,7 +1605,7 @@ impl Net {
       ];
 
       for asset_path in remove_list.iter() {
-        self.assets.remove(asset_path);
+        self.asset_manager.remove_asset(asset_path);
       }
 
       let area = self
@@ -1671,7 +1653,7 @@ impl Net {
       assert_assets(
         &self.socket,
         self.config.max_payload_size,
-        &self.assets,
+        &self.asset_manager,
         &mut self.clients,
         area.get_connected_players(),
         [bot.texture_path.as_str(), bot.animation_path.as_str()].iter(),
@@ -1759,7 +1741,7 @@ impl Net {
       update_cached_clients(
         &self.socket,
         self.config.max_payload_size,
-        &self.assets,
+        &self.asset_manager,
         &mut self.clients,
         texture_path,
       );
@@ -1767,7 +1749,7 @@ impl Net {
       update_cached_clients(
         &self.socket,
         self.config.max_payload_size,
-        &self.assets,
+        &self.asset_manager,
         &mut self.clients,
         animation_path,
       );
@@ -1901,7 +1883,7 @@ impl Net {
       assert_assets(
         &self.socket,
         self.config.max_payload_size,
-        &self.assets,
+        &self.asset_manager,
         &mut self.clients,
         area.get_connected_players(),
         [bot.texture_path.as_str(), bot.animation_path.as_str()].iter(),
@@ -1984,11 +1966,11 @@ impl Net {
       if map.asset_is_stale() {
         let map_asset = map.generate_asset();
 
-        self.assets.insert(map_path.clone(), map_asset);
+        self.asset_manager.set_asset(map_path.clone(), map_asset);
         update_cached_clients(
           &self.socket,
           self.config.max_payload_size,
-          &self.assets,
+          &self.asset_manager,
           &mut self.clients,
           &map_path,
         );
@@ -2091,14 +2073,13 @@ fn broadcast_actor_keyframes(
 fn update_cached_clients(
   socket: &UdpSocket,
   max_payload_size: usize,
-  assets: &HashMap<String, Asset>,
+  asset_manager: &AssetManager,
   clients: &mut HashMap<String, Client>,
   asset_path: &str,
 ) {
-  use super::get_flattened_dependency_chain;
   use crate::packets::build_packet;
 
-  let mut dependencies = get_flattened_dependency_chain(assets, asset_path);
+  let mut dependencies = asset_manager.get_flattened_dependency_chain(asset_path);
   dependencies.pop();
 
   let reliability = Reliability::ReliableOrdered;
@@ -2110,7 +2091,7 @@ fn update_cached_clients(
 
   // asserting dependencies
   for asset_path in dependencies {
-    if let Some(asset) = assets.get(asset_path) {
+    if let Some(asset) = asset_manager.get_asset(asset_path) {
       let mut byte_vecs = Vec::new();
 
       for client in &mut clients_to_update {
@@ -2136,7 +2117,7 @@ fn update_cached_clients(
   }
 
   // updating clients who have this asset
-  if let Some(asset) = assets.get(asset_path) {
+  if let Some(asset) = asset_manager.get_asset(asset_path) {
     let byte_vecs: Vec<Vec<u8>> = create_asset_stream(max_payload_size, asset_path, asset)
       .into_iter()
       .map(build_packet)
@@ -2145,50 +2126,6 @@ fn update_cached_clients(
     for client in &mut clients_to_update {
       for bytes in &byte_vecs {
         client.packet_shipper.send_bytes(socket, reliability, bytes);
-      }
-    }
-  }
-}
-
-fn assert_asset(
-  socket: &UdpSocket,
-  max_payload_size: usize,
-  assets: &HashMap<String, Asset>,
-  clients: &mut HashMap<String, Client>,
-  player_ids: &[String],
-  asset_path: &str,
-) {
-  use super::get_flattened_dependency_chain;
-  let assets_to_send = get_flattened_dependency_chain(assets, asset_path);
-
-  for asset_path in assets_to_send {
-    let asset = assets.get(asset_path).unwrap();
-
-    let mut byte_vecs = Vec::new();
-
-    for player_id in player_ids {
-      let client = clients.get_mut(player_id).unwrap();
-
-      if client.cached_assets.contains(asset_path) {
-        continue;
-      }
-
-      // lazily create stream
-      if byte_vecs.is_empty() {
-        use crate::packets::build_packet;
-
-        byte_vecs = create_asset_stream(max_payload_size, asset_path, asset)
-          .into_iter()
-          .map(build_packet)
-          .collect();
-      }
-
-      client.cached_assets.insert(asset_path.to_string());
-
-      for bytes in &byte_vecs {
-        client
-          .packet_shipper
-          .send_bytes(socket, Reliability::ReliableOrdered, bytes);
       }
     }
   }
@@ -2238,10 +2175,53 @@ fn broadcast_bytes_to_area(
   }
 }
 
+fn assert_asset(
+  socket: &UdpSocket,
+  max_payload_size: usize,
+  asset_manager: &AssetManager,
+  clients: &mut HashMap<String, Client>,
+  player_ids: &[String],
+  asset_path: &str,
+) {
+  let assets_to_send = asset_manager.get_flattened_dependency_chain(asset_path);
+
+  for asset_path in assets_to_send {
+    let asset = asset_manager.get_asset(asset_path).unwrap();
+
+    let mut byte_vecs = Vec::new();
+
+    for player_id in player_ids {
+      let client = clients.get_mut(player_id).unwrap();
+
+      if client.cached_assets.contains(asset_path) {
+        continue;
+      }
+
+      // lazily create stream
+      if byte_vecs.is_empty() {
+        use crate::packets::build_packet;
+
+        byte_vecs = create_asset_stream(max_payload_size, asset_path, asset)
+          .into_iter()
+          .map(build_packet)
+          .collect();
+      }
+
+      client.cached_assets.insert(asset_path.to_string());
+
+      for bytes in &byte_vecs {
+        client
+          .packet_shipper
+          .send_bytes(socket, Reliability::ReliableOrdered, bytes);
+      }
+    }
+  }
+}
+
 fn assert_assets<'a, I>(
   socket: &UdpSocket,
   max_payload_size: usize,
-  assets: &HashMap<String, Asset>,
+  asset_manager: &AssetManager,
   clients: &mut HashMap<String, Client>,
   player_ids: &[String],
   asset_paths: I,
@@ -2252,7 +2232,7 @@ fn assert_assets<'a, I>(
     assert_asset(
       socket,
       max_payload_size,
-      assets,
+      asset_manager,
       clients,
       player_ids,
       asset_path,

@@ -1,7 +1,7 @@
 #[derive(Clone, Debug)]
 pub struct Asset {
   pub data: AssetData,
-  pub dependencies: Vec<String>,
+  pub dependencies: Vec<AssetDependency>,
   pub last_modified: u64,
   pub cachable: bool, // allows the client to know if they can cache this asset or if it's dynamic
 }
@@ -13,7 +13,39 @@ pub enum AssetData {
   Audio(Vec<u8>),
 }
 
+#[derive(Clone, Debug)]
+pub enum AssetDependency {
+  AssetPath(String),
+  ScriptedCharacter(String),
+}
+
 impl Asset {
+  pub fn load_from_file(path: std::path::PathBuf) -> Asset {
+    use std::fs::{metadata, read};
+
+    let data = read(&path).unwrap_or_default();
+    let asset_data = resolve_asset_data(&path, &data);
+    let dependencies = resolve_dependencies(&path, &asset_data);
+
+    let mut last_modified = 0;
+
+    if let Ok(file_meta) = metadata(path) {
+      if let Ok(time) = file_meta.modified() {
+        last_modified = time
+          .duration_since(std::time::UNIX_EPOCH)
+          .unwrap_or_default()
+          .as_secs();
+      }
+    }
+
+    Asset {
+      data: asset_data,
+      dependencies,
+      last_modified,
+      cachable: true,
+    }
+  }
+
   pub fn len(&self) -> usize {
     match &self.data {
       AssetData::Text(data) => data.len(),
@@ -41,59 +73,6 @@ pub fn get_player_mugshot_animation_path(player_id: &str) -> String {
 
 pub fn get_map_path(map_id: &str) -> String {
   String::from("/server/maps/") + map_id + ".tmx"
-}
-
-pub(super) fn get_flattened_dependency_chain<'a>(
-  assets: &'a std::collections::HashMap<String, Asset>,
-  asset_path: &'a str,
-) -> Vec<&'a str> {
-  let mut chain = Vec::new();
-  build_flattened_dependency_chain_with_recursion(assets, asset_path, &mut chain);
-  chain
-}
-
-fn build_flattened_dependency_chain_with_recursion<'a>(
-  assets: &'a std::collections::HashMap<String, Asset>,
-  asset_path: &'a str,
-  chain: &mut Vec<&'a str>,
-) {
-  if let Some(asset) = assets.get(asset_path) {
-    for dependency_path in &asset.dependencies {
-      if chain.contains(&&dependency_path[..]) {
-        continue;
-      }
-
-      build_flattened_dependency_chain_with_recursion(assets, dependency_path, chain);
-    }
-
-    chain.push(asset_path);
-  }
-}
-
-pub(super) fn load_asset(path: std::path::PathBuf) -> Asset {
-  use std::fs::{metadata, read};
-
-  let data = read(&path).unwrap_or_default();
-  let asset_data = resolve_asset_data(&path, &data);
-  let dependencies = resolve_dependencies(&path, &asset_data);
-
-  let mut last_modified = 0;
-
-  if let Ok(file_meta) = metadata(path) {
-    if let Ok(time) = file_meta.modified() {
-      last_modified = time
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs();
-    }
-  }
-
-  Asset {
-    data: asset_data,
-    dependencies,
-    last_modified,
-    cachable: true,
-  }
 }
 
 pub fn resolve_asset_data(path: &std::path::Path, data: &[u8]) -> AssetData {
@@ -153,7 +132,10 @@ pub(super) fn translate_tsx(path: &std::path::Path, data: &str) -> Option<String
   Some(String::from_utf8_lossy(&output[..]).into_owned())
 }
 
-pub fn resolve_dependencies(path: &std::path::Path, asset_data: &AssetData) -> Vec<String> {
+pub fn resolve_dependencies(
+  path: &std::path::Path,
+  asset_data: &AssetData,
+) -> Vec<AssetDependency> {
   let extension = path
     .extension()
     .unwrap_or_default()
@@ -172,7 +154,7 @@ pub fn resolve_dependencies(path: &std::path::Path, asset_data: &AssetData) -> V
   }
 }
 
-fn resolve_tsx_dependencies(data: &str) -> Vec<String> {
+fn resolve_tsx_dependencies(data: &str) -> Vec<AssetDependency> {
   let mut dependencies = Vec::new();
 
   if let Ok(tileset_element) = data.parse::<minidom::Element>() {
@@ -182,7 +164,7 @@ fn resolve_tsx_dependencies(data: &str) -> Vec<String> {
           let source = child.attr("source").unwrap_or_default();
 
           if source.starts_with("/server/") {
-            dependencies.push(source.to_string())
+            dependencies.push(AssetDependency::AssetPath(source.to_string()))
           }
         }
         "tile" => {
@@ -196,7 +178,7 @@ fn resolve_tsx_dependencies(data: &str) -> Vec<String> {
   dependencies
 }
 
-fn resolve_tile_dependencies(tile_element: &minidom::Element) -> Vec<String> {
+fn resolve_tile_dependencies(tile_element: &minidom::Element) -> Vec<AssetDependency> {
   let mut dependencies = Vec::new();
 
   let tile_type = if let Some(tile_type) = tile_element.attr("type") {
@@ -220,7 +202,7 @@ fn resolve_tile_dependencies(tile_element: &minidom::Element) -> Vec<String> {
         let value = property_element.attr("value").unwrap_or_default();
 
         if value.starts_with("/server/") {
-          dependencies.push(value.to_string());
+          dependencies.push(AssetDependency::AssetPath(value.to_string()));
         }
       }
       _ => {}
