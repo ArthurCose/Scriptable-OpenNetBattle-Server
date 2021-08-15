@@ -1435,6 +1435,7 @@ impl Net {
         path,
         Asset {
           data,
+          alternate_names: Vec::new(),
           dependencies: Vec::new(),
           last_modified: 0,
           cachable: false,

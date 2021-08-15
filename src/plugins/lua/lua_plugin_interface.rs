@@ -112,6 +112,7 @@ impl LuaPluginInterface {
 
         let final_path = &path_str[2..]; // chop off the ./
 
+        // using require to load the script for better error messages (logs the path of the file)
         let require: rlua::Function = globals.get("require")?;
         require.call::<&str, ()>(final_path)?;
 

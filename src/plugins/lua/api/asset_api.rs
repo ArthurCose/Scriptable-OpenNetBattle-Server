@@ -4,24 +4,11 @@ use crate::net::{Asset, AssetData};
 pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Net", "update_asset", |api_ctx, lua_ctx, params| {
     let (path, data): (String, rlua::String) = lua_ctx.unpack_multi(params)?;
-    use crate::net::asset::{resolve_asset_data, resolve_dependencies};
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
     let path_buf = std::path::PathBuf::from(path.to_string());
-    let asset_data = resolve_asset_data(&path_buf, data.as_bytes());
-    let dependencies = resolve_dependencies(&path_buf, &asset_data);
-    let last_modified = std::time::SystemTime::now()
-      .duration_since(std::time::UNIX_EPOCH)
-      .expect("Current time is before epoch?")
-      .as_secs();
-
-    let asset = Asset {
-      data: asset_data,
-      dependencies,
-      last_modified,
-      cachable: true,
-    };
+    let asset = Asset::load_from_memory(&path_buf, data.as_bytes());
 
     net.set_asset(path, asset);
 
@@ -58,6 +45,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
         AssetData::Text(_) => Some("text"),
         AssetData::Texture(_) => Some("texture"),
         AssetData::Audio(_) => Some("audio"),
+        AssetData::Data(_) => Some("data"),
       }
     } else {
       None

@@ -587,6 +587,7 @@ impl Map {
 
     Asset {
       data: AssetData::Text(self.render()),
+      alternate_names: Vec::new(),
       dependencies,
       last_modified: 0,
       cachable: false,

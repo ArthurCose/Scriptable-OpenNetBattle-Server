@@ -371,17 +371,14 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       write_u64(buf, asset.last_modified);
       write_bool(buf, asset.cachable);
 
-      match asset.data {
-        AssetData::Text(_) => {
-          buf.push(0);
-        }
-        AssetData::Texture(_) => {
-          buf.push(1);
-        }
-        AssetData::Audio(_) => {
-          buf.push(2);
-        }
-      }
+      let data_type_byte = match asset.data {
+        AssetData::Text(_) => 0,
+        AssetData::Texture(_) => 1,
+        AssetData::Audio(_) => 2,
+        AssetData::Data(_) => 3,
+      };
+
+      buf.push(data_type_byte);
 
       write_u64(buf, asset.len() as u64);
     }
@@ -797,6 +794,7 @@ pub fn create_asset_stream<'a>(
     AssetData::Text(data) => data.as_bytes(),
     AssetData::Texture(data) => data,
     AssetData::Audio(data) => data,
+    AssetData::Data(data) => data,
   };
 
   let mut remaining_bytes = bytes.len();

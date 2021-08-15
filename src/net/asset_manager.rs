@@ -29,7 +29,7 @@ impl AssetManager {
           // adjust windows paths
           path_string = path_string.replace('\\', "/");
 
-          self.assets.insert(path_string, Asset::load_from_file(path));
+          self.set_asset(path_string, Asset::load_from_file(&path));
         }
       }
     }
@@ -40,11 +40,45 @@ impl AssetManager {
   }
 
   pub fn set_asset(&mut self, path: String, asset: Asset) {
+    for alternate_name in &asset.alternate_names {
+      #[allow(clippy::single_match)]
+      match alternate_name {
+        AssetDependency::ScriptedCharacter(name) => {
+          self
+            .scripted_character_paths
+            .insert(name.clone(), path.clone());
+        }
+        _ => {}
+      }
+    }
+
     self.assets.insert(path, asset);
   }
 
   pub fn remove_asset(&mut self, path: &str) {
-    self.assets.remove(path);
+    let asset = if let Some(asset) = self.assets.remove(path) {
+      asset
+    } else {
+      return;
+    };
+
+    for alternate_name in asset.alternate_names {
+      #[allow(clippy::single_match)]
+      match alternate_name {
+        AssetDependency::ScriptedCharacter(name) => {
+          let optional_path_str = self
+            .scripted_character_paths
+            .get(&name)
+            .map(|path| path.as_str());
+
+          // make sure another asset did not overwrite us as this name
+          if Some(path) == optional_path_str {
+            self.scripted_character_paths.remove(&name);
+          }
+        }
+        _ => {}
+      }
+    }
   }
 
   pub fn get_flattened_dependency_chain<'a>(&'a self, asset_path: &'a str) -> Vec<&'a str> {
