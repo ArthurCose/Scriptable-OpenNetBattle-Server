@@ -204,7 +204,7 @@ impl Asset {
         let engine_table = lua_ctx.create_table()?;
 
         engine_table.set(
-          "DefineCharacter",
+          "define_character",
           scope.create_function_mut(|_, name: String| {
             alternate_names.push(AssetDependency::ScriptedCharacter(name));
             Ok(())
@@ -212,7 +212,7 @@ impl Asset {
         )?;
 
         engine_table.set(
-          "RequiresCharacter",
+          "requires_character",
           scope.create_function_mut(|_, name: String| {
             dependencies.push(AssetDependency::ScriptedCharacter(name));
             Ok(())
