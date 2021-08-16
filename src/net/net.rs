@@ -156,7 +156,7 @@ impl Net {
 
   pub fn require_asset(&mut self, area_id: &str, asset_path: &str) {
     if let Some(area) = self.areas.get_mut(area_id) {
-      assert_asset(
+      ensure_asset(
         &self.socket,
         self.config.max_payload_size,
         &self.asset_manager,
@@ -171,7 +171,7 @@ impl Net {
 
   pub fn play_sound(&mut self, area_id: &str, path: &str) {
     if let Some(area) = self.areas.get(area_id) {
-      assert_asset(
+      ensure_asset(
         &self.socket,
         self.config.max_payload_size,
         &self.asset_manager,
@@ -222,7 +222,7 @@ impl Net {
       // but for this we want to make sure the player sees this and updates their avatar
       // if the other players receive this, they'll just ignore it
 
-      assert_assets(
+      ensure_assets(
         &self.socket,
         self.config.max_payload_size,
         &self.asset_manager,
@@ -336,7 +336,7 @@ impl Net {
         }
       }
 
-      assert_assets(
+      ensure_assets(
         &self.socket,
         self.config.max_payload_size,
         &self.asset_manager,
@@ -373,7 +373,7 @@ impl Net {
   }
 
   pub fn preload_asset_for_player(&mut self, id: &str, asset_path: &str) {
-    assert_asset(
+    ensure_asset(
       &self.socket,
       self.config.max_payload_size,
       &self.asset_manager,
@@ -605,7 +605,7 @@ impl Net {
     mug_texture_path: &str,
     mug_animation_path: &str,
   ) {
-    assert_assets(
+    ensure_assets(
       &self.socket,
       self.config.max_payload_size,
       &self.asset_manager,
@@ -636,7 +636,7 @@ impl Net {
     mug_texture_path: &str,
     mug_animation_path: &str,
   ) {
-    assert_assets(
+    ensure_assets(
       &self.socket,
       self.config.max_payload_size,
       &self.asset_manager,
@@ -669,7 +669,7 @@ impl Net {
     mug_texture_path: &str,
     mug_animation_path: &str,
   ) {
-    assert_assets(
+    ensure_assets(
       &self.socket,
       self.config.max_payload_size,
       &self.asset_manager,
@@ -1267,7 +1267,7 @@ impl Net {
     let texture_path = client.actor.texture_path.clone();
     let animation_path = client.actor.animation_path.clone();
 
-    assert_assets(
+    ensure_assets(
       &self.socket,
       self.config.max_payload_size,
       &self.asset_manager,
@@ -1455,7 +1455,7 @@ impl Net {
     let area = self.areas.get_mut(&area_id).unwrap();
     area.add_player(client.actor.id.clone());
 
-    assert_assets(
+    ensure_assets(
       &self.socket,
       self.config.max_payload_size,
       &self.asset_manager,
@@ -1547,7 +1547,7 @@ impl Net {
     let asset_recievers = vec![player_id.to_string()];
 
     for asset_path in asset_paths {
-      assert_asset(
+      ensure_asset(
         &self.socket,
         self.config.max_payload_size,
         &self.asset_manager,
@@ -1651,7 +1651,7 @@ impl Net {
 
       let packet = bot.create_spawn_packet(bot.x, bot.y, bot.z, true);
 
-      assert_assets(
+      ensure_assets(
         &self.socket,
         self.config.max_payload_size,
         &self.asset_manager,
@@ -1881,7 +1881,7 @@ impl Net {
       let area = self.areas.get_mut(area_id).unwrap();
       area.add_bot(id.to_string());
 
-      assert_assets(
+      ensure_assets(
         &self.socket,
         self.config.max_payload_size,
         &self.asset_manager,
@@ -2090,7 +2090,7 @@ fn update_cached_clients(
     .filter(|client| client.cached_assets.contains(asset_path))
     .collect();
 
-  // asserting dependencies
+  // ensuring dependencies
   for asset_path in dependencies {
     if let Some(asset) = asset_manager.get_asset(asset_path) {
       let mut byte_vecs = Vec::new();
@@ -2176,7 +2176,7 @@ fn broadcast_bytes_to_area(
   }
 }
 
-fn assert_asset(
+fn ensure_asset(
   socket: &UdpSocket,
   max_payload_size: usize,
   asset_manager: &AssetManager,
@@ -2219,7 +2219,7 @@ fn assert_asset(
   }
 }
 
-fn assert_assets<'a, I>(
+fn ensure_assets<'a, I>(
   socket: &UdpSocket,
   max_payload_size: usize,
   asset_manager: &AssetManager,
@@ -2230,7 +2230,7 @@ fn assert_assets<'a, I>(
   I: std::iter::Iterator<Item = &'a &'a str>,
 {
   for asset_path in asset_paths {
-    assert_asset(
+    ensure_asset(
       socket,
       max_payload_size,
       asset_manager,
