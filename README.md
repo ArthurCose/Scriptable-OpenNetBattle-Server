@@ -303,8 +303,8 @@ Net.set_object_data(area_id, object_id, data)
 {
   type = "tile",
   gid, -- int
-  flipped_horizontally, -- bool
-  flipped_vertically, -- bool
+  flipped_horizontally?, -- bool
+  flipped_vertically?, -- bool
   rotated?, -- always false
 }
 ```
