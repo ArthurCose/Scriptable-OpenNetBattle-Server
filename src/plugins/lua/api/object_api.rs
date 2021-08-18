@@ -86,7 +86,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let id = map.create_object(MapObjectSpecification {
       name: name.unwrap_or_default(),
       object_type: object_type.unwrap_or_default(),
-      visible: visible.unwrap_or_default(),
+      visible: visible.unwrap_or(true),
       x: x.unwrap_or_default(),
       y: y.unwrap_or_default(),
       layer: layer.unwrap_or_default(),
