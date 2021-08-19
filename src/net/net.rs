@@ -1819,9 +1819,9 @@ impl Net {
         None => return,
       };
 
-      let mut final_x = 0.0;
-      let mut final_y = 0.0;
-      let mut final_z = 0.0;
+      let mut final_x = bot.x;
+      let mut final_y = bot.y;
+      let mut final_z = bot.z;
 
       for keyframe in &animation {
         for (property, _) in &keyframe.property_steps {
@@ -1839,7 +1839,10 @@ impl Net {
         }
       }
 
-      bot.set_position(final_x, final_y, final_z);
+      // set position directly, to avoid reseting the animation
+      bot.x = final_x;
+      bot.y = final_y;
+      bot.z = final_z;
 
       broadcast_actor_keyframes(
         &self.socket,
