@@ -78,10 +78,10 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
-    let mut net = api_ctx.net_ref.borrow_mut();
+    let net = api_ctx.net_ref.borrow();
 
-    if let Some(area) = net.get_area_mut(area_id_str) {
-      lua_ctx.pack_multi(area.get_map_mut().get_width())
+    if let Some(area) = net.get_area(area_id_str) {
+      lua_ctx.pack_multi(area.get_map().get_width())
     } else {
       Err(create_area_error(area_id_str))
     }
@@ -91,10 +91,23 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
-    let mut net = api_ctx.net_ref.borrow_mut();
+    let net = api_ctx.net_ref.borrow();
 
-    if let Some(area) = net.get_area_mut(area_id_str) {
-      lua_ctx.pack_multi(area.get_map_mut().get_height())
+    if let Some(area) = net.get_area(area_id_str) {
+      lua_ctx.pack_multi(area.get_map().get_height())
+    } else {
+      Err(create_area_error(area_id_str))
+    }
+  });
+
+  lua_api.add_dynamic_function("Net", "get_layer_count", |api_ctx, lua_ctx, params| {
+    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id_str = area_id.to_str()?;
+
+    let net = api_ctx.net_ref.borrow();
+
+    if let Some(area) = net.get_area(area_id_str) {
+      lua_ctx.pack_multi(area.get_map().get_layer_count())
     } else {
       Err(create_area_error(area_id_str))
     }

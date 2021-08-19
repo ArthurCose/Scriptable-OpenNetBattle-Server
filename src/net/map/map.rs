@@ -342,6 +342,10 @@ impl Map {
     self.height
   }
 
+  pub fn get_layer_count(&self) -> usize {
+    self.layers.len()
+  }
+
   pub fn get_tile_width(&self) -> u32 {
     self.tile_width
   }
