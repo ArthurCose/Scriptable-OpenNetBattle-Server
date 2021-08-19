@@ -31,8 +31,10 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
     let name: Option<String> = table.get("name")?;
     let area_id: Option<String> = table.get("area_id")?;
+    let warp_in: Option<bool> = table.get("warp_in")?;
     let texture_path: Option<String> = table.get("texture_path")?;
     let animation_path: Option<String> = table.get("animation_path")?;
+    let animation: Option<String> = table.get("animation")?;
     let x: Option<f32> = table.get("x")?;
     let y: Option<f32> = table.get("y")?;
     let z: Option<f32> = table.get("z")?;
@@ -66,11 +68,11 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
         scale_x: 1.0,
         scale_y: 1.0,
         rotation: 0.0,
-        current_animation: None,
+        current_animation: animation,
         solid: solid.unwrap_or_default(),
       };
 
-      net.add_bot(bot);
+      net.add_bot(bot, warp_in.unwrap_or(true));
 
       lua_ctx.pack_multi(())
     } else {

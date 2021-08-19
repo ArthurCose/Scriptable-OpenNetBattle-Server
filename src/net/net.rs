@@ -1635,7 +1635,7 @@ impl Net {
     self.bots.get(id)
   }
 
-  pub fn add_bot(&mut self, bot: Actor) {
+  pub fn add_bot(&mut self, bot: Actor, warp_in: bool) {
     if self.bots.contains_key(&bot.id) {
       println!("A bot with id \"{}\" already exists!", bot.id);
       return;
@@ -1649,7 +1649,7 @@ impl Net {
     if let Some(area) = self.areas.get_mut(&bot.area_id) {
       area.add_bot(bot.id.clone());
 
-      let packet = bot.create_spawn_packet(bot.x, bot.y, bot.z, true);
+      let packet = bot.create_spawn_packet(bot.x, bot.y, bot.z, warp_in);
 
       ensure_assets(
         &self.socket,
