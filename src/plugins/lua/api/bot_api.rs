@@ -92,12 +92,12 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "remove_bot", |api_ctx, lua_ctx, params| {
-    let bot_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let (bot_id, warp_out): (rlua::String, Option<bool>) = lua_ctx.unpack_multi(params)?;
     let bot_id_str = bot_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.remove_bot(bot_id_str);
+    net.remove_bot(bot_id_str, warp_out.unwrap_or_default());
 
     lua_ctx.pack_multi(())
   });

@@ -1672,7 +1672,7 @@ impl Net {
     }
   }
 
-  pub fn remove_bot(&mut self, id: &str) {
+  pub fn remove_bot(&mut self, id: &str, warp_out: bool) {
     if let Some(bot) = self.bots.remove(id) {
       let area = self
         .areas
@@ -1683,7 +1683,7 @@ impl Net {
 
       let packet = ServerPacket::ActorDisconnected {
         ticket: id,
-        warp_out: true,
+        warp_out,
       };
 
       broadcast_to_area(

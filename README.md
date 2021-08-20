@@ -316,7 +316,7 @@ Net.set_object_data(area_id, object_id, data)
 Net.list_bots(area_id) -- bot_id[]
 Net.create_bot(bot_id, { name?, area_id?, warp_in?, texture_path?, animation_path?, animation?, x?, y?, z?, direction?, solid? })
 Net.is_bot(bot_id)
-Net.remove_bot(bot_id)
+Net.remove_bot(bot_id, warp_out?)
 Net.get_bot_area(bot_id) -- area_id
 Net.get_bot_name(bot_id) -- name
 Net.set_bot_name(bot_id, name)
