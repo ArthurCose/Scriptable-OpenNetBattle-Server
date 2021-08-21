@@ -2209,7 +2209,7 @@ fn ensure_asset(
   player_ids: &[String],
   asset_path: &str,
 ) {
-  if asset_path.is_empty() {
+  if !asset_path.starts_with("/server") {
     return;
   }
 
