@@ -1063,6 +1063,28 @@ impl Net {
     )
   }
 
+  pub fn initiate_mob(&mut self, player_id: &str, package_path: &str) {
+    ensure_asset(&self.socket, 
+      self.config.max_payload_size, 
+      &self.asset_manager,
+      &mut self.clients,
+      &[String::from(player_id)],
+      &package_path.to_string()
+    );
+
+    if let Some(client) = self.clients.get_mut(player_id) {
+      client.is_battling = true;
+      
+      client.packet_shipper.send(
+        &self.socket,
+        Reliability::ReliableOrdered,
+        ServerPacket::InitiateMob {
+          package_path: &package_path.to_string(),
+        },
+      );
+    }
+  }
+
   pub fn is_player_busy(&self, id: &str) -> bool {
     if let Some(client) = self.clients.get(id) {
       return client.is_busy();
@@ -2188,6 +2210,11 @@ fn ensure_asset(
   asset_path: &str,
 ) {
   let assets_to_send = asset_manager.get_flattened_dependency_chain(asset_path);
+
+  if assets_to_send.len() == 0 {
+    println!("No asset found with path {}", asset_path.to_string());
+    return
+  }
 
   for asset_path in assets_to_send {
     let asset = asset_manager.get_asset(asset_path).unwrap();

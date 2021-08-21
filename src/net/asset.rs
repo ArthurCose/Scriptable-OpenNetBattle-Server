@@ -175,7 +175,7 @@ impl Asset {
       return;
     };
 
-    if let Ok(mut mob_file) = archive.by_name("mob.lua") {
+    if let Ok(mut mob_file) = archive.by_name("entry.lua") {
       use std::io::Read;
 
       let mut entry_script = String::new();
@@ -225,7 +225,7 @@ impl Asset {
 
         lua_ctx.load(&entry_script).exec()?;
 
-        let load_scripts_func: rlua::Function = globals.get("load_scripts")?;
+        let load_scripts_func: rlua::Function = globals.get("package_requires_scripts")?;
         load_scripts_func.call(())?;
 
         Ok(())
@@ -234,7 +234,7 @@ impl Asset {
 
     if let Err(e) = result {
       println!(
-        "Failed to load \"mob.lua\" in \"{}\":\n{}",
+        "Failed to load \"entry.lua\" in \"{}\":\n{}",
         path.display(),
         e
       );

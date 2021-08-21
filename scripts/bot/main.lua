@@ -1,10 +1,12 @@
 local Direction = require("scripts/libs/direction")
-
+local Encounters = require("scripts/libs/encounters")
 local create_custom_bot = require('scripts/bot/create_custom_bot')
+
+local example_area_id = "default"
 
 local bot = create_custom_bot("test", {
   name = "",
-  area_id = "default",
+  area_id = example_area_id,
   texture_path = "/server/assets/prog.png",
   animation_path = "/server/assets/prog.animation",
   x = 1.5,
@@ -22,6 +24,19 @@ bot.path = {
   { x=2.5, y=2.5 },
   { x=2.5, y=0.5 }
 }
+
+-- Setup this area's encounters
+local encounters_table = { }
+encounters_table[example_area_id] = { }
+encounters_table[example_area_id].required_travel_amt = 10
+encounters_table[example_area_id].mobs = {
+    { 
+        asset_path = "/server/assets/basic_mob1.zip",
+        weight = 0.1
+    }
+}
+
+Encounters:setup(encounters_table)
 
 function bot.on_interact(player_id)
   if bot.talking_to then
@@ -74,10 +89,27 @@ function handle_textbox_response(player_id, response)
   bot._handle_textbox_response(player_id, response)
 end
 
+function handle_player_join(player_id)
+  -- prime this area for encounters
+  Encounters:reset(player_id)
+end
+
 function handle_player_disconnect(player_id)
   bot._handle_player_disconnect(player_id)
+
+  -- Drop will forget this player entry record
+  -- Also useful to stop tracking players for things like cutscenes or
+  -- repel items
+  Encounters:drop(player_id)
 end
 
 function handle_player_transfer(player_id)
   bot._handle_player_disconnect(player_id)
+
+  -- prime this new area for encounters
+  Encounters:reset(player_id)
+end
+
+function handle_player_move(player_id, x, y, z)
+  Encounters:handle_player_move(player_id, x, y, z)
 end
