@@ -315,6 +315,7 @@ Net.set_object_data(area_id, object_id, data)
 ```lua
 Net.list_bots(area_id) -- bot_id[]
 Net.create_bot(bot_id, { name?, area_id?, warp_in?, texture_path?, animation_path?, animation?, x?, y?, z?, direction?, solid? })
+Net.create_bot({ name?, area_id?, warp_in?, texture_path?, animation_path?, animation?, x?, y?, z?, direction?, solid? }) -- bot_id
 Net.is_bot(bot_id)
 Net.remove_bot(bot_id, warp_out?)
 Net.get_bot_area(bot_id) -- area_id

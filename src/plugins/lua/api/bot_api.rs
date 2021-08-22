@@ -24,8 +24,24 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
   lua_api.add_dynamic_function("Net", "create_bot", |api_ctx, lua_ctx, params| {
     use std::time::Instant;
+    use uuid::Uuid;
 
-    let (bot_id, table): (String, rlua::Table) = lua_ctx.unpack_multi(params)?;
+    // (bot_id, table) or (table, nil)
+    let (bot_id_or_table, optional_table): (rlua::Value, rlua::Value) =
+      lua_ctx.unpack_multi(params)?;
+
+    let bot_id;
+    let table: rlua::Table;
+
+    if let rlua::Value::String(bot_id_lua_string) = bot_id_or_table {
+      // (bot_id, table)
+      bot_id = bot_id_lua_string.to_str()?.to_string();
+      table = lua_ctx.unpack(optional_table)?;
+    } else {
+      // (table, nil)
+      bot_id = Uuid::new_v4().to_string();
+      table = lua_ctx.unpack(bot_id_or_table)?;
+    }
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
@@ -53,7 +69,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
         .unwrap_or(spawn_direction);
 
       let bot = Actor {
-        id: bot_id,
+        id: bot_id.clone(),
         name: name.unwrap_or_default(),
         area_id,
         texture_path: texture_path.unwrap_or_default(),
@@ -74,7 +90,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
       net.add_bot(bot, warp_in.unwrap_or(true));
 
-      lua_ctx.pack_multi(())
+      lua_ctx.pack_multi(bot_id)
     } else {
       Err(create_area_error(&area_id))
     }
