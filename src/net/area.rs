@@ -37,7 +37,9 @@ impl Area {
   }
 
   pub fn require_asset(&mut self, asset_path: String) {
-    self.required_assets.push(asset_path);
+    if !self.required_assets.contains(&asset_path) {
+      self.required_assets.push(asset_path);
+    }
   }
 
   pub fn get_required_assets(&self) -> &Vec<String> {
