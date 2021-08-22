@@ -58,8 +58,14 @@ function Async.promisify(co)
     local value = nil
 
     function update()
-      local _
-      _, value = coroutine.resume(co)
+      local ok
+      ok, value = coroutine.resume(co)
+
+      if not ok then
+        -- value is an error
+        print(value)
+        return true
+      end
 
       if coroutine.status(co) == "dead" then
         resolve(value)
