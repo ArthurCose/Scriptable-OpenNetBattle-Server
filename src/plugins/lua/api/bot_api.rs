@@ -33,14 +33,14 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let bot_id;
     let table: rlua::Table;
 
-    if let rlua::Value::String(bot_id_lua_string) = bot_id_or_table {
-      // (bot_id, table)
-      bot_id = bot_id_lua_string.to_str()?.to_string();
-      table = lua_ctx.unpack(optional_table)?;
-    } else {
+    if let rlua::Value::Table(bot_table) = bot_id_or_table {
       // (table, nil)
       bot_id = Uuid::new_v4().to_string();
-      table = lua_ctx.unpack(bot_id_or_table)?;
+      table = bot_table;
+    } else {
+      // (bot_id, table)
+      bot_id = lua_ctx.unpack(bot_id_or_table)?;
+      table = lua_ctx.unpack(optional_table)?;
     }
 
     let mut net = api_ctx.net_ref.borrow_mut();
