@@ -55,7 +55,7 @@ enum ServerPacketId {
   ShopInventory,
   OpenShop,
   InitiatePvp,
-  InitiateMob,
+  InitiateEncounter,
   ActorConnected,
   ActorDisconnected,
   ActorSetName,
@@ -238,7 +238,7 @@ pub enum ServerPacket<'a> {
   InitiatePvp {
     address: &'a str,
   },
-  InitiateMob {
+  InitiateEncounter {
     package_path: &'a str,
   },
   ActorConnected {
@@ -655,11 +655,11 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
     ServerPacket::InitiatePvp { address } => {
       write_u16(buf, ServerPacketId::InitiatePvp as u16);
       write_string_u16(buf, address);
-    },
-    ServerPacket::InitiateMob { package_path } => {
-      write_u16(buf, ServerPacketId::InitiateMob as u16);
+    }
+    ServerPacket::InitiateEncounter { package_path } => {
+      write_u16(buf, ServerPacketId::InitiateEncounter as u16);
       write_string_u16(buf, package_path);
-    },
+    }
     ServerPacket::ActorConnected {
       ticket,
       name,

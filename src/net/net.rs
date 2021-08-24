@@ -1090,7 +1090,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        ServerPacket::InitiateMob {
+        ServerPacket::InitiateEncounter {
           package_path: &package_path.to_string(),
         },
       );

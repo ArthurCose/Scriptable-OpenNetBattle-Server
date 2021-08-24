@@ -175,13 +175,13 @@ impl Asset {
       return;
     };
 
-    if let Ok(mut mob_file) = archive.by_name("entry.lua") {
+    if let Ok(mut encounter_file) = archive.by_name("entry.lua") {
       use std::io::Read;
 
       let mut entry_script = String::new();
 
-      if mob_file.read_to_string(&mut entry_script).is_ok() {
-        Asset::resolve_mob_dependencies(
+      if encounter_file.read_to_string(&mut entry_script).is_ok() {
+        Asset::resolve_encounter_dependencies(
           &mut self.alternate_names,
           &mut self.dependencies,
           path,
@@ -191,7 +191,7 @@ impl Asset {
     };
   }
 
-  fn resolve_mob_dependencies(
+  fn resolve_encounter_dependencies(
     alternate_names: &mut Vec<AssetDependency>,
     dependencies: &mut Vec<AssetDependency>,
     path: &std::path::Path,
