@@ -95,7 +95,7 @@ function lib.handle_player_move(player_id, x, y, z)
 
         if crawler <= 0 or i == #area_table.encounters then
             lib.track_player(player_id)
-            Net.initiate_mob(player_id, encounter.asset_path)
+            Net.initiate_encounter(player_id, encounter.asset_path)
             break
         end
     end
@@ -103,7 +103,7 @@ end
 
 function lib.initiate_direct_encounter(player_id, asset_path)
     lib.track_player(player_id)
-    Net.initiate_mob(player_id, asset_path)
+    Net.initiate_encounter(player_id, asset_path)
 end
 
 return lib

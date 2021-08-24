@@ -494,7 +494,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
-  lua_api.add_dynamic_function("Net", "initiate_mob", |api_ctx, lua_ctx, params| {
+  lua_api.add_dynamic_function("Net", "initiate_encounter", |api_ctx, lua_ctx, params| {
     let (player_id, package_id, _): (rlua::String, rlua::String, Option<rlua::String>) =
       lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
@@ -502,7 +502,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
-    net.initiate_mob(player_id_str, package_id_str);
+    net.initiate_encounter(player_id_str, package_id_str);
 
     lua_ctx.pack_multi(())
   });

@@ -1075,7 +1075,7 @@ impl Net {
     )
   }
 
-  pub fn initiate_mob(&mut self, player_id: &str, package_path: &str) {
+  pub fn initiate_encounter(&mut self, player_id: &str, package_path: &str) {
     ensure_asset(
       &self.socket,
       self.config.max_payload_size,
