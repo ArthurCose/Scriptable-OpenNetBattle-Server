@@ -374,6 +374,7 @@ Net.fade_player_camera(player_id, color, durationInSeconds) -- color = { r: 0-25
 Net.slide_player_camera(player_id, x, y, z, durationInSeconds)
 Net.shake_player_camera(player_id, strength, durationInSeconds)
 Net.track_with_player_camera(player_id, actor_id?)
+Net.is_player_input_locked(player_id)
 Net.unlock_player_camera(player_id)
 Net.lock_player_input(player_id)
 Net.unlock_player_input(player_id)

@@ -414,6 +414,21 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     },
   );
 
+  lua_api.add_dynamic_function(
+    "Net",
+    "is_player_input_locked",
+    |api_ctx, lua_ctx, params| {
+      let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+      let player_id_str = player_id.to_str()?;
+
+      let net = api_ctx.net_ref.borrow();
+
+      let is_locked = net.is_player_input_locked(player_id_str);
+
+      lua_ctx.pack_multi(is_locked)
+    },
+  );
+
   lua_api.add_dynamic_function("Net", "unlock_player_camera", |api_ctx, lua_ctx, params| {
     let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;

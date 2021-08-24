@@ -501,8 +501,18 @@ impl Net {
     }
   }
 
+  pub fn is_player_input_locked(&self, id: &str) -> bool {
+    if let Some(client) = self.clients.get(id) {
+      return client.is_input_locked;
+    }
+
+    false
+  }
+
   pub fn lock_player_input(&mut self, id: &str) {
     if let Some(client) = self.clients.get_mut(id) {
+      client.is_input_locked = true;
+
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
@@ -513,6 +523,8 @@ impl Net {
 
   pub fn unlock_player_input(&mut self, id: &str) {
     if let Some(client) = self.clients.get_mut(id) {
+      client.is_input_locked = false;
+
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,

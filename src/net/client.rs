@@ -24,6 +24,7 @@ pub(super) struct Client {
   pub widget_tracker: WidgetTracker<usize>,
   pub player_data: PlayerData,
   pub is_battling: bool,
+  pub is_input_locked: bool,
 }
 
 impl Client {
@@ -84,6 +85,7 @@ impl Client {
       widget_tracker: WidgetTracker::new(),
       player_data: PlayerData::new(identity),
       is_battling: false,
+      is_input_locked: false,
     }
   }
 
