@@ -289,7 +289,7 @@ impl Map {
       .insert(String::from("Background Vel X"), x.to_string());
     self
       .custom_properties
-      .insert(String::from("Background Vel Y"), x.to_string());
+      .insert(String::from("Background Vel Y"), y.to_string());
 
     self.background_vel_x = x;
     self.background_vel_y = y;
