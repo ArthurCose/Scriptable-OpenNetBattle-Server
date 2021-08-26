@@ -163,12 +163,12 @@ impl Server {
   ) {
     if let Some(player_id) = self.player_id_map.get(&socket_address) {
       match client_packet {
-        ClientPacket::Ping => {
+        ClientPacket::VersionRequest => {
           if self.config.log_packets {
-            println!("Received bad Ping packet from {}", socket_address);
+            println!("Received bad VersionRequest packet from {}", socket_address);
           }
 
-          let buf = build_unreliable_packet(ServerPacket::Pong {
+          let buf = build_unreliable_packet(ServerPacket::VersionInfo {
             max_payload_size: self.config.max_payload_size,
           });
           let _ = socket.send_to(&buf, socket_address);
@@ -504,12 +504,12 @@ impl Server {
       }
     } else {
       match client_packet {
-        ClientPacket::Ping => {
+        ClientPacket::VersionRequest => {
           if self.config.log_packets {
-            println!("Received Ping packet from {}", socket_address);
+            println!("Received VersionRequest packet from {}", socket_address);
           }
 
-          let buf = build_unreliable_packet(ServerPacket::Pong {
+          let buf = build_unreliable_packet(ServerPacket::VersionInfo {
             max_payload_size: self.config.max_payload_size,
           });
           let _ = socket.send_to(&buf, socket_address);

@@ -7,7 +7,7 @@ use crate::net::{Asset, AssetData, BbsPost, Direction, ShopItem};
 
 #[repr(u16)]
 enum ServerPacketId {
-  Pong,
+  VersionInfo,
   Ack,
   Heartbeat,
   Login,
@@ -68,7 +68,7 @@ enum ServerPacketId {
 
 #[derive(Debug)]
 pub enum ServerPacket<'a> {
-  Pong {
+  VersionInfo {
     max_payload_size: usize,
   },
   Ack {
@@ -305,8 +305,8 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
   let buf = &mut vec;
 
   match packet {
-    ServerPacket::Pong { max_payload_size } => {
-      write_u16(buf, ServerPacketId::Pong as u16);
+    ServerPacket::VersionInfo { max_payload_size } => {
+      write_u16(buf, ServerPacketId::VersionInfo as u16);
       write_string_u16(buf, VERSION_ID);
       write_u64(buf, VERSION_ITERATION);
       write_u16(buf, max_payload_size as u16);

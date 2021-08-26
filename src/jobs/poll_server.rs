@@ -36,7 +36,7 @@ pub fn poll_server(address: String, port: u16) -> JobPromise {
     let mut attempts: u8 = 0;
 
     while attempts < 10 {
-      // send &[unreliable, ping_part, ping_part]
+      // send &[unreliable, enum_part, enum_part]
       let _ = socket.send(&[0, 0, 0]).await;
 
       let response_fut = get_response(&socket).fuse();
@@ -78,7 +78,7 @@ async fn get_response(socket: &UdpSocket) -> Option<u16> {
     }
 
     if !matches!(read_u16(slice), Some(0)) {
-      // invalid response: expecting "Pong" byte
+      // invalid response: expecting "VersionInfo" byte
       return None;
     }
 
