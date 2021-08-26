@@ -23,6 +23,7 @@ pub(super) struct Client {
   pub mugshot_animation_buffer: Vec<u8>,
   pub widget_tracker: WidgetTracker<usize>,
   pub player_data: PlayerData,
+  pub battle_plugin: Option<usize>,
   pub is_battling: bool,
   pub is_input_locked: bool,
 }
@@ -84,6 +85,7 @@ impl Client {
       mugshot_animation_buffer: Vec::new(),
       widget_tracker: WidgetTracker::new(),
       player_data: PlayerData::new(identity),
+      battle_plugin: None,
       is_battling: false,
       is_input_locked: false,
     }

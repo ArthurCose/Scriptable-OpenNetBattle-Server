@@ -1051,7 +1051,10 @@ impl Net {
       };
 
     client_1.is_battling = true;
+    client_1.battle_plugin = Some(self.active_plugin);
+
     client_2.is_battling = true;
+    client_2.battle_plugin = Some(self.active_plugin);
 
     // todo: put these clients in slow mode
 
@@ -1087,6 +1090,7 @@ impl Net {
 
     if let Some(client) = self.clients.get_mut(player_id) {
       client.is_battling = true;
+      client.battle_plugin = Some(self.active_plugin);
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
