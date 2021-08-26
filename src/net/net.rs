@@ -1088,17 +1088,34 @@ impl Net {
       &package_path.to_string(),
     );
 
-    if let Some(client) = self.clients.get_mut(player_id) {
-      client.is_battling = true;
-      client.battle_plugin = Some(self.active_plugin);
+    let client = if let Some(client) = self.clients.get_mut(player_id) {
+      client
+    } else {
+      return;
+    };
+
+    client.is_battling = true;
+    client.battle_plugin = Some(self.active_plugin);
+
+    let dependency_chain = self
+      .asset_manager
+      .get_flattened_dependency_chain(package_path);
+
+    for asset_path in dependency_chain {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        ServerPacket::InitiateEncounter {
-          package_path: &package_path.to_string(),
+        ServerPacket::LoadEncounter {
+          package_path: asset_path,
         },
       );
     }
+
+    client.packet_shipper.send(
+      &self.socket,
+      Reliability::ReliableOrdered,
+      ServerPacket::InitiateEncounter { package_path },
+    );
   }
 
   pub fn is_player_busy(&self, id: &str) -> bool {
