@@ -17,7 +17,7 @@ pub struct Net {
   clients: HashMap<String, Client>,
   bots: HashMap<String, Actor>,
   asset_manager: AssetManager,
-  active_script: usize,
+  active_plugin: usize,
   kick_list: Vec<Boot>,
   items: HashMap<String, Item>,
 }
@@ -70,7 +70,7 @@ impl Net {
       clients: HashMap::new(),
       bots: HashMap::new(),
       asset_manager,
-      active_script: 0,
+      active_plugin: 0,
       kick_list: Vec::new(),
       items: HashMap::new(),
     }
@@ -627,7 +627,7 @@ impl Net {
     );
 
     if let Some(client) = self.clients.get_mut(id) {
-      client.widget_tracker.track_textbox(self.active_script);
+      client.widget_tracker.track_textbox(self.active_plugin);
 
       client.packet_shipper.send(
         &self.socket,
@@ -658,7 +658,7 @@ impl Net {
     );
 
     if let Some(client) = self.clients.get_mut(id) {
-      client.widget_tracker.track_textbox(self.active_script);
+      client.widget_tracker.track_textbox(self.active_plugin);
 
       client.packet_shipper.send(
         &self.socket,
@@ -691,7 +691,7 @@ impl Net {
     );
 
     if let Some(client) = self.clients.get_mut(id) {
-      client.widget_tracker.track_textbox(self.active_script);
+      client.widget_tracker.track_textbox(self.active_plugin);
 
       client.packet_shipper.send(
         &self.socket,
@@ -709,7 +709,7 @@ impl Net {
 
   pub fn prompt_player(&mut self, id: &str, character_limit: u16, default_text: Option<&str>) {
     if let Some(client) = self.clients.get_mut(id) {
-      client.widget_tracker.track_textbox(self.active_script);
+      client.widget_tracker.track_textbox(self.active_plugin);
 
       // reliability + id + type + u16 size
       let available_space = self.config.max_payload_size as u16 - 1 - 8 - 2 - 2 - 2;
@@ -745,7 +745,7 @@ impl Net {
     };
 
     let start_depth = client.widget_tracker.get_board_count() as u8;
-    client.widget_tracker.track_board(self.active_script);
+    client.widget_tracker.track_board(self.active_plugin);
 
     if posts.is_empty() {
       // logic below will send nothing if there's no posts,
@@ -996,7 +996,7 @@ impl Net {
       return;
     };
 
-    client.widget_tracker.track_shop(self.active_script);
+    client.widget_tracker.track_shop(self.active_plugin);
 
     let max_payload_size = self.config.max_payload_size;
 
@@ -1958,8 +1958,8 @@ impl Net {
   // ugly opengl like context storing
   // needed to correctly track message owners send without adding extra parameters
   // luckily not visible to plugin authors
-  pub(super) fn set_active_script(&mut self, active_script: usize) {
-    self.active_script = active_script;
+  pub(super) fn set_active_plugin(&mut self, active_plugin: usize) {
+    self.active_plugin = active_plugin;
   }
 
   pub(super) fn broadcast(&mut self, reliability: Reliability, packet: ServerPacket) {

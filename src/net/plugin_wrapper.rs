@@ -22,7 +22,7 @@ impl PluginWrapper {
   {
     let mut call = call;
 
-    net.set_active_script(i);
+    net.set_active_plugin(i);
     call(&mut self.plugin_interfaces[i], net);
   }
 
@@ -33,7 +33,7 @@ impl PluginWrapper {
     let mut call = call;
 
     for (i, plugin_interface) in self.plugin_interfaces.iter_mut().enumerate() {
-      net.set_active_script(i);
+      net.set_active_plugin(i);
       call(plugin_interface, net);
     }
   }
