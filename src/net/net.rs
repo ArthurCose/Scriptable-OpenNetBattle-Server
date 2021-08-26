@@ -1631,38 +1631,43 @@ impl Net {
   pub(super) fn remove_player(&mut self, id: &str, warp_out: bool) {
     use super::asset;
 
-    if let Some(client) = self.clients.remove(id) {
-      let remove_list = [
-        asset::get_player_texture_path(id),
-        asset::get_player_animation_path(id),
-        asset::get_player_mugshot_animation_path(id),
-        asset::get_player_mugshot_texture_path(id),
-      ];
+    let client = if let Some(client) = self.clients.remove(id) {
+      client
+    } else {
+      return;
+    };
 
-      for asset_path in remove_list.iter() {
-        self.asset_manager.remove_asset(asset_path);
-      }
+    let remove_list = [
+      asset::get_player_texture_path(id),
+      asset::get_player_animation_path(id),
+      asset::get_player_mugshot_animation_path(id),
+      asset::get_player_mugshot_texture_path(id),
+    ];
 
-      let area = self
-        .areas
-        .get_mut(&client.actor.area_id)
-        .expect("Missing area for removed client");
-
-      area.remove_player(&client.actor.id);
-
-      let packet = ServerPacket::ActorDisconnected {
-        ticket: id,
-        warp_out,
-      };
-
-      broadcast_to_area(
-        &self.socket,
-        &mut self.clients,
-        area,
-        Reliability::Reliable,
-        packet,
-      );
+    for asset_path in remove_list.iter() {
+      self.asset_manager.remove_asset(asset_path);
     }
+
+    let area = if let Some(area) = self.areas.get_mut(&client.actor.area_id) {
+      area
+    } else {
+      return;
+    };
+
+    area.remove_player(&client.actor.id);
+
+    let packet = ServerPacket::ActorDisconnected {
+      ticket: id,
+      warp_out,
+    };
+
+    broadcast_to_area(
+      &self.socket,
+      &mut self.clients,
+      area,
+      Reliability::Reliable,
+      packet,
+    );
   }
 
   pub fn get_bot(&self, id: &str) -> Option<&Actor> {
@@ -1707,27 +1712,32 @@ impl Net {
   }
 
   pub fn remove_bot(&mut self, id: &str, warp_out: bool) {
-    if let Some(bot) = self.bots.remove(id) {
-      let area = self
-        .areas
-        .get_mut(&bot.area_id)
-        .expect("Missing area for removed bot");
+    let bot = if let Some(bot) = self.bots.remove(id) {
+      bot
+    } else {
+      return;
+    };
 
-      area.remove_bot(&bot.id);
+    let area = if let Some(area) = self.areas.get_mut(&bot.area_id) {
+      area
+    } else {
+      return;
+    };
 
-      let packet = ServerPacket::ActorDisconnected {
-        ticket: id,
-        warp_out,
-      };
+    area.remove_bot(&bot.id);
 
-      broadcast_to_area(
-        &self.socket,
-        &mut self.clients,
-        area,
-        Reliability::Reliable,
-        packet,
-      );
-    }
+    let packet = ServerPacket::ActorDisconnected {
+      ticket: id,
+      warp_out,
+    };
+
+    broadcast_to_area(
+      &self.socket,
+      &mut self.clients,
+      area,
+      Reliability::Reliable,
+      packet,
+    );
   }
 
   pub fn set_bot_name(&mut self, id: &str, name: &str) {
