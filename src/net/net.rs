@@ -1375,7 +1375,7 @@ impl Net {
         },
       );
 
-      self.kick_player(id, "Transferred", false);
+      self.kick_player(id, "Transferred", warp_out);
     }
   }
 
