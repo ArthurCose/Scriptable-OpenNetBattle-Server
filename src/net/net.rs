@@ -983,13 +983,6 @@ impl Net {
     use super::shop_item::calc_size;
     use crate::helpers::iterators::IteratorHelper;
 
-    if self.is_player_shopping(player_id) {
-      println!(
-        "Player \"{}\" is already in a shop, issues may occur!",
-        player_id
-      );
-    }
-
     let client = if let Some(client) = self.clients.get_mut(player_id) {
       client
     } else {
