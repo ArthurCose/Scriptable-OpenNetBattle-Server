@@ -329,6 +329,7 @@ Net.move_bot(bot_id, x, y, z)
 -- Net.set_bot_solid(bot_id, solid)
 Net.set_bot_avatar(bot_id, texture_path, animation_path)
 Net.set_bot_emote(bot_id, emote_id, use_custom_emotes?)
+Net.set_bot_minimap_color(bot_id, color) -- color = { r: 0-255, g: 0-255, b: 0-255, a: 0-255 }
 Net.animate_bot(bot_id, state_name, loop?)
 Net.transfer_bot(bot_id, area_id, warp_in?, x?, y?, z?)
 
@@ -359,6 +360,7 @@ Net.get_player_avatar(player_id) -- { texture_path, animation_path }
 Net.set_player_avatar(player_id, texture_path, animation_path)
 Net.set_player_emote(player_id, emote_id, use_custom_emotes?)
 Net.exclusive_player_emote(player_id, emoter_id, emote_id, use_custom_emotes?)
+Net.set_player_minimap_color(player_id, color) -- color = { r: 0-255, g: 0-255, b: 0-255, a: 0-255 }
 Net.animate_player(player_id, state_name, loop?)
 Net.animate_player_properties(player_id, keyframes) -- unstable
 Net.is_player_battling(player_id)
@@ -370,7 +372,7 @@ Net.include_object_for_player(player_id, object_id)
 Net.exclude_actor_for_player(player_id, actor_id)
 Net.include_actor_for_player(player_id, actor_id)
 Net.move_player_camera(player_id, x, y, z, holdTimeInSeconds?)
-Net.fade_player_camera(player_id, color, durationInSeconds) -- color = { r: 0-255, g: 0-255, b: 0-255, a:0-255 }
+Net.fade_player_camera(player_id, color, durationInSeconds) -- color = { r: 0-255, g: 0-255, b: 0-255, a: 0-255 }
 Net.slide_player_camera(player_id, x, y, z, durationInSeconds)
 Net.shake_player_camera(player_id, strength, durationInSeconds)
 Net.track_with_player_camera(player_id, actor_id?)

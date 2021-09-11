@@ -18,6 +18,7 @@ pub struct Actor {
   pub scale_x: f32,
   pub scale_y: f32,
   pub rotation: f32,
+  pub minimap_color: (u8, u8, u8, u8),
   pub current_animation: Option<String>,
   pub solid: bool,
 }
@@ -38,6 +39,7 @@ impl Actor {
       scale_x: self.scale_x,
       scale_y: self.scale_y,
       rotation: self.rotation,
+      minimap_color: self.minimap_color,
       animation: self.current_animation.as_deref(),
     }
   }

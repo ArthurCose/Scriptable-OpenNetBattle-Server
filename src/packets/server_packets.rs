@@ -65,6 +65,7 @@ enum ServerPacketId {
   ActorEmote,
   ActorAnimate,
   ActorPropertyKeyFrames,
+  ActorMinimapColor,
 }
 
 #[derive(Debug)]
@@ -259,6 +260,7 @@ pub enum ServerPacket<'a> {
     scale_x: f32,
     scale_y: f32,
     rotation: f32,
+    minimap_color: (u8, u8, u8, u8),
     animation: Option<&'a str>,
   },
   ActorDisconnected {
@@ -295,6 +297,10 @@ pub enum ServerPacket<'a> {
     ticket: &'a str,
     tail: bool,
     keyframes: Vec<KeyFrame>,
+  },
+  ActorMinimapColor {
+    ticket: &'a str,
+    color: (u8, u8, u8, u8),
   },
 }
 
@@ -682,6 +688,7 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       scale_x,
       scale_y,
       rotation,
+      minimap_color: (r, g, b, a),
       animation,
     } => {
       write_u16(buf, ServerPacketId::ActorConnected as u16);
@@ -698,6 +705,12 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       write_f32(buf, scale_x);
       write_f32(buf, scale_y);
       write_f32(buf, rotation);
+
+      buf.push(r);
+      buf.push(g);
+      buf.push(b);
+      buf.push(a);
+
       write_bool(buf, animation.is_some());
 
       if let Some(animation) = animation {
@@ -790,6 +803,17 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
           }
         }
       }
+    }
+    ServerPacket::ActorMinimapColor {
+      ticket,
+      color: (r, g, b, a),
+    } => {
+      write_u16(buf, ServerPacketId::ActorMinimapColor as u16);
+      write_string_u16(buf, ticket);
+      buf.push(r);
+      buf.push(g);
+      buf.push(b);
+      buf.push(a);
     }
   }
 

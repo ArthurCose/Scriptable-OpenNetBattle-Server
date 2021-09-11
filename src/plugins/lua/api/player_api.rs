@@ -206,6 +206,28 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     },
   );
 
+  lua_api.add_dynamic_function(
+    "Net",
+    "set_player_minimap_color",
+    |api_ctx, lua_ctx, params| {
+      let (player_id, color_table): (rlua::String, rlua::Table) = lua_ctx.unpack_multi(params)?;
+      let player_id_str = player_id.to_str()?;
+
+      let mut net = api_ctx.net_ref.borrow_mut();
+
+      let color = (
+        color_table.get("r")?,
+        color_table.get("g")?,
+        color_table.get("b")?,
+        color_table.get("a")?,
+      );
+
+      net.set_player_minimap_color(player_id_str, color);
+
+      lua_ctx.pack_multi(())
+    },
+  );
+
   lua_api.add_dynamic_function("Net", "animate_player", |api_ctx, lua_ctx, params| {
     let (player_id, name, loop_option): (rlua::String, rlua::String, Option<bool>) =
       lua_ctx.unpack_multi(params)?;

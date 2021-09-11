@@ -287,6 +287,22 @@ impl Net {
     }
   }
 
+  pub fn set_player_minimap_color(&mut self, id: &str, color: (u8, u8, u8, u8)) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.actor.minimap_color = color;
+
+      let area = self.areas.get(&client.actor.area_id).unwrap();
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.clients,
+        area,
+        Reliability::Reliable,
+        ServerPacket::ActorMinimapColor { ticket: id, color },
+      );
+    }
+  }
+
   pub fn animate_player(&mut self, id: &str, name: &str, loop_animation: bool) {
     if let Some(client) = self.clients.get(id) {
       let area = self.areas.get(&client.actor.area_id).unwrap();
@@ -1845,6 +1861,22 @@ impl Net {
         area,
         Reliability::Reliable,
         packet,
+      );
+    }
+  }
+
+  pub fn set_bot_minimap_color(&mut self, id: &str, color: (u8, u8, u8, u8)) {
+    if let Some(bot) = self.bots.get_mut(id) {
+      bot.minimap_color = color;
+
+      let area = self.areas.get(&bot.area_id).unwrap();
+
+      broadcast_to_area(
+        &self.socket,
+        &mut self.clients,
+        area,
+        Reliability::Reliable,
+        ServerPacket::ActorMinimapColor { ticket: id, color },
       );
     }
   }
