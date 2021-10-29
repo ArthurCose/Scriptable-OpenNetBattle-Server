@@ -219,7 +219,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
         color_table.get("r")?,
         color_table.get("g")?,
         color_table.get("b")?,
-        color_table.get("a")?,
+        color_table.get("a").unwrap_or(255),
       );
 
       net.set_player_minimap_color(player_id_str, color);
@@ -410,7 +410,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
         color.get("r")?,
         color.get("g")?,
         color.get("b")?,
-        color.get("a")?,
+        color.get("a").unwrap_or(255),
       ),
       duration,
     );
