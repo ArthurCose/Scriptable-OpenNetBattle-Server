@@ -8,7 +8,7 @@ encounters_table["default"] = {
   preload = true,
   encounters = {
     {
-      asset_path = "/server/assets/basic_mob1.zip",
+      asset_path = "/server/assets/canodumb.zip",
       weight = 0.1
     }
   }
