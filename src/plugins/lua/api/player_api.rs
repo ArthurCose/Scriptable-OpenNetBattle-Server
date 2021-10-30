@@ -604,6 +604,31 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
+  lua_api.add_dynamic_function(
+    "Net",
+    "request_authorization",
+    |api_ctx, lua_ctx, params| {
+      let (player_id, address, port, data_option): (
+        rlua::String,
+        rlua::String,
+        u16,
+        Option<rlua::String>,
+      ) = lua_ctx.unpack_multi(params)?;
+      let (player_id_str, address_str) = (player_id.to_str()?, address.to_str()?);
+
+      let mut net = api_ctx.net_ref.borrow_mut();
+
+      let data = data_option
+        .as_ref()
+        .map(|lua_str| lua_str.as_bytes())
+        .unwrap_or(&[]);
+
+      net.request_authorization(player_id_str, address_str, port, data);
+
+      lua_ctx.pack_multi(())
+    },
+  );
+
   lua_api.add_dynamic_function("Net", "kick_player", |api_ctx, lua_ctx, params| {
     let (player_id, reason, warp_out_option): (rlua::String, rlua::String, Option<bool>) =
       lua_ctx.unpack_multi(params)?;

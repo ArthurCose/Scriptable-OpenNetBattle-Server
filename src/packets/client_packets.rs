@@ -15,6 +15,12 @@ pub enum ClientPacket {
   ServerMessage {
     data: Vec<u8>,
   },
+  Authorize {
+    origin_address: String,
+    port: u16,
+    identity: String,
+    data: Vec<u8>,
+  },
   Heartbeat,
   AssetFound {
     path: String,
@@ -120,19 +126,34 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
     2 => Some(ClientPacket::ServerMessage {
       data: work_buf.to_vec(),
     }),
-    3 => Some(ClientPacket::Heartbeat),
-    4 => Some(ClientPacket::AssetFound {
+    3 => Some({
+      let origin_address = read_string_u16(work_buf)?;
+      let port = read_u16(work_buf)?;
+      let identity_size = read_byte(work_buf)?;
+      let identity_bytes = read_data(work_buf, identity_size as usize)?;
+      let identity = base64::encode(&identity_bytes);
+      let data = work_buf.to_vec();
+
+      ClientPacket::Authorize {
+        origin_address,
+        port,
+        identity,
+        data,
+      }
+    }),
+    4 => Some(ClientPacket::Heartbeat),
+    5 => Some(ClientPacket::AssetFound {
       path: read_string_u16(work_buf)?,
       last_modified: read_u64(work_buf)?,
     }),
-    5 => {
+    6 => {
       let asset_type = read_byte(work_buf)?;
       let size = read_u16(work_buf)? as usize;
       let data = read_data(work_buf, size)?;
 
       Some(ClientPacket::AssetStream { asset_type, data })
     }
-    6 => Some({
+    7 => Some({
       let username = read_string_u8(work_buf)?;
       let identity_size = read_byte(work_buf)?;
       let identity_bytes = read_data(work_buf, identity_size as usize)?;
@@ -145,61 +166,61 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
         data,
       }
     }),
-    7 => Some(ClientPacket::Logout),
-    8 => Some(ClientPacket::RequestJoin),
-    9 => Some(ClientPacket::Ready {
+    8 => Some(ClientPacket::Logout),
+    9 => Some(ClientPacket::RequestJoin),
+    10 => Some(ClientPacket::Ready {
       time: read_u64(work_buf)?,
     }),
-    10 => Some(ClientPacket::TransferredOut),
-    11 => Some(ClientPacket::Position {
+    11 => Some(ClientPacket::TransferredOut),
+    12 => Some(ClientPacket::Position {
       creation_time: read_u64(work_buf)?,
       x: read_f32(work_buf)?,
       y: read_f32(work_buf)?,
       z: read_f32(work_buf)?,
       direction: read_direction(read_byte(work_buf)?),
     }),
-    12 => Some(ClientPacket::AvatarChange {
+    13 => Some(ClientPacket::AvatarChange {
       name: read_string_u8(work_buf)?,
       element: read_string_u8(work_buf)?,
       max_health: read_u32(work_buf)?,
     }),
-    13 => Some(ClientPacket::Emote {
+    14 => Some(ClientPacket::Emote {
       emote_id: read_byte(work_buf)?,
     }),
-    14 => Some(ClientPacket::CustomWarp {
+    15 => Some(ClientPacket::CustomWarp {
       tile_object_id: read_u32(work_buf)?,
     }),
-    15 => Some(ClientPacket::ObjectInteraction {
+    16 => Some(ClientPacket::ObjectInteraction {
       tile_object_id: read_u32(work_buf)?,
       button: read_byte(work_buf)?,
     }),
-    16 => Some(ClientPacket::ActorInteraction {
+    17 => Some(ClientPacket::ActorInteraction {
       actor_id: read_string_u16(work_buf)?,
       button: read_byte(work_buf)?,
     }),
-    17 => Some(ClientPacket::TileInteraction {
+    18 => Some(ClientPacket::TileInteraction {
       x: read_f32(work_buf)?,
       y: read_f32(work_buf)?,
       z: read_f32(work_buf)?,
       button: read_byte(work_buf)?,
     }),
-    18 => Some(ClientPacket::TextBoxResponse {
+    19 => Some(ClientPacket::TextBoxResponse {
       response: read_byte(work_buf)?,
     }),
-    19 => Some(ClientPacket::PromptResponse {
+    20 => Some(ClientPacket::PromptResponse {
       response: read_string_u16(work_buf)?,
     }),
-    20 => Some(ClientPacket::BoardOpen),
-    21 => Some(ClientPacket::BoardClose),
-    22 => Some(ClientPacket::PostRequest),
-    23 => Some(ClientPacket::PostSelection {
+    21 => Some(ClientPacket::BoardOpen),
+    22 => Some(ClientPacket::BoardClose),
+    23 => Some(ClientPacket::PostRequest),
+    24 => Some(ClientPacket::PostSelection {
       post_id: read_string_u16(work_buf)?,
     }),
-    24 => Some(ClientPacket::ShopClose),
-    25 => Some(ClientPacket::ShopPurchase {
+    25 => Some(ClientPacket::ShopClose),
+    26 => Some(ClientPacket::ShopPurchase {
       item_name: read_string_u8(work_buf)?,
     }),
-    26 => Some(ClientPacket::BattleResults {
+    27 => Some(ClientPacket::BattleResults {
       battle_stats: BattleStats {
         health: read_u32(work_buf)?,
         score: read_u32(work_buf)?,

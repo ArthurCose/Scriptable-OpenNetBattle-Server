@@ -1395,6 +1395,20 @@ impl Net {
     }
   }
 
+  pub fn request_authorization(&mut self, id: &str, address: &str, port: u16, data: &[u8]) {
+    if let Some(client) = self.clients.get_mut(id) {
+      client.packet_shipper.send(
+        &self.socket,
+        Reliability::ReliableOrdered,
+        ServerPacket::Authorize {
+          address,
+          port,
+          data,
+        },
+      );
+    }
+  }
+
   pub fn kick_player(&mut self, id: &str, reason: &str, warp_out: bool) {
     if let Some(client) = self.clients.get(id) {
       self.kick_list.push(Boot {

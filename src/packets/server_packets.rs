@@ -10,6 +10,7 @@ enum ServerPacketId {
   VersionInfo,
   Ack,
   Heartbeat,
+  Authorize,
   Login,
   CompleteConnection,
   TransferWarp,
@@ -78,6 +79,11 @@ pub enum ServerPacket<'a> {
     id: u64,
   },
   Heartbeat,
+  Authorize {
+    address: &'a str,
+    port: u16,
+    data: &'a [u8],
+  },
   Login {
     ticket: &'a str,
     warp_in: bool,
@@ -328,6 +334,16 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
     }
     ServerPacket::Heartbeat => {
       write_u16(buf, ServerPacketId::Heartbeat as u16);
+    }
+    ServerPacket::Authorize {
+      address,
+      port,
+      data,
+    } => {
+      write_u16(buf, ServerPacketId::Authorize as u16);
+      write_string_u16(buf, address);
+      write_u16(buf, port);
+      buf.extend(data);
     }
     ServerPacket::Login {
       ticket,

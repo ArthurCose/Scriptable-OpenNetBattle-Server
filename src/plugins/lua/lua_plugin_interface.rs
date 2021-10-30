@@ -9,6 +9,7 @@ use std::collections::HashMap;
 pub struct LuaPluginInterface {
   scripts: HashMap<std::path::PathBuf, Lua>,
   tick_listeners: Vec<std::path::PathBuf>,
+  authorization_listeners: Vec<std::path::PathBuf>,
   player_request_listeners: Vec<std::path::PathBuf>,
   player_connect_listeners: Vec<std::path::PathBuf>,
   player_join_listeners: Vec<std::path::PathBuf>,
@@ -33,6 +34,7 @@ impl LuaPluginInterface {
     LuaPluginInterface {
       scripts: HashMap::new(),
       tick_listeners: Vec::new(),
+      authorization_listeners: Vec::new(),
       player_request_listeners: Vec::new(),
       player_connect_listeners: Vec::new(),
       player_join_listeners: Vec::new(),
@@ -120,6 +122,13 @@ impl LuaPluginInterface {
       })?;
 
       self.tick_listeners.push(script_path.clone());
+
+      if globals
+        .get::<_, rlua::Function>("handle_authorization")
+        .is_ok()
+      {
+        self.authorization_listeners.push(script_path.clone());
+      }
 
       if globals
         .get::<_, rlua::Function>("handle_player_request")
@@ -248,6 +257,29 @@ impl PluginInterface for LuaPluginInterface {
       net,
       "_server_internal_tick",
       |_, callback| callback.call(delta_time),
+    );
+  }
+
+  fn handle_authorization(
+    &mut self,
+    net: &mut Net,
+    identity: &str,
+    host: &str,
+    port: u16,
+    data: &[u8],
+  ) {
+    handle_event(
+      &mut self.scripts,
+      &self.authorization_listeners,
+      &mut self.widget_trackers,
+      &mut self.promise_manager,
+      &mut self.lua_api,
+      net,
+      "handle_authorization",
+      |lua_ctx, callback| {
+        let data_string = lua_ctx.create_string(data)?;
+        callback.call((identity, host, port, data_string))
+      },
     );
   }
 

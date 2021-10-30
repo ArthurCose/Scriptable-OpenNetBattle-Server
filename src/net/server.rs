@@ -243,6 +243,16 @@ impl Server {
           let client = net.get_client_mut(player_id).unwrap();
           client.packet_shipper.acknowledged(reliability, id);
         }
+        ClientPacket::Authorize {
+          origin_address: _,
+          port: _,
+          identity: _,
+          data: _,
+        } => {
+          if self.config.log_packets {
+            println!("Received bad Authorize packet from {}", socket_address);
+          }
+        }
         ClientPacket::Login {
           username: _,
           identity: _,
@@ -513,6 +523,16 @@ impl Server {
             max_payload_size: self.config.max_payload_size,
           });
           let _ = socket.send_to(&buf, socket_address);
+        }
+        ClientPacket::Authorize {
+          origin_address,
+          port,
+          identity,
+          data,
+        } => {
+          self
+            .plugin_wrapper
+            .handle_authorization(net, &identity, &origin_address, port, &data);
         }
         ClientPacket::Login {
           username,

@@ -215,6 +215,7 @@ function handle_shop_close(player_id)
 function handle_shop_purchase(player_id, item_name)
 function handle_battle_results(player_id, stats) -- stats = { health: number, score: number, time: number, ran: bool, emotion: number }
 function handle_server_message(ip, port, data)
+function handle_authorization(identity, host, port, data) -- a player on another server needs to be authenticated with this server
 
 -- For the following functions:
 --  default action is not taken until after execution
@@ -385,6 +386,7 @@ Net.initiate_encounter(player_id, package_path)
 Net.initiate_pvp(player_1_id, player_2_id, field_script_path?)
 Net.transfer_player(player_id, area_id, warp_in?, x?, y?, z?, direction?)
 Net.transfer_server(player_id, address, port, warp_out?, data?) -- data = string
+Net.request_authorization(player_id, address, port, data?)
 Net.kick_player(player_id, reason, warp_out?)
 ```
 
