@@ -696,6 +696,19 @@ impl PluginInterface for LuaPluginInterface {
         table.set("time", battle_stats.time)?;
         table.set("ran", battle_stats.ran)?;
         table.set("emotion", battle_stats.emotion)?;
+        table.set("turns", battle_stats.turns)?;
+
+        let mut npc_tables = Vec::new();
+        npc_tables.reserve(battle_stats.npcs.len());
+
+        for npc in &battle_stats.npcs {
+          let npc_table = lua_ctx.create_table()?;
+          npc_table.set("id", npc.id.as_str())?;
+          npc_table.set("health", npc.health)?;
+          npc_tables.push(npc_table);
+        }
+
+        table.set("npcs", npc_tables)?;
 
         callback.call((player_id, table))
       },
