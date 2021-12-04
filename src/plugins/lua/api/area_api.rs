@@ -330,6 +330,124 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     }
   });
 
+  lua_api.add_dynamic_function(
+    "Net",
+    "get_background_parallax",
+    |api_ctx, lua_ctx, params| {
+      let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+      let area_id_str = area_id.to_str()?;
+
+      let net = api_ctx.net_ref.borrow();
+
+      if let Some(area) = net.get_area(area_id_str) {
+        let map = area.get_map();
+
+        let parallax = map.get_background_parallax();
+
+        lua_ctx.pack_multi(parallax)
+      } else {
+        Err(create_area_error(area_id_str))
+      }
+    },
+  );
+
+  lua_api.add_dynamic_function("Net", "get_foreground", |api_ctx, lua_ctx, params| {
+    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id_str = area_id.to_str()?;
+
+    let net = api_ctx.net_ref.borrow();
+
+    if let Some(area) = net.get_area(area_id_str) {
+      let map = area.get_map();
+
+      let table = lua_ctx.create_table()?;
+
+      table.set("texture_path", map.get_foreground_texture_path().as_str())?;
+
+      table.set(
+        "animation_path",
+        map.get_foreground_animation_path().as_str(),
+      )?;
+
+      lua_ctx.pack_multi(table)
+    } else {
+      Err(create_area_error(area_id_str))
+    }
+  });
+
+  lua_api.add_dynamic_function(
+    "Net",
+    "get_foreground_velocity",
+    |api_ctx, lua_ctx, params| {
+      let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+      let area_id_str = area_id.to_str()?;
+
+      let net = api_ctx.net_ref.borrow();
+
+      if let Some(area) = net.get_area(area_id_str) {
+        let map = area.get_map();
+
+        let (vel_x, vel_y) = map.get_foreground_velocity();
+
+        let table = lua_ctx.create_table()?;
+        table.set("x", vel_x)?;
+        table.set("y", vel_y)?;
+
+        lua_ctx.pack_multi(table)
+      } else {
+        Err(create_area_error(area_id_str))
+      }
+    },
+  );
+
+  lua_api.add_dynamic_function(
+    "Net",
+    "get_foreground_parallax",
+    |api_ctx, lua_ctx, params| {
+      let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+      let area_id_str = area_id.to_str()?;
+
+      let net = api_ctx.net_ref.borrow();
+
+      if let Some(area) = net.get_area(area_id_str) {
+        let map = area.get_map();
+
+        let parallax = map.get_foreground_parallax();
+
+        lua_ctx.pack_multi(parallax)
+      } else {
+        Err(create_area_error(area_id_str))
+      }
+    },
+  );
+
+  lua_api.add_dynamic_function("Net", "set_foreground", |api_ctx, lua_ctx, params| {
+    let (area_id, texture_path, animation_path, vel_x, vel_y, parallax): (
+      rlua::String,
+      String,
+      Option<String>,
+      Option<f32>,
+      Option<f32>,
+      Option<f32>,
+    ) = lua_ctx.unpack_multi(params)?;
+    let area_id_str = area_id.to_str()?;
+
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    if let Some(area) = net.get_area_mut(area_id_str) {
+      let map = area.get_map_mut();
+
+      map.set_foreground_texture_path(texture_path);
+      map.set_foreground_animation_path(animation_path.unwrap_or_default());
+      map.set_foreground_velocity(vel_x.unwrap_or_default(), vel_y.unwrap_or_default());
+      map.set_foreground_parallax(parallax.unwrap_or_default());
+
+      lua_ctx.pack_multi(())
+    } else {
+      Err(create_area_error(area_id_str))
+    }
+  });
+
   lua_api.add_dynamic_function("Net", "get_spawn_position", |api_ctx, lua_ctx, params| {
     let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;

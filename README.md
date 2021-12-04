@@ -85,6 +85,17 @@ Map:
   - Excluding this will use texture size for background repetition
 - Background Vel X: float
 - Background Vel Y: float
+- Background Parallax: float
+- Foreground Texture: string
+  - Path to foreground image file
+- Foreground Animation: string
+  - Path to foreground .animation file
+  - One animation state "BG"
+    - First frame of this animation determines foreground repetition
+  - Excluding this will use texture size for foreground repetition
+- Foreground Vel X: float
+- Foreground Vel Y: float
+- Foreground Parallax: float
 
 ### Types
 
@@ -261,7 +272,12 @@ Net.get_song(area_id) -- song_path
 Net.set_song(area_id, song_path)
 Net.get_background(area_id) -- { texture_path, animation_path }
 Net.get_background_velocity(area_id) -- { x, y }
+Net.get_background_parallax(area_id) -- number
 Net.set_background(area_id, texture_path, animation_path?, vel_x?, vel_y?)
+Net.get_foreground(area_id) -- { texture_path, animation_path }
+Net.get_foreground_velocity(area_id) -- { x, y }
+Net.get_foreground_parallax(area_id) -- number
+Net.set_foreground(area_id, texture_path, animation_path?, vel_x?, vel_y?, parallax?)
 Net.get_spawn_position(area_id) -- { x, y, z }
 Net.set_spawn_position(area_id, x, y, z)
 Net.get_spawn_direction(area_id)

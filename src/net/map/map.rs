@@ -18,6 +18,12 @@ pub struct Map {
   background_animation_path: String,
   background_vel_x: f32,
   background_vel_y: f32,
+  background_parallax: f32,
+  foreground_texture_path: String,
+  foreground_animation_path: String,
+  foreground_vel_x: f32,
+  foreground_vel_y: f32,
+  foreground_parallax: f32,
   song_path: String,
   custom_properties: HashMap<String, String>,
   width: usize,
@@ -46,6 +52,12 @@ impl Map {
       background_animation_path: String::new(),
       background_vel_x: 0.0,
       background_vel_y: 0.0,
+      background_parallax: 0.0,
+      foreground_texture_path: String::new(),
+      foreground_animation_path: String::new(),
+      foreground_vel_x: 0.0,
+      foreground_vel_y: 0.0,
+      foreground_parallax: 0.0,
       song_path: String::new(),
       custom_properties: HashMap::new(),
       width: 0,
@@ -296,6 +308,71 @@ impl Map {
     self.mark_dirty();
   }
 
+  pub fn get_background_parallax(&self) -> f32 {
+    self.background_parallax
+  }
+
+  pub fn set_background_parallax(&mut self, parallax: f32) {
+    self
+      .custom_properties
+      .insert(String::from("Background Animation"), parallax.to_string());
+
+    self.background_parallax = parallax;
+    self.mark_dirty();
+  }
+
+  pub fn get_foreground_texture_path(&self) -> &String {
+    &self.foreground_texture_path
+  }
+
+  pub fn set_foreground_texture_path(&mut self, path: String) {
+    self
+      .custom_properties
+      .insert(String::from("Foreground Texture"), path.clone());
+
+    self.foreground_texture_path = path;
+    self.mark_dirty();
+  }
+
+  pub fn get_foreground_animation_path(&self) -> &String {
+    &self.foreground_animation_path
+  }
+
+  pub fn set_foreground_animation_path(&mut self, path: String) {
+    self
+      .custom_properties
+      .insert(String::from("Foreground Animation"), path.clone());
+
+    self.foreground_animation_path = path;
+    self.mark_dirty();
+  }
+
+  pub fn get_foreground_velocity(&self) -> (f32, f32) {
+    (self.foreground_vel_x, self.foreground_vel_y)
+  }
+
+  pub fn set_foreground_velocity(&mut self, x: f32, y: f32) {
+    self
+      .custom_properties
+      .insert(String::from("Foreground Vel X"), x.to_string());
+    self
+      .custom_properties
+      .insert(String::from("Foreground Vel Y"), y.to_string());
+
+    self.foreground_vel_x = x;
+    self.foreground_vel_y = y;
+    self.mark_dirty();
+  }
+
+  pub fn get_foreground_parallax(&self) -> f32 {
+    self.foreground_parallax
+  }
+
+  pub fn set_foreground_parallax(&mut self, parallax: f32) {
+    self.foreground_parallax = parallax;
+    self.mark_dirty();
+  }
+
   pub fn get_custom_properties(&self) -> &HashMap<String, String> {
     &self.custom_properties
   }
@@ -324,6 +401,24 @@ impl Map {
       }
       "Background Vel Y" => {
         self.background_vel_y = value.parse().unwrap_or_default();
+      }
+      "Background Parallax" => {
+        self.background_parallax = value.parse().unwrap_or_default();
+      }
+      "Foreground Texture" => {
+        self.foreground_texture_path = value;
+      }
+      "Foreground Animation" => {
+        self.foreground_animation_path = value;
+      }
+      "Foreground Vel X" => {
+        self.foreground_vel_x = value.parse().unwrap_or_default();
+      }
+      "Foreground Vel Y" => {
+        self.foreground_vel_y = value.parse().unwrap_or_default();
+      }
+      "Foreground Parallax" => {
+        self.foreground_parallax = value.parse().unwrap_or_default();
       }
       "Song" => {
         self.song_path = value;
