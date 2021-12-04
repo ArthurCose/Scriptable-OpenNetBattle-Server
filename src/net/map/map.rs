@@ -678,6 +678,8 @@ impl Map {
     let dependencies = tileset_paths
       .chain(std::iter::once(&self.background_texture_path))
       .chain(std::iter::once(&self.background_animation_path))
+      .chain(std::iter::once(&self.foreground_texture_path))
+      .chain(std::iter::once(&self.foreground_animation_path))
       .chain(std::iter::once(&self.song_path))
       .filter(|path| path.starts_with("/server/")) // provided by server
       .cloned()
