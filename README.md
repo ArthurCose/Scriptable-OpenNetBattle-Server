@@ -273,7 +273,7 @@ Net.set_song(area_id, song_path)
 Net.get_background(area_id) -- { texture_path, animation_path }
 Net.get_background_velocity(area_id) -- { x, y }
 Net.get_background_parallax(area_id) -- number
-Net.set_background(area_id, texture_path, animation_path?, vel_x?, vel_y?)
+Net.set_background(area_id, texture_path, animation_path?, vel_x?, vel_y?, parallax?)
 Net.get_foreground(area_id) -- { texture_path, animation_path }
 Net.get_foreground_velocity(area_id) -- { x, y }
 Net.get_foreground_parallax(area_id) -- number

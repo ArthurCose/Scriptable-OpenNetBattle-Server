@@ -306,10 +306,11 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   );
 
   lua_api.add_dynamic_function("Net", "set_background", |api_ctx, lua_ctx, params| {
-    let (area_id, texture_path, animation_path, vel_x, vel_y): (
+    let (area_id, texture_path, animation_path, vel_x, vel_y, parallax): (
       rlua::String,
       String,
       Option<String>,
+      Option<f32>,
       Option<f32>,
       Option<f32>,
     ) = lua_ctx.unpack_multi(params)?;
@@ -323,6 +324,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       map.set_background_texture_path(texture_path);
       map.set_background_animation_path(animation_path.unwrap_or_default());
       map.set_background_velocity(vel_x.unwrap_or_default(), vel_y.unwrap_or_default());
+      map.set_background_parallax(parallax.unwrap_or_default());
 
       lua_ctx.pack_multi(())
     } else {
