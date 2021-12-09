@@ -171,6 +171,21 @@ Shop:
 - Tile Objects only
 - Visible in minimap
 
+Stairs:
+
+- Tiles only
+- Visible in minimap
+- Allows players to walk up or down a layer
+- Makes tile directly above become treated as a hole
+- Custom properties:
+
+  - Direction: string
+    - Marks the direction the player will travel up
+    - Up Left
+    - Up Right
+    - Down Left
+    - Down Right
+
 Conveyor:
 
 - Tiles only
@@ -186,20 +201,26 @@ Conveyor:
   - Speed: number? (Tiles per second, default: 6)
   - Sound Effect: string
 
-Stairs:
+Ice:
 
 - Tiles only
-- Visible in minimap
-- Allows players to walk up or down a layer
-- Makes tile directly above become treated as a hole
+- Custom properties:
+
+  - Speed: number? (Tiles per second, default: 6)
+  - Sound Effect: string
+
+Treadmill:
+
+- Tiles only
 - Custom properties:
 
   - Direction: string
-    - Marks the direction the player will travel up
+    - Marks the direction the player will travel
     - Up Left
     - Up Right
     - Down Left
     - Down Right
+  - Speed: number? (Tiles per second, default: 1.875)
 
 ## Lua API
 
