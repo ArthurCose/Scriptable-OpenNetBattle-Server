@@ -143,7 +143,7 @@ impl Asset {
     for property_element in properties_element.children() {
       #[allow(clippy::single_match)]
       match (tile_type, property_element.attr("name")) {
-        ("Conveyor", Some("Sound Effect")) => {
+        ("Conveyor" | "Ice", Some("Sound Effect")) => {
           let value = property_element.attr("value").unwrap_or_default();
 
           if value.starts_with("/server/") {
