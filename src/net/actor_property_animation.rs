@@ -3,6 +3,7 @@ use super::Direction;
 #[derive(Debug)]
 pub enum ActorProperty {
   Animation(String),
+  AnimationSpeed(f32),
   X(f32),
   Y(f32),
   Z(f32),

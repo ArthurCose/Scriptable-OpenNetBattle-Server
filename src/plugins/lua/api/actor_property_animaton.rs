@@ -20,6 +20,7 @@ pub fn parse_animation(keyframe_tables: Vec<rlua::Table>) -> rlua::Result<Vec<Ke
 
       let property = match property_name_str {
         "Animation" => ActorProperty::Animation(property_table.get("value")?),
+        "Animation Speed" => ActorProperty::AnimationSpeed(property_table.get("value")?),
         "X" => ActorProperty::X(property_table.get("value")?),
         "Y" => ActorProperty::Y(property_table.get("value")?),
         "Z" => ActorProperty::Z(property_table.get("value")?),

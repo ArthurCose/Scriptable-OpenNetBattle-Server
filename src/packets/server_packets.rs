@@ -807,6 +807,7 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
 
           match property {
             ActorProperty::Animation(value) => write_string_u16(buf, value),
+            ActorProperty::AnimationSpeed(value) => write_f32(buf, *value),
             ActorProperty::X(value) => write_f32(buf, *value),
             ActorProperty::Y(value) => write_f32(buf, *value),
             ActorProperty::Z(value) => write_f32(buf, *value),
@@ -892,15 +893,16 @@ fn translate_direction(direction: Direction) -> u8 {
 fn get_actor_property_identifier(property: &ActorProperty) -> u8 {
   match property {
     ActorProperty::Animation(_) => 0,
-    ActorProperty::X(_) => 1,
-    ActorProperty::Y(_) => 2,
-    ActorProperty::Z(_) => 3,
-    ActorProperty::ScaleX(_) => 4,
-    ActorProperty::ScaleY(_) => 5,
-    ActorProperty::Rotation(_) => 6,
-    ActorProperty::Direction(_) => 7,
-    ActorProperty::SoundEffect(_) => 8,
-    ActorProperty::SoundEffectLoop(_) => 9,
+    ActorProperty::AnimationSpeed(_) => 1,
+    ActorProperty::X(_) => 2,
+    ActorProperty::Y(_) => 3,
+    ActorProperty::Z(_) => 4,
+    ActorProperty::ScaleX(_) => 5,
+    ActorProperty::ScaleY(_) => 6,
+    ActorProperty::Rotation(_) => 7,
+    ActorProperty::Direction(_) => 8,
+    ActorProperty::SoundEffect(_) => 9,
+    ActorProperty::SoundEffectLoop(_) => 10,
   }
 }
 

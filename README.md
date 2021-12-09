@@ -374,7 +374,7 @@ Net.transfer_bot(bot_id, area_id, warp_in?, x?, y?, z?)
 -- keyframes:
 {
   properties: {
-    property: "Animation" | "X" | "Y" | "Z" | "ScaleX" | "ScaleY" | "Rotation" | "Direction" | "Sound Effect" | "Sound Effect Loop",
+    property: "Animation" | "Animation Speed" | "X" | "Y" | "Z" | "ScaleX" | "ScaleY" | "Rotation" | "Direction" | "Sound Effect" | "Sound Effect Loop",
     ease?: "Linear" | "In" | "Out" | "InOut" | "Floor",
     value: number | string
   }[],
