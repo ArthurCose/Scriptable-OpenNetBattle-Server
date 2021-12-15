@@ -229,7 +229,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "animate_bot_properties",
     |api_ctx, lua_ctx, params| {
-      use super::actor_property_animaton::parse_animation;
+      use super::actor_property_animation::parse_animation;
 
       let (player_id, keyframe_tables): (rlua::String, Vec<rlua::Table>) =
         lua_ctx.unpack_multi(params)?;

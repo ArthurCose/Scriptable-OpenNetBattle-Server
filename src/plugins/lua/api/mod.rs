@@ -1,4 +1,4 @@
-mod actor_property_animaton;
+mod actor_property_animation;
 mod area_api;
 mod asset_api;
 mod async_api;
