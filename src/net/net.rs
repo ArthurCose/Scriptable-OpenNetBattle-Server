@@ -1087,7 +1087,34 @@ impl Net {
     )
   }
 
-  pub fn initiate_encounter(&mut self, player_id: &str, package_path: &str) {
+  fn send_encounter_data_asset(&mut self, player_id: &str, data: Option<&str>) {
+    use super::asset;
+
+    // store data as an asset
+    let data_path = asset::get_encounter_data_path();
+    let data_path_buf = std::path::PathBuf::from(data_path.to_string());
+    let mut data_asset =
+      Asset::load_from_memory(&data_path_buf, data.unwrap_or_default().as_bytes());
+    data_asset.cachable = false;
+    data_asset.cache_to_disk = false;
+
+    self
+      .asset_manager
+      .set_asset(data_path.to_string(), data_asset);
+
+    ensure_asset(
+      &self.socket,
+      self.config.max_payload_size,
+      &self.asset_manager,
+      &mut self.clients,
+      &[player_id.to_string()],
+      data_path,
+    );
+  }
+
+  pub fn initiate_encounter(&mut self, player_id: &str, package_path: &str, data: Option<&str>) {
+    use super::asset;
+
     ensure_asset(
       &self.socket,
       self.config.max_payload_size,
@@ -1097,15 +1124,19 @@ impl Net {
       &package_path.to_string(),
     );
 
+    self.send_encounter_data_asset(player_id, data);
+
     let client = if let Some(client) = self.clients.get_mut(player_id) {
       client
     } else {
       return;
     };
 
+    // update tracking
     client.is_battling = true;
     client.battle_plugin = Some(self.active_plugin);
 
+    // send dependencies
     let dependency_chain = self
       .asset_manager
       .get_flattened_dependency_chain(package_path);
@@ -1120,10 +1151,14 @@ impl Net {
       );
     }
 
+    // initiate encounter
     client.packet_shipper.send(
       &self.socket,
       Reliability::ReliableOrdered,
-      ServerPacket::InitiateEncounter { package_path },
+      ServerPacket::InitiateEncounter {
+        package_path,
+        data_path: asset::get_encounter_data_path(),
+      },
     );
   }
 
@@ -1516,7 +1551,8 @@ impl Net {
           alternate_names: Vec::new(),
           dependencies: Vec::new(),
           last_modified: 0,
-          cachable: false,
+          cachable: true,
+          cache_to_disk: false,
         },
       );
     }
@@ -2310,7 +2346,7 @@ fn ensure_asset(
     for player_id in player_ids {
       let client = clients.get_mut(player_id).unwrap();
 
-      if client.cached_assets.contains(asset_path) {
+      if asset.cachable && client.cached_assets.contains(asset_path) {
         continue;
       }
 
@@ -2324,7 +2360,9 @@ fn ensure_asset(
           .collect();
       }
 
-      client.cached_assets.insert(asset_path.to_string());
+      if asset.cachable {
+        client.cached_assets.insert(asset_path.to_string());
+      }
 
       for bytes in &byte_vecs {
         client

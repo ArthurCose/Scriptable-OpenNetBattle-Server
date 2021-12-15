@@ -691,7 +691,8 @@ impl Map {
       alternate_names: Vec::new(),
       dependencies,
       last_modified: 0,
-      cachable: false,
+      cachable: true,
+      cache_to_disk: false,
     }
   }
 }

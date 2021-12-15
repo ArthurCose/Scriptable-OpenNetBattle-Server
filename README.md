@@ -419,7 +419,7 @@ Net.unlock_player_camera(player_id)
 Net.lock_player_input(player_id)
 Net.unlock_player_input(player_id)
 Net.teleport_player(player_id, warp, x, y, z, direction?)
-Net.initiate_encounter(player_id, package_path)
+Net.initiate_encounter(player_id, package_path, data?) -- data is a table, read as second param in package_build for the encounter package
 Net.initiate_pvp(player_1_id, player_2_id, field_script_path?)
 Net.transfer_player(player_id, area_id, warp_in?, x?, y?, z?, direction?)
 Net.transfer_server(player_id, address, port, warp_out?, data?) -- data = string

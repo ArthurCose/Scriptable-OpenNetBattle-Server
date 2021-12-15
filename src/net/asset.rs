@@ -4,7 +4,8 @@ pub struct Asset {
   pub alternate_names: Vec<AssetDependency>,
   pub dependencies: Vec<AssetDependency>,
   pub last_modified: u64,
-  pub cachable: bool, // allows the client to know if they can cache this asset or if it's dynamic
+  pub cachable: bool, // allows the server to know if it should update other clients with this asset, clients will cache in memory
+  pub cache_to_disk: bool, // allows the client to know if they should cache this asset for rejoins or if it's dynamic
 }
 
 #[derive(Clone, Debug)]
@@ -36,6 +37,7 @@ impl Asset {
       dependencies: Vec::new(),
       last_modified,
       cachable: true,
+      cache_to_disk: true,
     };
 
     asset.resolve_dependencies(path);
@@ -66,6 +68,7 @@ impl Asset {
       dependencies: Vec::new(),
       last_modified,
       cachable: true,
+      cache_to_disk: true,
     };
 
     asset.resolve_dependencies(path);
@@ -260,6 +263,10 @@ pub fn get_player_mugshot_animation_path(player_id: &str) -> String {
 
 pub fn get_map_path(map_id: &str) -> String {
   String::from("/server/maps/") + map_id + ".tmx"
+}
+
+pub fn get_encounter_data_path() -> &'static str {
+  "/server/encounters/data"
 }
 
 fn resolve_asset_data(path: &std::path::Path, data: &[u8]) -> AssetData {

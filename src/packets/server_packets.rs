@@ -251,6 +251,7 @@ pub enum ServerPacket<'a> {
   },
   InitiateEncounter {
     package_path: &'a str,
+    data_path: &'a str,
   },
   ActorConnected {
     ticket: &'a str,
@@ -686,9 +687,13 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       write_u16(buf, ServerPacketId::LoadEncounter as u16);
       write_string_u16(buf, package_path);
     }
-    ServerPacket::InitiateEncounter { package_path } => {
+    ServerPacket::InitiateEncounter {
+      package_path,
+      data_path,
+    } => {
       write_u16(buf, ServerPacketId::InitiateEncounter as u16);
       write_string_u16(buf, package_path);
+      write_string_u16(buf, data_path);
     }
     ServerPacket::ActorConnected {
       ticket,
