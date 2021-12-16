@@ -400,7 +400,7 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       write_u16(buf, ServerPacketId::AssetStreamStart as u16);
       write_string_u16(buf, name);
       write_u64(buf, asset.last_modified);
-      write_bool(buf, asset.cachable);
+      write_bool(buf, asset.cache_to_disk);
 
       let data_type_byte = match asset.data {
         AssetData::Text(_) => 0,
