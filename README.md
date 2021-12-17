@@ -449,7 +449,7 @@ Net.open_shop(player_id, items, mug_texture_path?, mug_animation_path?) -- items
 
 ```lua
 Net.get_player_secret(player_id) -- the secret identifier for this player. similar to a password, do not share
-Net.get_player_element(player_id)
+Net.get_player_element(player_id) -- string
 Net.get_player_health(player_id)
 Net.set_player_health(player_id, health)
 Net.get_player_max_health(player_id)
