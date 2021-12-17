@@ -1177,6 +1177,14 @@ impl Net {
       .map(|client| &client.player_data)
   }
 
+  pub(crate) fn update_player_data(&mut self, player_id: &str, element: String, max_health: u32) {
+    let client = self.clients.get_mut(player_id).unwrap();
+
+    client.player_data.element = element;
+    client.player_data.health = max_health;
+    client.player_data.max_health = max_health;
+  }
+
   pub fn set_player_health(&mut self, player_id: &str, health: u32) {
     if let Some(client) = self.clients.get_mut(player_id) {
       let max_health = client.player_data.max_health;

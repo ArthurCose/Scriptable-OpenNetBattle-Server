@@ -256,9 +256,10 @@ function handle_player_disconnect(player_id)
 function handle_player_move(player_id, x, y, z)
 
 -- For the following functions:
---  default action is not taken until after execution
+--  default action is not taken on the server until after execution. for the client, the action has already been taken
 --  returning true will prevent the default action
 
+-- health, max_health, and element will be updated before this function
 function handle_player_avatar_change(player_id, details) -- details = { texture_path: string, animation_path: string, name: string, element: string, max_health: number }
 function handle_player_emote(player_id, emote)
 ```
@@ -448,6 +449,7 @@ Net.open_shop(player_id, items, mug_texture_path?, mug_animation_path?) -- items
 
 ```lua
 Net.get_player_secret(player_id) -- the secret identifier for this player. similar to a password, do not share
+Net.get_player_element(player_id)
 Net.get_player_health(player_id)
 Net.set_player_health(player_id, health)
 Net.get_player_max_health(player_id)

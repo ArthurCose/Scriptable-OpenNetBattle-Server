@@ -359,6 +359,8 @@ impl Server {
           }
 
           if let Some((texture_path, animation_path)) = net.store_player_assets(player_id) {
+            net.update_player_data(player_id, element.clone(), max_health);
+
             let prevent_default = self.plugin_wrapper.handle_player_avatar_change(
               net,
               player_id,
