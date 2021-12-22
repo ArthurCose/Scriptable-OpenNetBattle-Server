@@ -55,9 +55,10 @@ enum ServerPacketId {
   CloseBBS,
   ShopInventory,
   OpenShop,
-  InitiatePvp,
   LoadPackage,
+  ModWhitelist,
   InitiateEncounter,
+  InitiatePvp,
   ActorConnected,
   ActorDisconnected,
   ActorSetName,
@@ -243,15 +244,18 @@ pub enum ServerPacket<'a> {
     mug_texture_path: &'a str,
     mug_animation_path: &'a str,
   },
-  InitiatePvp {
-    address: &'a str,
-  },
   LoadPackage {
     package_path: &'a str,
+  },
+  ModWhitelist {
+    whitelist_path: &'a str,
   },
   InitiateEncounter {
     package_path: &'a str,
     data_path: &'a str,
+  },
+  InitiatePvp {
+    address: &'a str,
   },
   ActorConnected {
     ticket: &'a str,
@@ -679,13 +683,13 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       write_string_u16(buf, mug_texture_path);
       write_string_u16(buf, mug_animation_path);
     }
-    ServerPacket::InitiatePvp { address } => {
-      write_u16(buf, ServerPacketId::InitiatePvp as u16);
-      write_string_u16(buf, address);
-    }
     ServerPacket::LoadPackage { package_path } => {
       write_u16(buf, ServerPacketId::LoadPackage as u16);
       write_string_u16(buf, package_path);
+    }
+    ServerPacket::ModWhitelist { whitelist_path } => {
+      write_u16(buf, ServerPacketId::ModWhitelist as u16);
+      write_string_u16(buf, whitelist_path);
     }
     ServerPacket::InitiateEncounter {
       package_path,
@@ -694,6 +698,10 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       write_u16(buf, ServerPacketId::InitiateEncounter as u16);
       write_string_u16(buf, package_path);
       write_string_u16(buf, data_path);
+    }
+    ServerPacket::InitiatePvp { address } => {
+      write_u16(buf, ServerPacketId::InitiatePvp as u16);
+      write_string_u16(buf, address);
     }
     ServerPacket::ActorConnected {
       ticket,

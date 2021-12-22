@@ -1112,6 +1112,29 @@ impl Net {
     );
   }
 
+  pub fn set_mod_whitelist_for_player(&mut self, player_id: &str, whitelist_path: &str) {
+    ensure_asset(
+      &self.socket,
+      self.config.max_payload_size,
+      &self.asset_manager,
+      &mut self.clients,
+      &[String::from(player_id)],
+      &whitelist_path.to_string(),
+    );
+
+    let client = if let Some(client) = self.clients.get_mut(player_id) {
+      client
+    } else {
+      return;
+    };
+
+    client.packet_shipper.send(
+      &self.socket,
+      Reliability::ReliableOrdered,
+      ServerPacket::ModWhitelist { whitelist_path },
+    );
+  }
+
   pub fn initiate_encounter(&mut self, player_id: &str, package_path: &str, data: Option<&str>) {
     use super::asset;
 
