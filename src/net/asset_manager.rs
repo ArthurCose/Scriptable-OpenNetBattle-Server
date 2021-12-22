@@ -3,14 +3,18 @@ use std::collections::HashMap;
 
 pub struct AssetManager {
   assets: HashMap<String, Asset>,
+  scripted_card_paths: HashMap<String, String>,
   scripted_character_paths: HashMap<String, String>,
+  scripted_library_paths: HashMap<String, String>,
 }
 
 impl AssetManager {
   pub fn new() -> AssetManager {
     AssetManager {
       assets: HashMap::new(),
+      scripted_card_paths: HashMap::new(),
       scripted_character_paths: HashMap::new(),
+      scripted_library_paths: HashMap::new(),
     }
   }
 
@@ -41,11 +45,18 @@ impl AssetManager {
 
   pub fn set_asset(&mut self, path: String, asset: Asset) {
     for alternate_name in &asset.alternate_names {
-      #[allow(clippy::single_match)]
       match alternate_name {
+        AssetDependency::ScriptedCard(name) => {
+          self.scripted_card_paths.insert(name.clone(), path.clone());
+        }
         AssetDependency::ScriptedCharacter(name) => {
           self
             .scripted_character_paths
+            .insert(name.clone(), path.clone());
+        }
+        AssetDependency::ScriptedLibrary(name) => {
+          self
+            .scripted_library_paths
             .insert(name.clone(), path.clone());
         }
         _ => {}
@@ -62,19 +73,23 @@ impl AssetManager {
       return;
     };
 
-    for alternate_name in asset.alternate_names {
-      #[allow(clippy::single_match)]
-      match alternate_name {
-        AssetDependency::ScriptedCharacter(name) => {
-          let optional_path_str = self
-            .scripted_character_paths
-            .get(&name)
-            .map(|path| path.as_str());
+    let try_remove = |paths: &mut HashMap<String, String>, name| {
+      let optional_path_str = paths.get(&name).map(|path| path.as_str());
 
-          // make sure another asset did not overwrite us as this name
-          if Some(path) == optional_path_str {
-            self.scripted_character_paths.remove(&name);
-          }
+      // make sure another asset did not overwrite us as this name
+      if Some(path) == optional_path_str {
+        paths.remove(&name);
+      }
+    };
+
+    for alternate_name in asset.alternate_names {
+      match alternate_name {
+        AssetDependency::ScriptedCard(name) => try_remove(&mut self.scripted_card_paths, name),
+        AssetDependency::ScriptedCharacter(name) => {
+          try_remove(&mut self.scripted_character_paths, name)
+        }
+        AssetDependency::ScriptedLibrary(name) => {
+          try_remove(&mut self.scripted_library_paths, name)
         }
         _ => {}
       }
@@ -112,12 +127,19 @@ impl AssetManager {
   }
 
   fn resolve_dependency_path<'a>(&'a self, dependency: &'a AssetDependency) -> Option<&'a str> {
+    let get_as_option_str = |paths: &'a HashMap<String, String>, name| -> Option<&'a str> {
+      paths.get(name).map(|path: &String| path.as_str())
+    };
+
     match dependency {
       AssetDependency::AssetPath(path) => Some(path),
-      AssetDependency::ScriptedCharacter(name) => self
-        .scripted_character_paths
-        .get(name)
-        .map(|path| path.as_str()),
+      AssetDependency::ScriptedCard(name) => get_as_option_str(&self.scripted_card_paths, name),
+      AssetDependency::ScriptedCharacter(name) => {
+        get_as_option_str(&self.scripted_character_paths, name)
+      }
+      AssetDependency::ScriptedLibrary(name) => {
+        get_as_option_str(&self.scripted_library_paths, name)
+      }
     }
   }
 }

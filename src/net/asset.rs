@@ -19,7 +19,9 @@ pub enum AssetData {
 #[derive(Clone, Debug)]
 pub enum AssetDependency {
   AssetPath(String),
+  ScriptedCard(String),
   ScriptedCharacter(String),
+  ScriptedLibrary(String),
 }
 
 impl Asset {
@@ -200,16 +202,57 @@ impl Asset {
     path: &std::path::Path,
     entry_script: String,
   ) {
+    use std::cell::RefCell;
+
     let lua = rlua::Lua::new();
+
+    let alternate_names = RefCell::new(alternate_names);
+    let dependencies = RefCell::new(dependencies);
 
     let result = lua.context(|lua_ctx| -> rlua::Result<()> {
       lua_ctx.scope(|scope| -> rlua::Result<()> {
         let engine_table = lua_ctx.create_table()?;
 
         engine_table.set(
+          "define_card",
+          scope.create_function_mut(|_, name: String| {
+            alternate_names
+              .borrow_mut()
+              .push(AssetDependency::ScriptedCard(name));
+
+            Ok(())
+          })?,
+        )?;
+
+        engine_table.set(
           "define_character",
           scope.create_function_mut(|_, name: String| {
-            alternate_names.push(AssetDependency::ScriptedCharacter(name));
+            alternate_names
+              .borrow_mut()
+              .push(AssetDependency::ScriptedCharacter(name));
+
+            Ok(())
+          })?,
+        )?;
+
+        engine_table.set(
+          "define_library",
+          scope.create_function_mut(|_, name: String| {
+            alternate_names
+              .borrow_mut()
+              .push(AssetDependency::ScriptedLibrary(name));
+
+            Ok(())
+          })?,
+        )?;
+
+        engine_table.set(
+          "requires_card",
+          scope.create_function_mut(|_, name: String| {
+            dependencies
+              .borrow_mut()
+              .push(AssetDependency::ScriptedCard(name));
+
             Ok(())
           })?,
         )?;
@@ -217,7 +260,21 @@ impl Asset {
         engine_table.set(
           "requires_character",
           scope.create_function_mut(|_, name: String| {
-            dependencies.push(AssetDependency::ScriptedCharacter(name));
+            dependencies
+              .borrow_mut()
+              .push(AssetDependency::ScriptedCharacter(name));
+
+            Ok(())
+          })?,
+        )?;
+
+        engine_table.set(
+          "requires_library",
+          scope.create_function_mut(|_, name: String| {
+            dependencies
+              .borrow_mut()
+              .push(AssetDependency::ScriptedLibrary(name));
+
             Ok(())
           })?,
         )?;

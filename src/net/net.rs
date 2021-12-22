@@ -1145,7 +1145,7 @@ impl Net {
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
-        ServerPacket::LoadEncounter {
+        ServerPacket::LoadPackage {
           package_path: asset_path,
         },
       );

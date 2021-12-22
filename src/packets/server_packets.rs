@@ -56,7 +56,7 @@ enum ServerPacketId {
   ShopInventory,
   OpenShop,
   InitiatePvp,
-  LoadEncounter,
+  LoadPackage,
   InitiateEncounter,
   ActorConnected,
   ActorDisconnected,
@@ -246,7 +246,7 @@ pub enum ServerPacket<'a> {
   InitiatePvp {
     address: &'a str,
   },
-  LoadEncounter {
+  LoadPackage {
     package_path: &'a str,
   },
   InitiateEncounter {
@@ -683,8 +683,8 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       write_u16(buf, ServerPacketId::InitiatePvp as u16);
       write_string_u16(buf, address);
     }
-    ServerPacket::LoadEncounter { package_path } => {
-      write_u16(buf, ServerPacketId::LoadEncounter as u16);
+    ServerPacket::LoadPackage { package_path } => {
+      write_u16(buf, ServerPacketId::LoadPackage as u16);
       write_string_u16(buf, package_path);
     }
     ServerPacket::InitiateEncounter {
