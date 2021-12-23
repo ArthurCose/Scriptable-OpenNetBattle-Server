@@ -420,7 +420,7 @@ Net.unlock_player_camera(player_id)
 Net.lock_player_input(player_id)
 Net.unlock_player_input(player_id)
 Net.teleport_player(player_id, warp, x, y, z, direction?)
-Net.set_mod_whitelist_for_player(player_id, whitelist_path) -- whitelist has this format: `[package_id] [md5]\n`
+Net.set_mod_whitelist_for_player(player_id, whitelist_path) -- whitelist has this format: `[md5] [package_id]\n`
 Net.initiate_encounter(player_id, package_path, data?) -- data is a table, read as second param in package_build for the encounter package
 Net.initiate_pvp(player_1_id, player_2_id, field_script_path?)
 Net.transfer_player(player_id, area_id, warp_in?, x?, y?, z?, direction?)
