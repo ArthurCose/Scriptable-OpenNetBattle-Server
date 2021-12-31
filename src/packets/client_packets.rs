@@ -3,7 +3,7 @@
 use super::bytes::*;
 use super::management::{get_reliability, Reliability};
 use super::PacketHeaders;
-use crate::net::{BattleStats, Direction, NPCBattleStats};
+use crate::net::{BattleStats, Direction, EnemyBattleStats};
 
 #[derive(Debug)]
 pub enum ClientPacket {
@@ -228,19 +228,19 @@ fn parse_body(work_buf: &mut &[u8]) -> Option<ClientPacket> {
         ran: read_bool(work_buf)?,
         emotion: read_byte(work_buf)?,
         turns: read_u32(work_buf)?,
-        npcs: Vec::new(),
+        enemies: Vec::new(),
       };
 
-      let npc_count = read_u16(work_buf)?;
-      battle_stats.npcs.reserve(npc_count.into());
+      let enemy_count = read_u16(work_buf)?;
+      battle_stats.enemies.reserve(enemy_count.into());
 
-      for _ in 0..npc_count {
-        let npc_stats = NPCBattleStats {
+      for _ in 0..enemy_count {
+        let enemy_stats = EnemyBattleStats {
           id: read_string_u8(work_buf)?,
           health: read_u32(work_buf)?,
         };
 
-        battle_stats.npcs.push(npc_stats);
+        battle_stats.enemies.push(enemy_stats);
       }
 
       ClientPacket::BattleResults { battle_stats }

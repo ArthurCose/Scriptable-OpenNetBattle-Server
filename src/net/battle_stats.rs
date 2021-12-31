@@ -1,5 +1,5 @@
 #[derive(Debug)]
-pub struct NPCBattleStats {
+pub struct EnemyBattleStats {
   pub id: String,
   pub health: u32,
 }
@@ -12,5 +12,5 @@ pub struct BattleStats {
   pub ran: bool,
   pub emotion: u8,
   pub turns: u32,
-  pub npcs: Vec<NPCBattleStats>,
+  pub enemies: Vec<EnemyBattleStats>,
 }

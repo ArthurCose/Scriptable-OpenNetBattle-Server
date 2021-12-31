@@ -245,7 +245,7 @@ function handle_post_selection(player_id, post_id)
 function handle_post_request(player_id) -- bbs post request for infinite scroll
 function handle_shop_close(player_id)
 function handle_shop_purchase(player_id, item_name)
-function handle_battle_results(player_id, stats) -- stats = { health: number, score: number, time: number, ran: bool, emotion: number, turns: number, npcs: { id: String, health: number }[] }
+function handle_battle_results(player_id, stats) -- stats = { health: number, score: number, time: number, ran: bool, emotion: number, turns: number, enemies: { id: String, health: number }[] }
 function handle_server_message(ip, port, data)
 function handle_authorization(identity, host, port, data) -- a player on another server needs to be authenticated with this server
 
