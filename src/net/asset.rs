@@ -335,7 +335,7 @@ fn resolve_asset_data(path: &std::path::Path, data: &[u8]) -> AssetData {
 
   match extension {
     "png" | "bmp" => AssetData::Texture(data.to_vec()),
-    "ogg" => AssetData::Audio(data.to_vec()),
+    "flac" | "mp3" | "wav" | "mid" | "midi" | "ogg" => AssetData::Audio(data.to_vec()),
     "zip" => AssetData::Data(data.to_vec()),
     "tsx" => {
       let original_data = String::from_utf8_lossy(data);
