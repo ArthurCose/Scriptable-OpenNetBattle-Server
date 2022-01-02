@@ -222,6 +222,18 @@ Treadmill:
     - Down Right
   - Speed: number? (Tiles per second, default: 1.875)
 
+Arrow:
+
+- Tiles only
+- Visible in minimap
+- Custom properties:
+
+  - Direction: string
+    - Up Left
+    - Up Right
+    - Down Left
+    - Down Right
+
 ## Lua API
 
 Commented functions are in development and require changes to the client (specified below).
