@@ -315,7 +315,7 @@ impl Map {
   pub fn set_background_parallax(&mut self, parallax: f32) {
     self
       .custom_properties
-      .insert(String::from("Background Animation"), parallax.to_string());
+      .insert(String::from("Background Parallax"), parallax.to_string());
 
     self.background_parallax = parallax;
     self.mark_dirty();
