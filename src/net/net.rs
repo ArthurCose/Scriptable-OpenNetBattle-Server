@@ -408,6 +408,15 @@ impl Net {
   }
 
   pub fn play_sound_for_player(&mut self, id: &str, path: &str) {
+    ensure_asset(
+      &self.socket,
+      self.config.max_payload_size,
+      &self.asset_manager,
+      &mut self.clients,
+      &[id.to_string()],
+      path,
+    );
+
     if let Some(client) = self.clients.get_mut(id) {
       client.packet_shipper.send(
         &self.socket,
