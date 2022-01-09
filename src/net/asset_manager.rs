@@ -3,18 +3,14 @@ use std::collections::HashMap;
 
 pub struct AssetManager {
   assets: HashMap<String, Asset>,
-  scripted_card_paths: HashMap<String, String>,
-  scripted_character_paths: HashMap<String, String>,
-  scripted_library_paths: HashMap<String, String>,
+  package_paths: HashMap<String, String>,
 }
 
 impl AssetManager {
   pub fn new() -> AssetManager {
     AssetManager {
       assets: HashMap::new(),
-      scripted_card_paths: HashMap::new(),
-      scripted_character_paths: HashMap::new(),
-      scripted_library_paths: HashMap::new(),
+      package_paths: HashMap::new(),
     }
   }
 
@@ -46,18 +42,8 @@ impl AssetManager {
   pub fn set_asset(&mut self, path: String, asset: Asset) {
     for alternate_name in &asset.alternate_names {
       match alternate_name {
-        AssetDependency::ScriptedCard(name) => {
-          self.scripted_card_paths.insert(name.clone(), path.clone());
-        }
-        AssetDependency::ScriptedCharacter(name) => {
-          self
-            .scripted_character_paths
-            .insert(name.clone(), path.clone());
-        }
-        AssetDependency::ScriptedLibrary(name) => {
-          self
-            .scripted_library_paths
-            .insert(name.clone(), path.clone());
+        AssetDependency::Package(id) => {
+          self.package_paths.insert(id.clone(), path.clone());
         }
         _ => {}
       }
@@ -84,13 +70,7 @@ impl AssetManager {
 
     for alternate_name in asset.alternate_names {
       match alternate_name {
-        AssetDependency::ScriptedCard(name) => try_remove(&mut self.scripted_card_paths, name),
-        AssetDependency::ScriptedCharacter(name) => {
-          try_remove(&mut self.scripted_character_paths, name)
-        }
-        AssetDependency::ScriptedLibrary(name) => {
-          try_remove(&mut self.scripted_library_paths, name)
-        }
+        AssetDependency::Package(id) => try_remove(&mut self.package_paths, id),
         _ => {}
       }
     }
@@ -133,13 +113,7 @@ impl AssetManager {
 
     match dependency {
       AssetDependency::AssetPath(path) => Some(path),
-      AssetDependency::ScriptedCard(name) => get_as_option_str(&self.scripted_card_paths, name),
-      AssetDependency::ScriptedCharacter(name) => {
-        get_as_option_str(&self.scripted_character_paths, name)
-      }
-      AssetDependency::ScriptedLibrary(name) => {
-        get_as_option_str(&self.scripted_library_paths, name)
-      }
+      AssetDependency::Package(id) => get_as_option_str(&self.package_paths, id),
     }
   }
 }

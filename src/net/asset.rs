@@ -19,9 +19,7 @@ pub enum AssetData {
 #[derive(Clone, Debug)]
 pub enum AssetDependency {
   AssetPath(String),
-  ScriptedCard(String),
-  ScriptedCharacter(String),
-  ScriptedLibrary(String),
+  Package(String),
 }
 
 impl Asset {
@@ -213,71 +211,27 @@ impl Asset {
       lua_ctx.scope(|scope| -> rlua::Result<()> {
         let engine_table = lua_ctx.create_table()?;
 
-        engine_table.set(
-          "define_card",
-          scope.create_function_mut(|_, name: String| {
-            alternate_names
-              .borrow_mut()
-              .push(AssetDependency::ScriptedCard(name));
+        let define_package_func = scope.create_function_mut(|_, id: String| {
+          alternate_names
+            .borrow_mut()
+            .push(AssetDependency::Package(id));
 
-            Ok(())
-          })?,
-        )?;
+          Ok(())
+        })?;
 
-        engine_table.set(
-          "define_character",
-          scope.create_function_mut(|_, name: String| {
-            alternate_names
-              .borrow_mut()
-              .push(AssetDependency::ScriptedCharacter(name));
+        let requires_package_func = scope.create_function_mut(|_, id: String| {
+          dependencies.borrow_mut().push(AssetDependency::Package(id));
 
-            Ok(())
-          })?,
-        )?;
+          Ok(())
+        })?;
 
-        engine_table.set(
-          "define_library",
-          scope.create_function_mut(|_, name: String| {
-            alternate_names
-              .borrow_mut()
-              .push(AssetDependency::ScriptedLibrary(name));
+        engine_table.set("define_card", define_package_func.clone())?;
+        engine_table.set("define_character", define_package_func.clone())?;
+        engine_table.set("define_library", define_package_func)?;
 
-            Ok(())
-          })?,
-        )?;
-
-        engine_table.set(
-          "requires_card",
-          scope.create_function_mut(|_, name: String| {
-            dependencies
-              .borrow_mut()
-              .push(AssetDependency::ScriptedCard(name));
-
-            Ok(())
-          })?,
-        )?;
-
-        engine_table.set(
-          "requires_character",
-          scope.create_function_mut(|_, name: String| {
-            dependencies
-              .borrow_mut()
-              .push(AssetDependency::ScriptedCharacter(name));
-
-            Ok(())
-          })?,
-        )?;
-
-        engine_table.set(
-          "requires_library",
-          scope.create_function_mut(|_, name: String| {
-            dependencies
-              .borrow_mut()
-              .push(AssetDependency::ScriptedLibrary(name));
-
-            Ok(())
-          })?,
-        )?;
+        engine_table.set("requires_card", requires_package_func.clone())?;
+        engine_table.set("requires_character", requires_package_func.clone())?;
+        engine_table.set("requires_library", requires_package_func)?;
 
         let globals = lua_ctx.globals();
         globals.set("_modpath", "")?;
