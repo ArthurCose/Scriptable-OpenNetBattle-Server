@@ -669,7 +669,7 @@ impl Map {
   }
 
   pub fn generate_asset(&mut self) -> Asset {
-    use super::super::{AssetData, AssetDependency};
+    use super::super::{AssetData, AssetID};
 
     self.asset_stale = false;
 
@@ -683,7 +683,7 @@ impl Map {
       .chain(std::iter::once(&self.song_path))
       .filter(|path| path.starts_with("/server/")) // provided by server
       .cloned()
-      .map(AssetDependency::AssetPath)
+      .map(AssetID::AssetPath)
       .collect();
 
     Asset {

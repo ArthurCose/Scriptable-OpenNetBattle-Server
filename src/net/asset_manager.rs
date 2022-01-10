@@ -1,4 +1,4 @@
-use super::{Asset, AssetDependency};
+use super::{Asset, AssetID};
 use std::collections::HashMap;
 
 pub struct AssetManager {
@@ -42,7 +42,7 @@ impl AssetManager {
   pub fn set_asset(&mut self, path: String, asset: Asset) {
     for alternate_name in &asset.alternate_names {
       match alternate_name {
-        AssetDependency::Package(id) => {
+        AssetID::Package { id, category: _ } => {
           self.package_paths.insert(id.clone(), path.clone());
         }
         _ => {}
@@ -70,7 +70,7 @@ impl AssetManager {
 
     for alternate_name in asset.alternate_names {
       match alternate_name {
-        AssetDependency::Package(id) => try_remove(&mut self.package_paths, id),
+        AssetID::Package { id, category: _ } => try_remove(&mut self.package_paths, id),
         _ => {}
       }
     }
@@ -106,14 +106,14 @@ impl AssetManager {
     }
   }
 
-  fn resolve_dependency_path<'a>(&'a self, dependency: &'a AssetDependency) -> Option<&'a str> {
+  fn resolve_dependency_path<'a>(&'a self, dependency: &'a AssetID) -> Option<&'a str> {
     let get_as_option_str = |paths: &'a HashMap<String, String>, name| -> Option<&'a str> {
       paths.get(name).map(|path: &String| path.as_str())
     };
 
     match dependency {
-      AssetDependency::AssetPath(path) => Some(path),
-      AssetDependency::Package(id) => get_as_option_str(&self.package_paths, id),
+      AssetID::AssetPath(path) => Some(path),
+      AssetID::Package { id, category: _ } => get_as_option_str(&self.package_paths, id),
     }
   }
 }

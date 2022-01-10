@@ -1217,11 +1217,26 @@ impl Net {
       .get_flattened_dependency_chain(package_path);
 
     for asset_path in dependency_chain {
+      let asset = if let Some(asset) = self.asset_manager.get_asset(asset_path) {
+        asset
+      } else {
+        println!("No asset found with path \"{}\"", asset_path);
+        continue;
+      };
+
+      let package_category = if let Some(package_category) = asset.resolve_package_category() {
+        package_category
+      } else {
+        println!("\"{}\" is not a package", asset_path);
+        continue;
+      };
+
       client.packet_shipper.send(
         &self.socket,
         Reliability::ReliableOrdered,
         ServerPacket::LoadPackage {
           package_path: asset_path,
+          package_category,
         },
       );
     }
@@ -2462,7 +2477,12 @@ fn ensure_asset(
   }
 
   for asset_path in assets_to_send {
-    let asset = asset_manager.get_asset(asset_path).unwrap();
+    let asset = if let Some(asset) = asset_manager.get_asset(asset_path) {
+      asset
+    } else {
+      println!("No asset found with path \"{}\"", asset_path);
+      continue;
+    };
 
     let mut byte_vecs = Vec::new();
 

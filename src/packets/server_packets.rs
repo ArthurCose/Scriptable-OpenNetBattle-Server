@@ -3,7 +3,7 @@
 use super::bytes::*;
 use super::{VERSION_ID, VERSION_ITERATION};
 use crate::net::actor_property_animation::{ActorProperty, Ease, KeyFrame};
-use crate::net::{Asset, AssetData, BbsPost, Direction, ShopItem};
+use crate::net::{Asset, AssetData, BbsPost, Direction, PackageCategory, ShopItem};
 
 #[repr(u16)]
 enum ServerPacketId {
@@ -246,6 +246,7 @@ pub enum ServerPacket<'a> {
   },
   LoadPackage {
     package_path: &'a str,
+    package_category: PackageCategory,
   },
   ModWhitelist {
     whitelist_path: &'a str,
@@ -683,9 +684,13 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       write_string_u16(buf, mug_texture_path);
       write_string_u16(buf, mug_animation_path);
     }
-    ServerPacket::LoadPackage { package_path } => {
+    ServerPacket::LoadPackage {
+      package_path,
+      package_category,
+    } => {
       write_u16(buf, ServerPacketId::LoadPackage as u16);
       write_string_u16(buf, package_path);
+      buf.push(package_category as u8)
     }
     ServerPacket::ModWhitelist { whitelist_path } => {
       write_u16(buf, ServerPacketId::ModWhitelist as u16);
