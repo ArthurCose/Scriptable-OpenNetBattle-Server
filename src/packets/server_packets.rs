@@ -3,7 +3,7 @@
 use super::bytes::*;
 use super::{VERSION_ID, VERSION_ITERATION};
 use crate::net::actor_property_animation::{ActorProperty, Ease, KeyFrame};
-use crate::net::{Asset, AssetData, BbsPost, Direction, PackageCategory, ShopItem};
+use crate::net::{Asset, AssetData, BbsPost, Direction, PackageCategory, PackageInfo, ShopItem};
 
 #[repr(u16)]
 enum ServerPacketId {
@@ -55,6 +55,7 @@ enum ServerPacketId {
   CloseBBS,
   ShopInventory,
   OpenShop,
+  OfferPackage,
   LoadPackage,
   ModWhitelist,
   InitiateEncounter,
@@ -243,6 +244,10 @@ pub enum ServerPacket<'a> {
   OpenShop {
     mug_texture_path: &'a str,
     mug_animation_path: &'a str,
+  },
+  OfferPackage {
+    package_info: &'a PackageInfo,
+    package_path: &'a str,
   },
   LoadPackage {
     package_path: &'a str,
@@ -683,6 +688,16 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       write_u16(buf, ServerPacketId::OpenShop as u16);
       write_string_u16(buf, mug_texture_path);
       write_string_u16(buf, mug_animation_path);
+    }
+    ServerPacket::OfferPackage {
+      package_info,
+      package_path,
+    } => {
+      write_u16(buf, ServerPacketId::OfferPackage as u16);
+      buf.push(package_info.category as u8);
+      write_string_u8(buf, &package_info.id);
+      write_string_u8(buf, &package_info.name);
+      write_string_u16(buf, package_path);
     }
     ServerPacket::LoadPackage {
       package_path,

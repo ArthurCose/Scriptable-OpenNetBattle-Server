@@ -533,6 +533,18 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     },
   );
 
+  lua_api.add_dynamic_function("Net", "offer_package", |api_ctx, lua_ctx, params| {
+    let (player_id, package_id): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+    let player_id_str = player_id.to_str()?;
+    let package_id_str = package_id.to_str()?;
+
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    net.offer_package(player_id_str, package_id_str);
+
+    lua_ctx.pack_multi(())
+  });
+
   lua_api.add_dynamic_function("Net", "initiate_encounter", |api_ctx, lua_ctx, params| {
     let (player_id, package_id, data_value): (rlua::String, rlua::String, Option<rlua::Value>) =
       lua_ctx.unpack_multi(params)?;

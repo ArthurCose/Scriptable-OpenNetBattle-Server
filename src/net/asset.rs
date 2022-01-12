@@ -28,12 +28,16 @@ pub enum PackageCategory {
 }
 
 #[derive(Clone, Debug)]
+pub struct PackageInfo {
+  pub name: String,
+  pub id: String,
+  pub category: PackageCategory,
+}
+
+#[derive(Clone, Debug)]
 pub enum AssetID {
   AssetPath(String),
-  Package {
-    id: String,
-    category: PackageCategory,
-  },
+  Package(PackageInfo),
 }
 
 impl Asset {
@@ -221,12 +225,17 @@ impl Asset {
 
     let alternate_names = RefCell::new(alternate_names);
     let dependencies = RefCell::new(dependencies);
-    let package_id = RefCell::new(String::new());
-    let package_category = RefCell::new(PackageCategory::Library);
+    let package_info = RefCell::new(PackageInfo {
+      name: String::new(),
+      id: String::new(),
+      category: PackageCategory::Library,
+    });
 
     let result = lua.context(|lua_ctx| -> rlua::Result<()> {
       lua_ctx.scope(|scope| -> rlua::Result<()> {
         let globals = lua_ctx.globals();
+
+        globals.set("_card_props", lua_ctx.create_table()?)?;
 
         let engine_table = lua_ctx.create_table()?;
 
@@ -234,9 +243,11 @@ impl Asset {
         let create_define_func = |category: PackageCategory| {
           scope.create_function_mut(
             closure!(move category, ref alternate_names, |_, id: String| {
+              let package_info = PackageInfo{ name: String::new(), id, category };
+
               alternate_names
                 .borrow_mut()
-                .push(AssetID::Package { id, category });
+                .push(AssetID::Package(package_info));
 
               Ok(())
             }),
@@ -256,9 +267,9 @@ impl Asset {
         // dependency resolution
         let create_require_func = |category: PackageCategory| {
           scope.create_function_mut(closure!(move category, ref dependencies, |_, id: String| {
-            dependencies
-              .borrow_mut()
-              .push(AssetID::Package { id, category });
+            let package_info = PackageInfo{ name: String::new(), id, category };
+
+            dependencies.borrow_mut().push(AssetID::Package(package_info));
 
             Ok(())
           }))
@@ -280,7 +291,16 @@ impl Asset {
         package_table.set(
           "declare_package_id",
           scope.create_function_mut(|_, (_, id): (rlua::Table, String)| {
-            *package_id.borrow_mut() = id;
+            package_info.borrow_mut().id = id;
+            Ok(())
+          })?,
+        )?;
+
+        // name resolution
+        package_table.set(
+          "set_name",
+          scope.create_function_mut(|_, (_, name): (rlua::Table, String)| {
+            package_info.borrow_mut().name = name;
             Ok(())
           })?,
         )?;
@@ -288,8 +308,8 @@ impl Asset {
         // resolving category
         let create_category_stub = |category: PackageCategory| {
           scope.create_function_mut(
-            closure!(move category, ref package_category, |_, _: rlua::MultiValue| {
-              *package_category.borrow_mut() = category;
+            closure!(move category, ref package_info, |_, _: rlua::MultiValue| {
+              package_info.borrow_mut().category = category;
 
               Ok(())
             }),
@@ -305,9 +325,11 @@ impl Asset {
         package_table.set(
           "get_card_props",
           scope.create_function_mut(|lua_ctx, _: rlua::Table| {
-            *package_category.borrow_mut() = PackageCategory::Card;
+            package_info.borrow_mut().category = PackageCategory::Card;
 
-            lua_ctx.create_table()
+            let card_props: rlua::Table = lua_ctx.globals().get("_card_props")?;
+
+            Ok(card_props)
           })?,
         )?;
 
@@ -335,6 +357,8 @@ impl Asset {
 
         globals.set("_modpath", "")?;
         globals.set("_folderpath", "")?;
+        globals.set("include", create_nil_stub()?)?;
+
         globals.set("Blocks", lua_ctx.create_table()?)?;
         globals.set("Element", lua_ctx.create_table()?)?;
         globals.set("CardClass", lua_ctx.create_table()?)?;
@@ -347,7 +371,6 @@ impl Asset {
         engine_table.set("load_audio", create_nil_stub()?)?;
         globals.set("Engine", engine_table)?;
 
-        package_table.set("set_name", create_nil_stub()?)?;
         package_table.set("set_description", create_nil_stub()?)?;
         package_table.set("set_color", create_nil_stub()?)?;
         package_table.set("set_shape", create_nil_stub()?)?;
@@ -365,8 +388,9 @@ impl Asset {
 
         lua_ctx.load(&entry_script).exec()?;
 
-        let requires_scripts_func: rlua::Function = globals.get("package_requires_scripts")?;
-        requires_scripts_func.call(())?;
+        if let Ok(requires_scripts_func) = globals.get::<&str, rlua::Function>("package_requires_scripts") {
+          requires_scripts_func.call(())?;
+        }
 
         let init_func: rlua::Function = globals.get("package_init")?;
         init_func.call(package_table)?;
@@ -376,22 +400,25 @@ impl Asset {
 
         match package_build_func {
           rlua::Value::Function(_) => {
-            *package_category.borrow_mut() = PackageCategory::Encounter;
+            package_info.borrow_mut().category = PackageCategory::Encounter;
           }
           _ => {}
+        }
+
+        // name resolution
+        let card_props: rlua::Table = lua_ctx.globals().get("_card_props")?;
+
+        if let Ok(card_name) = card_props.get("shortname") {
+          package_info.borrow_mut().name = card_name;
         }
 
         Ok(())
       })?;
 
       // prepend the alternate name to make the first result when resolving the category
-      alternate_names.into_inner().insert(
-        0,
-        AssetID::Package {
-          id: package_id.into_inner(),
-          category: package_category.into_inner(),
-        },
-      );
+      alternate_names
+        .into_inner()
+        .insert(0, AssetID::Package(package_info.into_inner()));
 
       Ok(())
     });
@@ -405,12 +432,12 @@ impl Asset {
     }
   }
 
-  pub fn resolve_package_category(&self) -> Option<PackageCategory> {
+  pub fn resolve_package_info(&self) -> Option<&PackageInfo> {
     self
       .alternate_names
       .iter()
       .find_map(|asset_id| match asset_id {
-        AssetID::Package { id: _, category } => Some(category.clone()),
+        AssetID::Package(info) => Some(info),
         _ => None,
       })
   }

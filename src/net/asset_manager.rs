@@ -1,4 +1,4 @@
-use super::{Asset, AssetID};
+use super::{Asset, AssetID, PackageInfo};
 use std::collections::HashMap;
 
 pub struct AssetManager {
@@ -42,7 +42,11 @@ impl AssetManager {
   pub fn set_asset(&mut self, path: String, asset: Asset) {
     for alternate_name in &asset.alternate_names {
       match alternate_name {
-        AssetID::Package { id, category: _ } => {
+        AssetID::Package(PackageInfo {
+          name: _,
+          id,
+          category: _,
+        }) => {
           self.package_paths.insert(id.clone(), path.clone());
         }
         _ => {}
@@ -70,7 +74,11 @@ impl AssetManager {
 
     for alternate_name in asset.alternate_names {
       match alternate_name {
-        AssetID::Package { id, category: _ } => try_remove(&mut self.package_paths, id),
+        AssetID::Package(PackageInfo {
+          name: _,
+          id,
+          category: _,
+        }) => try_remove(&mut self.package_paths, id),
         _ => {}
       }
     }
@@ -113,7 +121,11 @@ impl AssetManager {
 
     match dependency {
       AssetID::AssetPath(path) => Some(path),
-      AssetID::Package { id, category: _ } => get_as_option_str(&self.package_paths, id),
+      AssetID::Package(PackageInfo {
+        name: _,
+        id,
+        category: _,
+      }) => get_as_option_str(&self.package_paths, id),
     }
   }
 }
