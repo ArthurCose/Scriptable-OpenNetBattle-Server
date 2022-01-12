@@ -398,11 +398,8 @@ impl Asset {
         // encounter detection
         let package_build_func: rlua::Value = globals.get("package_build")?;
 
-        match package_build_func {
-          rlua::Value::Function(_) => {
-            package_info.borrow_mut().category = PackageCategory::Encounter;
-          }
-          _ => {}
+        if let rlua::Value::Function(_) = package_build_func {
+          package_info.borrow_mut().category = PackageCategory::Encounter;
         }
 
         // name resolution

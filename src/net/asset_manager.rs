@@ -41,6 +41,7 @@ impl AssetManager {
 
   pub fn set_asset(&mut self, path: String, asset: Asset) {
     for alternate_name in &asset.alternate_names {
+      #[allow(clippy::single_match)]
       match alternate_name {
         AssetID::Package(PackageInfo {
           name: _,
@@ -73,6 +74,7 @@ impl AssetManager {
     };
 
     for alternate_name in asset.alternate_names {
+      #[allow(clippy::single_match)]
       match alternate_name {
         AssetID::Package(PackageInfo {
           name: _,
