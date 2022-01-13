@@ -55,7 +55,6 @@ enum ServerPacketId {
   CloseBBS,
   ShopInventory,
   OpenShop,
-  OfferPackage,
   LoadPackage,
   ModWhitelist,
   InitiateEncounter,
@@ -69,6 +68,7 @@ enum ServerPacketId {
   ActorAnimate,
   ActorPropertyKeyFrames,
   ActorMinimapColor,
+  OfferPackage,
 }
 
 #[derive(Debug)]
