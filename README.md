@@ -6,12 +6,31 @@ Support for more sources such as WASM/WASI (C++, Kotlin, etc) or JavaScript can 
 
 The Plugin Interface could also be used to build a Rust based script compiled directly into the server.
 
+## Minimal Setup
+
+- `areas` folder
+  - `.tmx` map files, `default.tmx` required
+  - See [Areas](#areas)
+- `assets` folder
+  - Tilesets, textures, audio, animations, packages
+  - See [Assets](#assets)
+- `scripts` folder
+  - Lua files
+  - See [Lua API](#lua-api)
+- Server executable
+  - See [Building the Project](#building-the-project) if you don't have a copy
+
+Run the server through a command prompt or terminal and join on `127.0.0.1:8765`
+
+Use `-h` to see more options and research port forwarding or server hosting if you want to share your server with others over the internet.
+
 ## Assets
 
 Types of assets:
 
 - Texture (.png|.bmp)
-- Audio (.ogg)
+- Audio (.ogg|.wav|.mid|.midi)
+- Mod Packages (.zip)
 - Text
 
 Paths
@@ -101,7 +120,23 @@ Map:
 
 Types are used to denote special tiles or objects understood by the client.
 
-Home Warp:
+- Warps
+  - [Home Warp](#home-warp)
+  - [Position Warp](#position-warp)
+  - [Server Warp](#server-warp)
+  - [Custom Server Warp](#custom-server-warp)
+  - [Custom Warp](#custom-warp)
+- Movement
+  - [Stairs](#stairs)
+  - [Conveyor](#conveyor)
+  - [Ice](#ice)
+  - [Treadmill](#treadmill)
+- Plain Markers
+  - [Board](#board)
+  - [Shop](#shop)
+  - [Arrow](#arrow)
+
+#### Home Warp
 
 - Tile Objects only
 - Visible in minimap
@@ -117,7 +152,7 @@ Home Warp:
     - Down Left
     - Down Right
 
-Position Warp:
+#### Position Warp
 
 - Tile Objects only
 - Visible in minimap
@@ -136,7 +171,7 @@ Position Warp:
     - Down Left
     - Down Right
 
-Server Warp:
+#### Server Warp
 
 - Tile Objects only
 - Visible in minimap
@@ -149,29 +184,19 @@ Server Warp:
     - Can be read through handle_player_request on the other server
     - Try to keep it short! Long data strings may get ignored
 
-Custom Server Warp:
+#### Custom Server Warp
 
 - Tile Objects only
 - Visible in minimap
 - Players will be warped out if colliding with the warp, the result of the warp can be resolved in handle_custom_warp
 
-Custom Warp:
+#### Custom Warp
 
 - Tile Objects only
 - Visible in minimap
 - Players will be warped out if colliding with the warp, the result of the warp can be resolved in handle_custom_warp
 
-Board:
-
-- Tile Objects only
-- Visible in minimap
-
-Shop:
-
-- Tile Objects only
-- Visible in minimap
-
-Stairs:
+#### Stairs
 
 - Tiles only
 - Visible in minimap
@@ -186,7 +211,7 @@ Stairs:
     - Down Left
     - Down Right
 
-Conveyor:
+#### Conveyor
 
 - Tiles only
 - Visible in minimap
@@ -201,7 +226,7 @@ Conveyor:
   - Speed: number? (Tiles per second, default: 6)
   - Sound Effect: string
 
-Ice:
+#### Ice
 
 - Tiles only
 - Custom properties:
@@ -209,7 +234,7 @@ Ice:
   - Speed: number? (Tiles per second, default: 6)
   - Sound Effect: string
 
-Treadmill:
+#### Treadmill
 
 - Tiles only
 - Custom properties:
@@ -222,7 +247,17 @@ Treadmill:
     - Down Right
   - Speed: number? (Tiles per second, default: 1.875)
 
-Arrow:
+#### Board
+
+- Tile Objects only
+- Visible in minimap
+
+#### Shop
+
+- Tile Objects only
+- Visible in minimap
+
+#### Arrow
 
 - Tiles only
 - Visible in minimap
@@ -238,7 +273,17 @@ Arrow:
 
 Commented functions are in development and require changes to the client (specified below).
 
-### Entry functions
+- [Entry Functions](#entry-functions)
+- [Net API](#net-api)
+  - [Area API](#area-api)
+  - [Bot API](#bot-api)
+  - [Player API](#player-api)
+  - [Widget API](#widget-api)
+  - [Player Data API](#player-data-api)
+  - [Asset API](#asset-api)
+- [Async API](#async-api)
+
+### Entry Functions
 
 ```Lua
 function tick(delta_time)
@@ -514,8 +559,10 @@ Async.message_server(address, port, data) -- you will not know if this succeeds,
 Async.sleep(duration) -- promise, value = nil
 ```
 
-## Building
+## Building the Project
 
 This project is built with Rust, so after installing Cargo, you can compile and run the project with `cargo run`.
+
+For a standalone executable you can run `cargo build --release` and copy just the executable from `target/build`
 
 If you are interested in understanding the source before making changes, check out the [achitecture document](./ARCHITECTURE.md).
