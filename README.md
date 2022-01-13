@@ -53,6 +53,10 @@ Paths
 
 Maps for areas are stored in `./areas`. The first area players will see is `default.tmx` (required).
 
+- [Suggested Settings](#suggested-settings)
+- [Custom Properties](#custom-properties)
+- [Types](#types)
+
 ### Suggested Settings
 
 Editor:
