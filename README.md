@@ -55,7 +55,7 @@ Maps for areas are stored in `./areas`. The first area players will see is `defa
 
 - [Suggested Settings](#suggested-settings)
 - [Custom Properties](#custom-properties)
-- [Types](#types)
+- [Object and Tile Types](#object-and-tile-types)
 
 ### Suggested Settings
 
@@ -120,7 +120,7 @@ Map:
 - Foreground Vel Y: float
 - Foreground Parallax: float
 
-### Types
+### Object and Tile Types
 
 Types are used to denote special tiles or objects understood by the client.
 
