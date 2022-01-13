@@ -1,6 +1,6 @@
 # Scriptable server for [OpenNetBattle](https://github.com/TheMaverickProgrammer/OpenNetBattle).
 
-Scripts can be created through Lua. Entry scripts are read from `scripts/*/main.lua` for script projects, and `scripts/*.lua` for single file scripts.
+Scripting available through through Lua.
 
 Support for more sources such as WASM/WASI (C++, Kotlin, etc) or JavaScript can be added by creating a Plugin Interface. For an example of how implement one, take a look at the existing LuaPluginInterface.
 
@@ -15,14 +15,14 @@ The Plugin Interface could also be used to build a Rust based script compiled di
   - Tilesets, textures, audio, animations, packages
   - See [Assets](#assets)
 - `scripts` folder
-  - Lua files
+  - Lua files. Entry scripts are read from `scripts/*/main.lua` for script projects, and `scripts/*.lua` for single file scripts
   - See [Lua API](#lua-api)
 - Server executable
   - See [Building the Project](#building-the-project) if you don't have a copy
 
 Run the server through a command prompt or terminal and join on `127.0.0.1:8765`
 
-Use `-h` to see more options and research port forwarding or server hosting if you want to share your server with others over the internet.
+Use `-h` to see more options and research port forwarding or server hosting if you want to share your server with others over the internet
 
 ## Assets
 
@@ -561,8 +561,8 @@ Async.sleep(duration) -- promise, value = nil
 
 ## Building the Project
 
-This project is built with Rust, so after installing Cargo, you can compile and run the project with `cargo run`.
+This project is built with Rust, so after installing Cargo, you can compile and run the project with `cargo run`
 
 For a standalone executable you can run `cargo build --release` and copy just the executable from `target/build`
 
-If you are interested in understanding the source before making changes, check out the [achitecture document](./ARCHITECTURE.md).
+If you are interested in understanding the source before making changes, check out the [achitecture document](./ARCHITECTURE.md)
