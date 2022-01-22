@@ -58,6 +58,7 @@ enum ServerPacketId {
   OfferPackage,
   LoadPackage,
   ModWhitelist,
+  ModBlacklist,
   InitiateEncounter,
   InitiatePvp,
   ActorConnected,
@@ -254,7 +255,10 @@ pub enum ServerPacket<'a> {
     package_category: PackageCategory,
   },
   ModWhitelist {
-    whitelist_path: &'a str,
+    whitelist_path: Option<&'a str>,
+  },
+  ModBlacklist {
+    blacklist_path: Option<&'a str>,
   },
   InitiateEncounter {
     package_path: &'a str,
@@ -709,7 +713,11 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
     }
     ServerPacket::ModWhitelist { whitelist_path } => {
       write_u16(buf, ServerPacketId::ModWhitelist as u16);
-      write_string_u16(buf, whitelist_path);
+      write_string_u16(buf, whitelist_path.unwrap_or_default());
+    }
+    ServerPacket::ModBlacklist { blacklist_path } => {
+      write_u16(buf, ServerPacketId::ModBlacklist as u16);
+      write_string_u16(buf, blacklist_path.unwrap_or_default());
     }
     ServerPacket::InitiateEncounter {
       package_path,

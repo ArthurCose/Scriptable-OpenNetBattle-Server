@@ -520,14 +520,35 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "set_mod_whitelist_for_player",
     |api_ctx, lua_ctx, params| {
-      let (player_id, whitelist_path): (rlua::String, rlua::String) =
+      let (player_id, whitelist_path): (rlua::String, Option<rlua::String>) =
         lua_ctx.unpack_multi(params)?;
       let player_id_str = player_id.to_str()?;
-      let whitelist_path_str = whitelist_path.to_str()?;
+      let whitelist_path_str = whitelist_path
+        .as_ref()
+        .map(|path| path.to_str().unwrap_or_default());
 
       let mut net = api_ctx.net_ref.borrow_mut();
 
       net.set_mod_whitelist_for_player(player_id_str, whitelist_path_str);
+
+      lua_ctx.pack_multi(())
+    },
+  );
+
+  lua_api.add_dynamic_function(
+    "Net",
+    "set_mod_blacklist_for_player",
+    |api_ctx, lua_ctx, params| {
+      let (player_id, blacklist_path): (rlua::String, Option<rlua::String>) =
+        lua_ctx.unpack_multi(params)?;
+      let player_id_str = player_id.to_str()?;
+      let blacklist_path_str = blacklist_path
+        .as_ref()
+        .map(|path| path.to_str().unwrap_or_default());
+
+      let mut net = api_ctx.net_ref.borrow_mut();
+
+      net.set_mod_blacklist_for_player(player_id_str, blacklist_path_str);
 
       lua_ctx.pack_multi(())
     },

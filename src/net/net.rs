@@ -1164,15 +1164,17 @@ impl Net {
     );
   }
 
-  pub fn set_mod_whitelist_for_player(&mut self, player_id: &str, whitelist_path: &str) {
-    ensure_asset(
-      &self.socket,
-      self.config.max_payload_size,
-      &self.asset_manager,
-      &mut self.clients,
-      &[String::from(player_id)],
-      &whitelist_path.to_string(),
-    );
+  pub fn set_mod_whitelist_for_player(&mut self, player_id: &str, whitelist_path: Option<&str>) {
+    if let Some(whitelist_path) = whitelist_path {
+      ensure_asset(
+        &self.socket,
+        self.config.max_payload_size,
+        &self.asset_manager,
+        &mut self.clients,
+        &[String::from(player_id)],
+        &whitelist_path.to_string(),
+      );
+    }
 
     let client = if let Some(client) = self.clients.get_mut(player_id) {
       client
@@ -1184,6 +1186,31 @@ impl Net {
       &self.socket,
       Reliability::ReliableOrdered,
       ServerPacket::ModWhitelist { whitelist_path },
+    );
+  }
+
+  pub fn set_mod_blacklist_for_player(&mut self, player_id: &str, blacklist_path: Option<&str>) {
+    if let Some(blacklist_path) = blacklist_path {
+      ensure_asset(
+        &self.socket,
+        self.config.max_payload_size,
+        &self.asset_manager,
+        &mut self.clients,
+        &[String::from(player_id)],
+        &blacklist_path.to_string(),
+      );
+    }
+
+    let client = if let Some(client) = self.clients.get_mut(player_id) {
+      client
+    } else {
+      return;
+    };
+
+    client.packet_shipper.send(
+      &self.socket,
+      Reliability::ReliableOrdered,
+      ServerPacket::ModBlacklist { blacklist_path },
     );
   }
 
