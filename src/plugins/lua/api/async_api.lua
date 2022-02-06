@@ -63,7 +63,7 @@ function Async.promisify(co)
 
       if not ok then
         -- value is an error
-        print(value)
+        print("runtime error: " .. value)
         return true
       end
 
@@ -91,7 +91,11 @@ function Async.create_promise(task)
     value = v
 
     for _, listener in ipairs(listeners) do
-      pcall(function() listener(value) end)
+      local success, err = pcall(function() listener(value) end)
+
+      if not success then
+        print("runtime error: " .. err)
+      end
     end
   end
 
