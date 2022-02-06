@@ -362,6 +362,9 @@ impl Asset {
         globals.set("Blocks", lua_ctx.create_table()?)?;
         globals.set("Element", lua_ctx.create_table()?)?;
         globals.set("CardClass", lua_ctx.create_table()?)?;
+        globals.set("TileState", lua_ctx.create_table()?)?;
+        globals.set("Team", lua_ctx.create_table()?)?;
+        globals.set("Rank", lua_ctx.create_table()?)?;
 
         let color_table = lua_ctx.create_table()?;
         color_table.set("new", create_table_stub()?)?;
@@ -388,7 +391,9 @@ impl Asset {
 
         lua_ctx.load(&entry_script).exec()?;
 
-        if let Ok(requires_scripts_func) = globals.get::<&str, rlua::Function>("package_requires_scripts") {
+        if let Ok(requires_scripts_func) =
+          globals.get::<&str, rlua::Function>("package_requires_scripts")
+        {
           requires_scripts_func.call(())?;
         }
 
