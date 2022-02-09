@@ -310,7 +310,7 @@ impl PluginInterface for PluginWrapper {
     // expect the above to be correct
     // don't expect the client to be correct
     // otherwise someone can read the source and force a crash :p
-    if let Some(i) = client.battle_plugin.take() {
+    if let Some(i) = client.battle_tracker.pop_front() {
       self.wrap_call(i, net, |plugin_interface, net| {
         plugin_interface.handle_battle_results(net, player_id, battle_stats)
       });

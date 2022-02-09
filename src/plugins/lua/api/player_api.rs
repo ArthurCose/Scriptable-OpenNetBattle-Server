@@ -505,13 +505,22 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "initiate_pvp", |api_ctx, lua_ctx, params| {
+    use multi_mut::HashMapMultiMut;
+
     let (player_1_id, player_2_id, _): (rlua::String, rlua::String, Option<rlua::String>) =
       lua_ctx.unpack_multi(params)?;
     let (player_1_id_str, player_2_id_str) = (player_1_id.to_str()?, player_2_id.to_str()?);
 
     let mut net = api_ctx.net_ref.borrow_mut();
+    let mut battle_tracker = api_ctx.battle_tracker_ref.borrow_mut();
+    let tracker_pair = battle_tracker.get_pair_mut(player_1_id_str, player_2_id_str);
 
-    net.initiate_pvp(player_1_id_str, player_2_id_str);
+    if let Some((tracker_1, tracker_2)) = tracker_pair {
+      tracker_1.push_back(api_ctx.script_path.clone());
+      tracker_2.push_back(api_ctx.script_path.clone());
+  
+      net.initiate_pvp(player_1_id_str, player_2_id_str);
+    }
 
     lua_ctx.pack_multi(())
   });
@@ -575,7 +584,15 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let mut net = api_ctx.net_ref.borrow_mut();
     let data = data_value.map(|v| format!("return {}", lua_value_to_string(v)));
 
-    net.initiate_encounter(player_id_str, package_id_str, data.as_deref());
+    if let Some(tracker) = api_ctx
+      .battle_tracker_ref
+      .borrow_mut()
+      .get_mut(player_id_str)
+    {
+      tracker.push_back(api_ctx.script_path.clone());
+
+      net.initiate_encounter(player_id_str, package_id_str, data.as_deref());
+    }
 
     lua_ctx.pack_multi(())
   });

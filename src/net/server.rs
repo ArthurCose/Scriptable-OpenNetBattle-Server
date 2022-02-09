@@ -496,9 +496,6 @@ impl Server {
             println!("Received BattleResults packet from {}", socket_address);
           }
 
-          let client = net.get_client_mut(player_id).unwrap();
-          client.is_battling = false;
-
           self
             .plugin_wrapper
             .handle_battle_results(net, player_id, &battle_stats);

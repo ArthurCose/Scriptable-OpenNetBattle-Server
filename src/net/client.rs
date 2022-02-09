@@ -1,6 +1,7 @@
 use super::{Actor, Direction, PlayerData, WidgetTracker};
 use crate::packets::PacketShipper;
 use std::collections::HashSet;
+use std::collections::VecDeque;
 use std::net::SocketAddr;
 
 pub(super) struct Client {
@@ -22,9 +23,8 @@ pub(super) struct Client {
   pub mugshot_texture_buffer: Vec<u8>,
   pub mugshot_animation_buffer: Vec<u8>,
   pub widget_tracker: WidgetTracker<usize>,
+  pub battle_tracker: VecDeque<usize>,
   pub player_data: PlayerData,
-  pub battle_plugin: Option<usize>,
-  pub is_battling: bool,
   pub is_input_locked: bool,
 }
 
@@ -85,9 +85,8 @@ impl Client {
       mugshot_texture_buffer: Vec::new(),
       mugshot_animation_buffer: Vec::new(),
       widget_tracker: WidgetTracker::new(),
+      battle_tracker: VecDeque::new(),
       player_data: PlayerData::new(identity),
-      battle_plugin: None,
-      is_battling: false,
       is_input_locked: false,
     }
   }
@@ -100,8 +99,12 @@ impl Client {
     self.widget_tracker.current_shop().is_some()
   }
 
+  pub fn is_battling(&self) -> bool {
+    !self.battle_tracker.is_empty()
+  }
+
   pub fn is_busy(&self) -> bool {
-    self.is_battling || self.is_in_widget()
+    self.is_battling() || self.is_in_widget()
   }
 }
 
