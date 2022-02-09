@@ -418,9 +418,10 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
 
       let data_type_byte = match asset.data {
         AssetData::Text(_) => 0,
-        AssetData::Texture(_) => 1,
-        AssetData::Audio(_) => 2,
-        AssetData::Data(_) => 3,
+        AssetData::CompressedText(_) => 1,
+        AssetData::Texture(_) => 2,
+        AssetData::Audio(_) => 3,
+        AssetData::Data(_) => 4,
       };
 
       buf.push(data_type_byte);
@@ -890,6 +891,7 @@ pub fn create_asset_stream<'a>(
 
   let mut bytes = match &asset.data {
     AssetData::Text(data) => data.as_bytes(),
+    AssetData::CompressedText(data) => data,
     AssetData::Texture(data) => data,
     AssetData::Audio(data) => data,
     AssetData::Data(data) => data,

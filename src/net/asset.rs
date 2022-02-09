@@ -11,9 +11,30 @@ pub struct Asset {
 #[derive(Clone, Debug)]
 pub enum AssetData {
   Text(String),
+  CompressedText(Vec<u8>),
   Texture(Vec<u8>),
   Audio(Vec<u8>),
   Data(Vec<u8>),
+}
+
+impl AssetData {
+  pub fn compress_text(text: String) -> AssetData {
+    use flate2::write::ZlibEncoder;
+    use flate2::Compression;
+    use std::io::prelude::*;
+
+    let mut e = ZlibEncoder::new(Vec::new(), Compression::fast());
+
+    if e.write_all(text.as_bytes()).is_err() {
+      return AssetData::Text(text);
+    }
+
+    if let Ok(bytes) = e.finish() {
+      return AssetData::CompressedText(bytes);
+    }
+
+    AssetData::Text(text)
+  }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -97,6 +118,7 @@ impl Asset {
   pub fn len(&self) -> usize {
     match &self.data {
       AssetData::Text(data) => data.len(),
+      AssetData::CompressedText(data) => data.len(),
       AssetData::Texture(data) => data.len(),
       AssetData::Audio(data) => data.len(),
       AssetData::Data(data) => data.len(),
@@ -488,9 +510,9 @@ fn resolve_asset_data(path: &std::path::Path, data: &[u8]) -> AssetData {
         println!("Invalid .tsx file: {:?}", path);
       }
 
-      AssetData::Text(translated_data.unwrap_or_else(|| original_data.to_string()))
+      AssetData::compress_text(translated_data.unwrap_or_else(|| original_data.to_string()))
     }
-    _ => AssetData::Text(String::from_utf8_lossy(data).to_string()),
+    _ => AssetData::compress_text(String::from_utf8_lossy(data).to_string()),
   }
 }
 

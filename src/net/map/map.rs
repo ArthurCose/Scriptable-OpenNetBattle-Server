@@ -687,7 +687,7 @@ impl Map {
       .collect();
 
     Asset {
-      data: AssetData::Text(self.render()),
+      data: AssetData::compress_text(self.render()),
       alternate_names: Vec::new(),
       dependencies,
       last_modified: 0,

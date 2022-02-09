@@ -1701,14 +1701,14 @@ impl Net {
 
     let player_assets = [
       (texture_path.clone(), AssetData::Texture(texture_data)),
-      (animation_path.clone(), AssetData::Text(animation_data)),
+      (animation_path.clone(), AssetData::compress_text(animation_data)),
       (
         mugshot_texture_path,
         AssetData::Texture(mugshot_texture_data),
       ),
       (
         mugshot_animation_path,
-        AssetData::Text(mugshot_animation_data),
+        AssetData::compress_text(mugshot_animation_data),
       ),
     ];
 

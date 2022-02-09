@@ -43,6 +43,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let asset_type = if let Some(asset) = net.get_asset(path_str) {
       match asset.data {
         AssetData::Text(_) => Some("text"),
+        AssetData::CompressedText(_) => Some("text"),
         AssetData::Texture(_) => Some("texture"),
         AssetData::Audio(_) => Some("audio"),
         AssetData::Data(_) => Some("data"),
