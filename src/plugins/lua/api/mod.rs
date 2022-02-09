@@ -15,12 +15,15 @@ use std::cell::RefCell;
 
 use crate::jobs::JobPromiseManager;
 use std::collections::HashMap;
+use std::collections::VecDeque;
 
 pub struct ApiContext<'lua_scope, 'a> {
   pub script_path: &'lua_scope std::path::PathBuf,
   pub net_ref: &'lua_scope RefCell<&'a mut Net>,
   pub widget_tracker_ref:
     &'lua_scope RefCell<&'a mut HashMap<String, WidgetTracker<std::path::PathBuf>>>,
+  pub battle_tracker_ref:
+    &'lua_scope RefCell<&'a mut HashMap<String, VecDeque<std::path::PathBuf>>>,
   pub promise_manager_ref: &'lua_scope RefCell<&'a mut JobPromiseManager>,
 }
 

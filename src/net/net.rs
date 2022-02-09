@@ -1094,7 +1094,7 @@ impl Net {
 
   pub fn is_player_battling(&self, id: &str) -> bool {
     if let Some(client) = self.clients.get(id) {
-      return client.is_battling;
+      return client.is_battling();
     }
 
     false
@@ -1111,11 +1111,8 @@ impl Net {
         return;
       };
 
-    client_1.is_battling = true;
-    client_1.battle_plugin = Some(self.active_plugin);
-
-    client_2.is_battling = true;
-    client_2.battle_plugin = Some(self.active_plugin);
+    client_1.battle_tracker.push_back(self.active_plugin);
+    client_2.battle_tracker.push_back(self.active_plugin);
 
     // todo: put these clients in slow mode
 
@@ -1255,8 +1252,7 @@ impl Net {
     };
 
     // update tracking
-    client.is_battling = true;
-    client.battle_plugin = Some(self.active_plugin);
+    client.battle_tracker.push_back(self.active_plugin);
 
     // send dependencies
     let dependency_chain = self

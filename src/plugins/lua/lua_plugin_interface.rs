@@ -5,6 +5,7 @@ use crate::plugins::PluginInterface;
 use rlua::Lua;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::collections::VecDeque;
 
 pub struct LuaPluginInterface {
   scripts: HashMap<std::path::PathBuf, Lua>,
@@ -25,6 +26,7 @@ pub struct LuaPluginInterface {
   battle_results_listeners: Vec<std::path::PathBuf>,
   server_message_listeners: Vec<std::path::PathBuf>,
   widget_trackers: HashMap<String, WidgetTracker<std::path::PathBuf>>,
+  battle_trackers: HashMap<String, VecDeque<std::path::PathBuf>>,
   promise_manager: JobPromiseManager,
   lua_api: LuaApi,
 }
@@ -50,6 +52,7 @@ impl LuaPluginInterface {
       server_message_listeners: Vec::new(),
       battle_results_listeners: Vec::new(),
       widget_trackers: HashMap::new(),
+      battle_trackers: HashMap::new(),
       promise_manager: JobPromiseManager::new(),
       lua_api: LuaApi::new(),
     }
@@ -91,12 +94,14 @@ impl LuaPluginInterface {
 
     lua_env.context(|lua_ctx| {
       let widget_tracker_ref = RefCell::new(&mut self.widget_trackers);
+      let battle_tracker_ref = RefCell::new(&mut self.battle_trackers);
       let promise_manager_ref = RefCell::new(&mut self.promise_manager);
 
       let api_ctx = ApiContext {
         script_path: &script_path,
         net_ref: &net_ref,
         widget_tracker_ref: &widget_tracker_ref,
+        battle_tracker_ref: &battle_tracker_ref,
         promise_manager_ref: &promise_manager_ref,
       };
 
@@ -252,6 +257,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &self.tick_listeners,
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -272,6 +278,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &self.authorization_listeners,
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -288,10 +295,15 @@ impl PluginInterface for LuaPluginInterface {
       .widget_trackers
       .insert(player_id.to_string(), WidgetTracker::new());
 
+    self
+      .battle_trackers
+      .insert(player_id.to_string(), VecDeque::new());
+
     handle_event(
       &mut self.scripts,
       &self.player_request_listeners,
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -305,6 +317,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &self.player_connect_listeners,
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -318,6 +331,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &self.player_join_listeners,
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -331,6 +345,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &self.player_transfer_listeners,
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -344,6 +359,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &self.player_disconnect_listeners,
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -352,6 +368,7 @@ impl PluginInterface for LuaPluginInterface {
     );
 
     self.widget_trackers.remove(player_id);
+    self.battle_trackers.remove(player_id);
   }
 
   fn handle_player_move(&mut self, net: &mut Net, player_id: &str, x: f32, y: f32, z: f32) {
@@ -359,6 +376,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &self.player_move_listeners,
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -383,6 +401,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &self.player_avatar_change_listeners,
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -414,6 +433,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &self.player_emote_listeners,
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -435,6 +455,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &self.custom_warp_listeners,
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -454,6 +475,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &self.object_interaction_listeners,
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -473,6 +495,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &self.actor_interaction_listeners,
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -494,6 +517,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &self.tile_interaction_listeners,
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -516,6 +540,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &[script_path],
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -538,6 +563,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &[script_path],
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -562,6 +588,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &[script_path],
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -584,6 +611,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &[script_path],
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -606,6 +634,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &[script_path],
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -628,6 +657,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &[script_path],
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -650,6 +680,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &[script_path],
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -672,6 +703,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &[script_path],
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -681,10 +713,20 @@ impl PluginInterface for LuaPluginInterface {
   }
 
   fn handle_battle_results(&mut self, net: &mut Net, player_id: &str, battle_stats: &BattleStats) {
+    let tracker = self.battle_trackers.get_mut(player_id).unwrap();
+
+    let script_path = if let Some(script_path) = tracker.pop_front() {
+      script_path
+    } else {
+      // protect against attackers
+      return;
+    };
+
     handle_event(
       &mut self.scripts,
-      &self.battle_results_listeners,
+      &[script_path],
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -725,6 +767,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.scripts,
       &self.server_message_listeners,
       &mut self.widget_trackers,
+      &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
@@ -745,6 +788,7 @@ fn handle_event<F>(
   scripts: &mut HashMap<std::path::PathBuf, Lua>,
   event_listeners: &[std::path::PathBuf],
   widget_tracker: &mut HashMap<String, WidgetTracker<std::path::PathBuf>>,
+  battle_tracker: &mut HashMap<String, VecDeque<std::path::PathBuf>>,
   promise_manager: &mut JobPromiseManager,
   lua_api: &mut LuaApi,
   net: &mut Net,
@@ -758,6 +802,7 @@ fn handle_event<F>(
   let call_lua = || -> rlua::Result<()> {
     let net_ref = RefCell::new(net);
     let widget_tracker_ref = RefCell::new(widget_tracker);
+    let battle_tracker_ref = RefCell::new(battle_tracker);
     let promise_manager_ref = RefCell::new(promise_manager);
 
     // loop over scripts
@@ -769,6 +814,7 @@ fn handle_event<F>(
           script_path,
           net_ref: &net_ref,
           widget_tracker_ref: &widget_tracker_ref,
+          battle_tracker_ref: &battle_tracker_ref,
           promise_manager_ref: &promise_manager_ref,
         };
 
