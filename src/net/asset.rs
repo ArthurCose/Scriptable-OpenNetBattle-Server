@@ -81,6 +81,10 @@ impl Asset {
 
     asset.resolve_dependencies(path);
 
+    if let AssetData::Text(text) = asset.data {
+      asset.data = AssetData::compress_text(text)
+    }
+
     asset
   }
 
@@ -112,6 +116,10 @@ impl Asset {
 
     asset.resolve_dependencies(path);
 
+    if let AssetData::Text(text) = asset.data {
+      asset.data = AssetData::compress_text(text)
+    }
+
     asset
   }
 
@@ -125,8 +133,8 @@ impl Asset {
     }
   }
 
-  /// Resolves dependencies and alternate name. `load_from_*` functions automatically call this
-  pub fn resolve_dependencies(&mut self, path: &std::path::Path) {
+  // Resolves dependencies and alternate name. `load_from_*` functions automatically call this
+  fn resolve_dependencies(&mut self, path: &std::path::Path) {
     let extension = path
       .extension()
       .unwrap_or_default()
@@ -510,9 +518,9 @@ fn resolve_asset_data(path: &std::path::Path, data: &[u8]) -> AssetData {
         println!("Invalid .tsx file: {:?}", path);
       }
 
-      AssetData::compress_text(translated_data.unwrap_or_else(|| original_data.to_string()))
+      AssetData::Text(translated_data.unwrap_or_else(|| original_data.to_string()))
     }
-    _ => AssetData::compress_text(String::from_utf8_lossy(data).to_string()),
+    _ => AssetData::Text(String::from_utf8_lossy(data).to_string()),
   }
 }
 
