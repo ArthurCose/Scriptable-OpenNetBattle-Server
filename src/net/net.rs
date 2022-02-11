@@ -1894,7 +1894,7 @@ impl Net {
       &self.socket,
       &mut self.clients,
       area,
-      Reliability::Reliable,
+      Reliability::ReliableOrdered,
       packet,
     );
   }
@@ -1962,7 +1962,7 @@ impl Net {
       &self.socket,
       &mut self.clients,
       area,
-      Reliability::Reliable,
+      Reliability::ReliableOrdered,
       packet,
     );
   }
@@ -2186,7 +2186,7 @@ impl Net {
           &self.socket,
           &mut self.clients,
           previous_area,
-          Reliability::Reliable,
+          Reliability::ReliableOrdered,
           ServerPacket::ActorDisconnected {
             ticket: id,
             warp_out: warp_in,
@@ -2215,7 +2215,7 @@ impl Net {
         &self.socket,
         &mut self.clients,
         area,
-        Reliability::Reliable,
+        Reliability::ReliableOrdered,
         bot.create_spawn_packet(bot.x, bot.y, bot.z, warp_in),
       );
     }
