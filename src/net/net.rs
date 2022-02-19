@@ -5,13 +5,15 @@ use super::client::Client;
 use super::map::Map;
 use super::server::ServerConfig;
 use super::{Actor, Area, Asset, AssetData, BbsPost, Direction, Item, PlayerData, ShopItem};
-use crate::packets::{create_asset_stream, Reliability, ServerPacket};
+use crate::packets::{create_asset_stream, PacketOrchestrator, Reliability, ServerPacket};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::net::UdpSocket;
 use std::rc::Rc;
 
 pub struct Net {
   socket: Rc<UdpSocket>,
+  packet_orchestrator: Rc<RefCell<PacketOrchestrator>>,
   config: Rc<ServerConfig>,
   areas: HashMap<String, Area>,
   clients: HashMap<String, Client>,
@@ -23,7 +25,11 @@ pub struct Net {
 }
 
 impl Net {
-  pub fn new(socket: Rc<UdpSocket>, config: Rc<ServerConfig>) -> Net {
+  pub fn new(
+    socket: Rc<UdpSocket>,
+    packet_orchestrator: Rc<RefCell<PacketOrchestrator>>,
+    config: Rc<ServerConfig>,
+  ) -> Net {
     use super::asset::get_map_path;
     use std::fs::{read_dir, read_to_string};
 
@@ -65,6 +71,7 @@ impl Net {
 
     Net {
       socket,
+      packet_orchestrator,
       config,
       areas,
       clients: HashMap::new(),
@@ -84,7 +91,7 @@ impl Net {
     self.asset_manager.set_asset(path.clone(), asset);
 
     update_cached_clients(
-      &self.socket,
+      &mut *self.packet_orchestrator.borrow_mut(),
       self.config.max_payload_size,
       &self.asset_manager,
       &mut self.clients,
@@ -162,7 +169,7 @@ impl Net {
   pub fn require_asset(&mut self, area_id: &str, asset_path: &str) {
     if let Some(area) = self.areas.get_mut(area_id) {
       ensure_asset(
-        &self.socket,
+        &mut *self.packet_orchestrator.borrow_mut(),
         self.config.max_payload_size,
         &self.asset_manager,
         &mut self.clients,
@@ -177,7 +184,7 @@ impl Net {
   pub fn play_sound(&mut self, area_id: &str, path: &str) {
     if let Some(area) = self.areas.get(area_id) {
       ensure_asset(
-        &self.socket,
+        &mut *self.packet_orchestrator.borrow_mut(),
         self.config.max_payload_size,
         &self.asset_manager,
         &mut self.clients,
@@ -186,8 +193,7 @@ impl Net {
       );
 
       broadcast_to_area(
-        &self.socket,
-        &mut self.clients,
+        &mut *self.packet_orchestrator.borrow_mut(),
         area,
         Reliability::Reliable,
         ServerPacket::PlaySound { path },
@@ -216,8 +222,7 @@ impl Net {
     let packet = ServerPacket::ActorSetName { ticket: id, name };
 
     broadcast_to_area(
-      &self.socket,
-      &mut self.clients,
+      &mut *self.packet_orchestrator.borrow_mut(),
       area,
       Reliability::Reliable,
       packet,
@@ -243,7 +248,7 @@ impl Net {
     // if the other players receive this, they'll just ignore it
 
     ensure_assets(
-      &self.socket,
+      &mut *self.packet_orchestrator.borrow_mut(),
       self.config.max_payload_size,
       &self.asset_manager,
       &mut self.clients,
@@ -258,8 +263,7 @@ impl Net {
     };
 
     broadcast_to_area(
-      &self.socket,
-      &mut self.clients,
+      &mut *self.packet_orchestrator.borrow_mut(),
       area,
       Reliability::ReliableOrdered,
       packet,
@@ -284,8 +288,7 @@ impl Net {
     };
 
     broadcast_to_area(
-      &self.socket,
-      &mut self.clients,
+      &mut *self.packet_orchestrator.borrow_mut(),
       area,
       Reliability::Reliable,
       packet,
@@ -299,17 +302,17 @@ impl Net {
     emote_id: u8,
     use_custom_emotes: bool,
   ) {
-    if let Some(client) = self.clients.get_mut(target_id) {
-      let packet = ServerPacket::ActorEmote {
-        ticket: emoter_id,
-        emote_id,
-        use_custom_emotes,
-      };
+    let packet = ServerPacket::ActorEmote {
+      ticket: emoter_id,
+      emote_id,
+      use_custom_emotes,
+    };
 
-      client
-        .packet_shipper
-        .send(&self.socket, Reliability::Reliable, packet);
-    }
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      target_id,
+      Reliability::Reliable,
+      packet,
+    );
   }
 
   pub fn set_player_minimap_color(&mut self, id: &str, color: (u8, u8, u8, u8)) {
@@ -326,8 +329,7 @@ impl Net {
     };
 
     broadcast_to_area(
-      &self.socket,
-      &mut self.clients,
+      &mut *self.packet_orchestrator.borrow_mut(),
       area,
       Reliability::Reliable,
       ServerPacket::ActorMinimapColor { ticket: id, color },
@@ -346,8 +348,7 @@ impl Net {
     };
 
     broadcast_to_area(
-      &self.socket,
-      &mut self.clients,
+      &mut *self.packet_orchestrator.borrow_mut(),
       area,
       Reliability::Reliable,
       ServerPacket::ActorAnimate {
@@ -394,7 +395,7 @@ impl Net {
     }
 
     ensure_assets(
-      &self.socket,
+      &mut *self.packet_orchestrator.borrow_mut(),
       self.config.max_payload_size,
       &self.asset_manager,
       &mut self.clients,
@@ -403,8 +404,7 @@ impl Net {
     );
 
     broadcast_actor_keyframes(
-      &self.socket,
-      &mut self.clients,
+      &mut *self.packet_orchestrator.borrow_mut(),
       area,
       self.config.max_payload_size,
       id,
@@ -430,7 +430,7 @@ impl Net {
 
   pub fn preload_asset_for_player(&mut self, id: &str, asset_path: &str) {
     ensure_asset(
-      &self.socket,
+      &mut *self.packet_orchestrator.borrow_mut(),
       self.config.max_payload_size,
       &self.asset_manager,
       &mut self.clients,
@@ -438,18 +438,16 @@ impl Net {
       asset_path,
     );
 
-    if let Some(client) = self.clients.get_mut(id) {
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::Preload { asset_path },
-      );
-    }
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      id,
+      Reliability::ReliableOrdered,
+      ServerPacket::Preload { asset_path },
+    );
   }
 
   pub fn play_sound_for_player(&mut self, id: &str, path: &str) {
     ensure_asset(
-      &self.socket,
+      &mut *self.packet_orchestrator.borrow_mut(),
       self.config.max_payload_size,
       &self.asset_manager,
       &mut self.clients,
@@ -457,113 +455,91 @@ impl Net {
       path,
     );
 
-    if let Some(client) = self.clients.get_mut(id) {
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::PlaySound { path },
-      );
-    }
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      id,
+      Reliability::ReliableOrdered,
+      ServerPacket::PlaySound { path },
+    );
   }
 
   pub fn exclude_object_for_player(&mut self, id: &str, object_id: u32) {
-    if let Some(client) = self.clients.get_mut(id) {
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::ExcludeObject { id: object_id },
-      );
-    }
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      id,
+      Reliability::ReliableOrdered,
+      ServerPacket::ExcludeObject { id: object_id },
+    );
   }
 
   pub fn include_object_for_player(&mut self, id: &str, object_id: u32) {
-    if let Some(client) = self.clients.get_mut(id) {
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::IncludeObject { id: object_id },
-      );
-    }
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      id,
+      Reliability::ReliableOrdered,
+      ServerPacket::IncludeObject { id: object_id },
+    );
   }
 
   pub fn exclude_actor_for_player(&mut self, id: &str, actor_id: &str) {
-    if let Some(client) = self.clients.get_mut(id) {
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::ExcludeActor { actor_id },
-      );
-    }
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      id,
+      Reliability::ReliableOrdered,
+      ServerPacket::ExcludeActor { actor_id },
+    );
   }
 
   pub fn include_actor_for_player(&mut self, id: &str, actor_id: &str) {
-    if let Some(client) = self.clients.get_mut(id) {
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::IncludeActor { actor_id },
-      );
-    }
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      id,
+      Reliability::ReliableOrdered,
+      ServerPacket::IncludeActor { actor_id },
+    );
   }
 
   pub fn move_player_camera(&mut self, id: &str, x: f32, y: f32, z: f32, hold_time: f32) {
-    if let Some(client) = self.clients.get_mut(id) {
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::MoveCamera { x, y, z, hold_time },
-      );
-    }
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      id,
+      Reliability::ReliableOrdered,
+      ServerPacket::MoveCamera { x, y, z, hold_time },
+    );
   }
 
   pub fn slide_player_camera(&mut self, id: &str, x: f32, y: f32, z: f32, duration: f32) {
-    if let Some(client) = self.clients.get_mut(id) {
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::SlideCamera { x, y, z, duration },
-      );
-    }
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      id,
+      Reliability::ReliableOrdered,
+      ServerPacket::SlideCamera { x, y, z, duration },
+    );
   }
 
   pub fn shake_player_camera(&mut self, id: &str, strength: f32, duration: f32) {
-    if let Some(client) = self.clients.get_mut(id) {
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::ShakeCamera { strength, duration },
-      );
-    }
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      id,
+      Reliability::ReliableOrdered,
+      ServerPacket::ShakeCamera { strength, duration },
+    );
   }
 
   pub fn fade_player_camera(&mut self, id: &str, color: (u8, u8, u8, u8), duration: f32) {
-    if let Some(client) = self.clients.get_mut(id) {
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::FadeCamera { duration, color },
-      );
-    }
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      id,
+      Reliability::ReliableOrdered,
+      ServerPacket::FadeCamera { duration, color },
+    );
   }
 
   pub fn track_with_player_camera(&mut self, id: &str, actor_id: Option<&str>) {
-    if let Some(client) = self.clients.get_mut(id) {
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::TrackWithCamera { actor_id },
-      );
-    }
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      id,
+      Reliability::ReliableOrdered,
+      ServerPacket::TrackWithCamera { actor_id },
+    );
   }
 
   pub fn unlock_player_camera(&mut self, id: &str) {
-    if let Some(client) = self.clients.get_mut(id) {
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::UnlockCamera,
-      );
-    }
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      id,
+      Reliability::ReliableOrdered,
+      ServerPacket::UnlockCamera,
+    );
   }
 
   pub fn is_player_input_locked(&self, id: &str) -> bool {
@@ -578,8 +554,8 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.is_input_locked = true;
 
-      client.packet_shipper.send(
-        &self.socket,
+      self.packet_orchestrator.borrow_mut().send(
+        client.socket_address,
         Reliability::ReliableOrdered,
         ServerPacket::LockInput,
       );
@@ -590,8 +566,8 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.is_input_locked = false;
 
-      client.packet_shipper.send(
-        &self.socket,
+      self.packet_orchestrator.borrow_mut().send(
+        client.socket_address,
         Reliability::ReliableOrdered,
         ServerPacket::UnlockInput,
       );
@@ -608,8 +584,8 @@ impl Net {
     direction: Direction,
   ) {
     if let Some(client) = self.clients.get_mut(id) {
-      client.packet_shipper.send(
-        &self.socket,
+      self.packet_orchestrator.borrow_mut().send(
+        client.socket_address,
         Reliability::ReliableOrdered,
         ServerPacket::Teleport {
           warp,
@@ -670,8 +646,7 @@ impl Net {
     };
 
     broadcast_to_area(
-      &self.socket,
-      &mut self.clients,
+      &mut *self.packet_orchestrator.borrow_mut(),
       area,
       Reliability::UnreliableSequenced,
       packet,
@@ -686,7 +661,7 @@ impl Net {
     mug_animation_path: &str,
   ) {
     ensure_assets(
-      &self.socket,
+      &mut *self.packet_orchestrator.borrow_mut(),
       self.config.max_payload_size,
       &self.asset_manager,
       &mut self.clients,
@@ -697,8 +672,8 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.widget_tracker.track_textbox(self.active_plugin);
 
-      client.packet_shipper.send(
-        &self.socket,
+      self.packet_orchestrator.borrow_mut().send(
+        client.socket_address,
         Reliability::ReliableOrdered,
         ServerPacket::Message {
           message,
@@ -717,7 +692,7 @@ impl Net {
     mug_animation_path: &str,
   ) {
     ensure_assets(
-      &self.socket,
+      &mut *self.packet_orchestrator.borrow_mut(),
       self.config.max_payload_size,
       &self.asset_manager,
       &mut self.clients,
@@ -728,8 +703,8 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.widget_tracker.track_textbox(self.active_plugin);
 
-      client.packet_shipper.send(
-        &self.socket,
+      self.packet_orchestrator.borrow_mut().send(
+        client.socket_address,
         Reliability::ReliableOrdered,
         ServerPacket::Question {
           message,
@@ -750,7 +725,7 @@ impl Net {
     mug_animation_path: &str,
   ) {
     ensure_assets(
-      &self.socket,
+      &mut *self.packet_orchestrator.borrow_mut(),
       self.config.max_payload_size,
       &self.asset_manager,
       &mut self.clients,
@@ -761,8 +736,8 @@ impl Net {
     if let Some(client) = self.clients.get_mut(id) {
       client.widget_tracker.track_textbox(self.active_plugin);
 
-      client.packet_shipper.send(
-        &self.socket,
+      self.packet_orchestrator.borrow_mut().send(
+        client.socket_address,
         Reliability::ReliableOrdered,
         ServerPacket::Quiz {
           option_a,
@@ -784,8 +759,8 @@ impl Net {
 
       let character_limit = std::cmp::min(character_limit, available_space);
 
-      client.packet_shipper.send(
-        &self.socket,
+      self.packet_orchestrator.borrow_mut().send(
+        client.socket_address,
         Reliability::ReliableOrdered,
         ServerPacket::Prompt {
           character_limit,
@@ -804,7 +779,6 @@ impl Net {
   ) {
     use super::bbs_post::calc_size;
     use crate::helpers::iterators::IteratorHelper;
-    use std::cell::RefCell;
 
     let client = if let Some(client) = self.clients.get_mut(player_id) {
       client
@@ -812,14 +786,16 @@ impl Net {
       return;
     };
 
+    let mut packet_orchestrator = self.packet_orchestrator.borrow_mut();
+
     let start_depth = client.widget_tracker.get_board_count() as u8;
     client.widget_tracker.track_board(self.active_plugin);
 
     if posts.is_empty() {
       // logic below will send nothing if there's no posts,
       // we want to at least open the bbs if the post vec is empty
-      client.packet_shipper.send(
-        &self.socket,
+      packet_orchestrator.send(
+        client.socket_address,
         Reliability::ReliableOrdered,
         ServerPacket::OpenBoard {
           current_depth: start_depth,
@@ -867,6 +843,10 @@ impl Net {
     let mut last_id = None;
     let current_depth = client.widget_tracker.get_board_count() as u8;
 
+    use crate::packets::build_packet;
+
+    let mut packets = Vec::new();
+
     for (i, mut chunk) in chunks.enumerate() {
       let mut ref_id = None;
       std::mem::swap(&mut ref_id, &mut last_id); // avoiding clone
@@ -886,18 +866,21 @@ impl Net {
         }
       };
 
-      client
-        .packet_shipper
-        .send(&self.socket, Reliability::ReliableOrdered, packet);
+      packets.push(build_packet(packet));
 
       last_id = chunk.pop().map(|post| post.id);
     }
+
+    packet_orchestrator.send_byte_packets(
+      client.socket_address,
+      Reliability::ReliableOrdered,
+      &packets,
+    );
   }
 
   pub fn prepend_posts(&mut self, player_id: &str, reference: Option<&str>, posts: Vec<BbsPost>) {
     use super::bbs_post::calc_size;
     use crate::helpers::iterators::IteratorHelper;
-    use std::cell::RefCell;
 
     let client = if let Some(client) = self.clients.get_mut(player_id) {
       client
@@ -933,6 +916,10 @@ impl Net {
 
     let mut last_id = reference;
     let current_depth = client.widget_tracker.get_board_count() as u8;
+
+    use crate::packets::build_packet;
+
+    let mut packets = Vec::new();
 
     for (i, mut chunk) in chunks.enumerate() {
       let mut ref_id = None;
@@ -952,18 +939,21 @@ impl Net {
         }
       };
 
-      client
-        .packet_shipper
-        .send(&self.socket, Reliability::ReliableOrdered, packet);
+      packets.push(build_packet(packet));
 
       last_id = chunk.pop().map(|post| post.id);
     }
+
+    self.packet_orchestrator.borrow_mut().send_byte_packets(
+      client.socket_address,
+      Reliability::ReliableOrdered,
+      &packets,
+    );
   }
 
   pub fn append_posts(&mut self, player_id: &str, reference: Option<&str>, posts: Vec<BbsPost>) {
     use super::bbs_post::calc_size;
     use crate::helpers::iterators::IteratorHelper;
-    use std::cell::RefCell;
 
     let client = if let Some(client) = self.clients.get_mut(player_id) {
       client
@@ -1000,6 +990,10 @@ impl Net {
     let mut last_id = reference;
     let current_depth = client.widget_tracker.get_board_count() as u8;
 
+    use crate::packets::build_packet;
+
+    let mut packets = Vec::new();
+
     for mut chunk in chunks {
       let mut ref_id = None;
       std::mem::swap(&mut ref_id, &mut last_id); // avoiding clone
@@ -1010,18 +1004,22 @@ impl Net {
         posts: chunk.as_slice(),
       };
 
-      client
-        .packet_shipper
-        .send(&self.socket, Reliability::ReliableOrdered, packet);
+      packets.push(build_packet(packet));
 
       last_id = chunk.pop().map(|post| post.id);
     }
+
+    self.packet_orchestrator.borrow_mut().send_byte_packets(
+      client.socket_address,
+      Reliability::ReliableOrdered,
+      &packets,
+    );
   }
 
   pub fn remove_post(&mut self, player_id: &str, post_id: &str) {
-    if let Some(client) = self.clients.get_mut(player_id) {
-      client.packet_shipper.send(
-        &self.socket,
+    if let Some(client) = self.clients.get(player_id) {
+      self.packet_orchestrator.borrow_mut().send(
+        client.socket_address,
         Reliability::ReliableOrdered,
         ServerPacket::RemovePost {
           current_depth: client.widget_tracker.get_board_count() as u8,
@@ -1032,13 +1030,11 @@ impl Net {
   }
 
   pub fn close_bbs(&mut self, player_id: &str) {
-    if let Some(client) = self.clients.get_mut(player_id) {
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::CloseBBS,
-      );
-    }
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      player_id,
+      Reliability::ReliableOrdered,
+      ServerPacket::CloseBBS,
+    );
   }
 
   pub fn open_shop(
@@ -1068,27 +1064,27 @@ impl Net {
       max_payload_size - header_size
     };
 
-    let chunks = items
+    use crate::packets::build_packet;
+
+    let mut packets: Vec<Vec<u8>> = items
       .into_iter()
-      .pack_chunks_lossy(calc_chunk_limit, calc_size);
-
-    for chunk in chunks {
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::ShopInventory {
+      .pack_chunks_lossy(calc_chunk_limit, calc_size)
+      .map(|chunk| {
+        build_packet(ServerPacket::ShopInventory {
           items: chunk.as_slice(),
-        },
-      );
-    }
+        })
+      })
+      .collect();
 
-    client.packet_shipper.send(
-      &self.socket,
+    packets.push(build_packet(ServerPacket::OpenShop {
+      mug_texture_path,
+      mug_animation_path,
+    }));
+
+    self.packet_orchestrator.borrow_mut().send_byte_packets(
+      client.socket_address,
       Reliability::ReliableOrdered,
-      ServerPacket::OpenShop {
-        mug_texture_path,
-        mug_animation_path,
-      },
+      &packets,
     );
   }
 
@@ -1119,21 +1115,23 @@ impl Net {
     let client_1_addr = use_public_ip(client_1.socket_address, self.config.public_ip);
     let client_2_addr = use_public_ip(client_2.socket_address, self.config.public_ip);
 
-    client_1.packet_shipper.send(
-      &self.socket,
+    let mut orchestrator = self.packet_orchestrator.borrow_mut();
+
+    orchestrator.send(
+      client_1.socket_address,
       Reliability::ReliableOrdered,
       ServerPacket::InitiatePvp {
         address: &client_2_addr.to_string(),
       },
     );
 
-    client_2.packet_shipper.send(
-      &self.socket,
+    orchestrator.send(
+      client_2.socket_address,
       Reliability::ReliableOrdered,
       ServerPacket::InitiatePvp {
         address: &client_1_addr.to_string(),
       },
-    )
+    );
   }
 
   fn send_encounter_data_asset(&mut self, player_id: &str, data: Option<&str>) {
@@ -1152,7 +1150,7 @@ impl Net {
       .set_asset(data_path.to_string(), data_asset);
 
     ensure_asset(
-      &self.socket,
+      &mut *self.packet_orchestrator.borrow_mut(),
       self.config.max_payload_size,
       &self.asset_manager,
       &mut self.clients,
@@ -1164,23 +1162,17 @@ impl Net {
   pub fn set_mod_whitelist_for_player(&mut self, player_id: &str, whitelist_path: Option<&str>) {
     if let Some(whitelist_path) = whitelist_path {
       ensure_asset(
-        &self.socket,
+        &mut *self.packet_orchestrator.borrow_mut(),
         self.config.max_payload_size,
         &self.asset_manager,
         &mut self.clients,
         &[String::from(player_id)],
         &whitelist_path.to_string(),
       );
-    }
-
-    let client = if let Some(client) = self.clients.get_mut(player_id) {
-      client
-    } else {
-      return;
     };
 
-    client.packet_shipper.send(
-      &self.socket,
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      player_id,
       Reliability::ReliableOrdered,
       ServerPacket::ModWhitelist { whitelist_path },
     );
@@ -1189,7 +1181,7 @@ impl Net {
   pub fn set_mod_blacklist_for_player(&mut self, player_id: &str, blacklist_path: Option<&str>) {
     if let Some(blacklist_path) = blacklist_path {
       ensure_asset(
-        &self.socket,
+        &mut *self.packet_orchestrator.borrow_mut(),
         self.config.max_payload_size,
         &self.asset_manager,
         &mut self.clients,
@@ -1198,14 +1190,8 @@ impl Net {
       );
     }
 
-    let client = if let Some(client) = self.clients.get_mut(player_id) {
-      client
-    } else {
-      return;
-    };
-
-    client.packet_shipper.send(
-      &self.socket,
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      player_id,
       Reliability::ReliableOrdered,
       ServerPacket::ModBlacklist { blacklist_path },
     );
@@ -1213,7 +1199,7 @@ impl Net {
 
   pub fn offer_package(&mut self, player_id: &str, package_path: &str) {
     ensure_asset(
-      &self.socket,
+      &mut *self.packet_orchestrator.borrow_mut(),
       self.config.max_payload_size,
       &self.asset_manager,
       &mut self.clients,
@@ -1232,6 +1218,9 @@ impl Net {
       .asset_manager
       .get_flattened_dependency_chain(package_path);
 
+    let mut packets = Vec::new();
+    packets.reserve_exact(dependency_chain.len());
+
     for asset_path in dependency_chain {
       let asset = if let Some(asset) = self.asset_manager.get_asset(asset_path) {
         asset
@@ -1247,22 +1236,24 @@ impl Net {
         continue;
       };
 
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::OfferPackage {
-          package_info,
-          package_path: asset_path,
-        },
-      );
+      packets.push(ServerPacket::OfferPackage {
+        package_info,
+        package_path: asset_path,
+      });
     }
+
+    self.packet_orchestrator.borrow_mut().send_packets(
+      client.socket_address,
+      Reliability::ReliableOrdered,
+      packets,
+    );
   }
 
   pub fn initiate_encounter(&mut self, player_id: &str, package_path: &str, data: Option<&str>) {
     use super::asset;
 
     ensure_asset(
-      &self.socket,
+      &mut *self.packet_orchestrator.borrow_mut(),
       self.config.max_payload_size,
       &self.asset_manager,
       &mut self.clients,
@@ -1286,6 +1277,9 @@ impl Net {
       .asset_manager
       .get_flattened_dependency_chain(package_path);
 
+    let mut packets = Vec::new();
+    packets.reserve_exact(dependency_chain.len());
+
     for asset_path in dependency_chain {
       let asset = if let Some(asset) = self.asset_manager.get_asset(asset_path) {
         asset
@@ -1301,24 +1295,21 @@ impl Net {
         continue;
       };
 
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::LoadPackage {
-          package_path: asset_path,
-          package_category,
-        },
-      );
+      packets.push(ServerPacket::LoadPackage {
+        package_path: asset_path,
+        package_category,
+      });
     }
 
-    // initiate encounter
-    client.packet_shipper.send(
-      &self.socket,
+    packets.push(ServerPacket::InitiateEncounter {
+      package_path,
+      data_path: asset::get_encounter_data_path(),
+    });
+
+    self.packet_orchestrator.borrow_mut().send_packets(
+      client.socket_address,
       Reliability::ReliableOrdered,
-      ServerPacket::InitiateEncounter {
-        package_path,
-        data_path: asset::get_encounter_data_path(),
-      },
+      packets,
     );
   }
 
@@ -1351,8 +1342,8 @@ impl Net {
 
       client.player_data.health = health;
 
-      client.packet_shipper.send(
-        &self.socket,
+      self.packet_orchestrator.borrow_mut().send(
+        client.socket_address,
         Reliability::ReliableOrdered,
         ServerPacket::Health { health, max_health },
       );
@@ -1365,8 +1356,8 @@ impl Net {
 
       client.player_data.max_health = max_health;
 
-      client.packet_shipper.send(
-        &self.socket,
+      self.packet_orchestrator.borrow_mut().send(
+        client.socket_address,
         Reliability::ReliableOrdered,
         ServerPacket::Health { health, max_health },
       );
@@ -1377,8 +1368,8 @@ impl Net {
     if let Some(client) = self.clients.get_mut(player_id) {
       client.player_data.emotion = emotion;
 
-      client.packet_shipper.send(
-        &self.socket,
+      self.packet_orchestrator.borrow_mut().send(
+        client.socket_address,
         Reliability::ReliableOrdered,
         ServerPacket::Emotion { emotion },
       );
@@ -1389,8 +1380,8 @@ impl Net {
     if let Some(client) = self.clients.get_mut(player_id) {
       client.player_data.money = money;
 
-      client.packet_shipper.send(
-        &self.socket,
+      self.packet_orchestrator.borrow_mut().send(
+        client.socket_address,
         Reliability::ReliableOrdered,
         ServerPacket::Money { money },
       );
@@ -1419,8 +1410,8 @@ impl Net {
       return;
     };
 
-    client.packet_shipper.send(
-      &self.socket,
+    self.packet_orchestrator.borrow_mut().send(
+      client.socket_address,
       Reliability::ReliableOrdered,
       ServerPacket::AddItem {
         id: &item_id,
@@ -1434,8 +1425,8 @@ impl Net {
 
   pub fn remove_player_item(&mut self, player_id: &str, item_id: &str) {
     if let Some(client) = self.clients.get_mut(player_id) {
-      client.packet_shipper.send(
-        &self.socket,
+      self.packet_orchestrator.borrow_mut().send(
+        client.socket_address,
         Reliability::ReliableOrdered,
         ServerPacket::RemoveItem { id: item_id },
       );
@@ -1491,11 +1482,16 @@ impl Net {
     }
 
     previous_area.remove_player(id);
+
+    self
+      .packet_orchestrator
+      .borrow_mut()
+      .leave_room(client.socket_address, area_id);
+
     client.warp_area = area_id.to_string();
 
     broadcast_to_area(
-      &self.socket,
-      &mut self.clients,
+      &mut *self.packet_orchestrator.borrow_mut(),
       previous_area,
       Reliability::ReliableOrdered,
       ServerPacket::ActorDisconnected {
@@ -1505,10 +1501,8 @@ impl Net {
     );
 
     if warp_in {
-      let client = self.clients.get_mut(id).unwrap();
-
-      client.packet_shipper.send(
-        &self.socket,
+      self.packet_orchestrator.borrow_mut().broadcast_to_room(
+        id,
         Reliability::ReliableOrdered,
         ServerPacket::TransferWarp,
       );
@@ -1524,8 +1518,8 @@ impl Net {
       return;
     };
 
-    client.packet_shipper.send(
-      &self.socket,
+    self.packet_orchestrator.borrow_mut().send(
+      client.socket_address,
       Reliability::ReliableOrdered,
       ServerPacket::TransferStart,
     );
@@ -1535,8 +1529,13 @@ impl Net {
     let texture_path = client.actor.texture_path.clone();
     let animation_path = client.actor.animation_path.clone();
 
+    self
+      .packet_orchestrator
+      .borrow_mut()
+      .join_room(client.socket_address, area_id.clone());
+
     ensure_assets(
-      &self.socket,
+      &mut *self.packet_orchestrator.borrow_mut(),
       self.config.max_payload_size,
       &self.asset_manager,
       &mut self.clients,
@@ -1553,8 +1552,8 @@ impl Net {
     client.transferring = true;
     client.ready = false;
 
-    client.packet_shipper.send(
-      &self.socket,
+    self.packet_orchestrator.borrow_mut().send(
+      client.socket_address,
       Reliability::ReliableOrdered,
       ServerPacket::Teleport {
         warp: false,
@@ -1565,8 +1564,8 @@ impl Net {
       },
     );
 
-    client.packet_shipper.send(
-      &self.socket,
+    self.packet_orchestrator.borrow_mut().send(
+      client.socket_address,
       Reliability::ReliableOrdered,
       ServerPacket::TransferComplete {
         warp_in: client.warp_in,
@@ -1583,34 +1582,30 @@ impl Net {
     data: &str,
     warp_out: bool,
   ) {
-    if let Some(client) = self.clients.get_mut(id) {
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::TransferServer {
-          address,
-          port,
-          data,
-          warp_out,
-        },
-      );
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      id,
+      Reliability::ReliableOrdered,
+      ServerPacket::TransferServer {
+        address,
+        port,
+        data,
+        warp_out,
+      },
+    );
 
-      self.kick_player(id, "Transferred", warp_out);
-    }
+    self.kick_player(id, "Transferred", warp_out);
   }
 
   pub fn request_authorization(&mut self, id: &str, address: &str, port: u16, data: &[u8]) {
-    if let Some(client) = self.clients.get_mut(id) {
-      client.packet_shipper.send(
-        &self.socket,
-        Reliability::ReliableOrdered,
-        ServerPacket::Authorize {
-          address,
-          port,
-          data,
-        },
-      );
-    }
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      id,
+      Reliability::ReliableOrdered,
+      ServerPacket::Authorize {
+        address,
+        port,
+        data,
+      },
+    );
   }
 
   pub fn kick_player(&mut self, id: &str, reason: &str, warp_out: bool) {
@@ -1647,15 +1642,18 @@ impl Net {
       socket_address,
       name,
       identity,
-      area_id,
+      area_id.clone(),
       spawn_x,
       spawn_y,
       spawn_z,
       spawn_direction,
-      self.config.resend_budget,
     );
 
     let id = client.actor.id.clone();
+
+    let mut packet_orchestrator = self.packet_orchestrator.borrow_mut();
+    packet_orchestrator.add_client(client.socket_address);
+    packet_orchestrator.join_room(client.socket_address, id.clone());
 
     self.clients.insert(id.clone(), client);
 
@@ -1701,7 +1699,10 @@ impl Net {
 
     let player_assets = [
       (texture_path.clone(), AssetData::Texture(texture_data)),
-      (animation_path.clone(), AssetData::compress_text(animation_data)),
+      (
+        animation_path.clone(),
+        AssetData::compress_text(animation_data),
+      ),
       (
         mugshot_texture_path,
         AssetData::Texture(mugshot_texture_data),
@@ -1742,8 +1743,13 @@ impl Net {
 
     area.add_player(client.actor.id.clone());
 
+    self
+      .packet_orchestrator
+      .borrow_mut()
+      .join_room(client.socket_address, area_id.clone());
+
     ensure_assets(
-      &self.socket,
+      &mut *self.packet_orchestrator.borrow_mut(),
       self.config.max_payload_size,
       &self.asset_manager,
       &mut self.clients,
@@ -1764,16 +1770,16 @@ impl Net {
       spawn_direction: client.warp_direction,
     };
 
-    client
-      .packet_shipper
-      .send(&self.socket, Reliability::ReliableOrdered, packet);
+    self.packet_orchestrator.borrow_mut().send(
+      client.socket_address,
+      Reliability::ReliableOrdered,
+      packet,
+    );
   }
 
   pub(super) fn connect_client(&mut self, player_id: &str) {
-    let client = self.clients.get_mut(player_id).unwrap();
-
-    client.packet_shipper.send(
-      &self.socket,
+    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      player_id,
       Reliability::ReliableOrdered,
       ServerPacket::CompleteConnection,
     );
@@ -1835,7 +1841,7 @@ impl Net {
 
     for asset_path in asset_paths {
       ensure_asset(
-        &self.socket,
+        &mut *self.packet_orchestrator.borrow_mut(),
         self.config.max_payload_size,
         &self.asset_manager,
         &mut self.clients,
@@ -1844,13 +1850,10 @@ impl Net {
       );
     }
 
-    let client = self.clients.get_mut(player_id).unwrap();
-
-    for packet in packets {
-      client
-        .packet_shipper
-        .send_bytes(&self.socket, Reliability::ReliableOrdered, &packet);
-    }
+    self
+      .packet_orchestrator
+      .borrow_mut()
+      .broadcast_byte_packets_to_room(player_id, Reliability::ReliableOrdered, &packets);
   }
 
   // handles first join and completed transfer
@@ -1877,13 +1880,10 @@ impl Net {
 
     let packet_bytes = build_packet(packet);
 
-    broadcast_bytes_to_area(
-      &self.socket,
-      &mut self.clients,
-      area,
-      Reliability::ReliableOrdered,
-      packet_bytes,
-    );
+    self
+      .packet_orchestrator
+      .borrow_mut()
+      .broadcast_bytes_to_room(area.get_id(), Reliability::ReliableOrdered, packet_bytes);
   }
 
   pub(super) fn remove_player(&mut self, id: &str, warp_out: bool) {
@@ -1917,13 +1917,16 @@ impl Net {
       warp_out,
     };
 
+    let mut packet_orchestrator = self.packet_orchestrator.borrow_mut();
+
     broadcast_to_area(
-      &self.socket,
-      &mut self.clients,
+      &mut packet_orchestrator,
       area,
       Reliability::ReliableOrdered,
       packet,
     );
+
+    packet_orchestrator.drop_client(client.socket_address);
   }
 
   pub fn get_bot(&self, id: &str) -> Option<&Actor> {
@@ -1947,7 +1950,7 @@ impl Net {
       let packet = bot.create_spawn_packet(bot.x, bot.y, bot.z, warp_in);
 
       ensure_assets(
-        &self.socket,
+        &mut *self.packet_orchestrator.borrow_mut(),
         self.config.max_payload_size,
         &self.asset_manager,
         &mut self.clients,
@@ -1956,8 +1959,7 @@ impl Net {
       );
 
       broadcast_to_area(
-        &self.socket,
-        &mut self.clients,
+        &mut *self.packet_orchestrator.borrow_mut(),
         area,
         Reliability::ReliableOrdered,
         packet,
@@ -1986,8 +1988,7 @@ impl Net {
     };
 
     broadcast_to_area(
-      &self.socket,
-      &mut self.clients,
+      &mut *self.packet_orchestrator.borrow_mut(),
       area,
       Reliability::ReliableOrdered,
       packet,
@@ -2010,8 +2011,7 @@ impl Net {
     let packet = ServerPacket::ActorSetName { ticket: id, name };
 
     broadcast_to_area(
-      &self.socket,
-      &mut self.clients,
+      &mut *self.packet_orchestrator.borrow_mut(),
       area,
       Reliability::Reliable,
       packet,
@@ -2046,7 +2046,7 @@ impl Net {
     bot.animation_path = animation_path.to_string();
 
     update_cached_clients(
-      &self.socket,
+      &mut *self.packet_orchestrator.borrow_mut(),
       self.config.max_payload_size,
       &self.asset_manager,
       &mut self.clients,
@@ -2054,7 +2054,7 @@ impl Net {
     );
 
     update_cached_clients(
-      &self.socket,
+      &mut *self.packet_orchestrator.borrow_mut(),
       self.config.max_payload_size,
       &self.asset_manager,
       &mut self.clients,
@@ -2073,8 +2073,7 @@ impl Net {
     };
 
     broadcast_to_area(
-      &self.socket,
-      &mut self.clients,
+      &mut *self.packet_orchestrator.borrow_mut(),
       area,
       Reliability::ReliableOrdered,
       packet,
@@ -2099,8 +2098,7 @@ impl Net {
     };
 
     broadcast_to_area(
-      &self.socket,
-      &mut self.clients,
+      &mut *self.packet_orchestrator.borrow_mut(),
       area,
       Reliability::Reliable,
       packet,
@@ -2121,8 +2119,7 @@ impl Net {
     };
 
     broadcast_to_area(
-      &self.socket,
-      &mut self.clients,
+      &mut *self.packet_orchestrator.borrow_mut(),
       area,
       Reliability::Reliable,
       ServerPacket::ActorMinimapColor { ticket: id, color },
@@ -2141,8 +2138,7 @@ impl Net {
     };
 
     broadcast_to_area(
-      &self.socket,
-      &mut self.clients,
+      &mut *self.packet_orchestrator.borrow_mut(),
       area,
       Reliability::Reliable,
       ServerPacket::ActorAnimate {
@@ -2189,8 +2185,7 @@ impl Net {
       bot.z = final_z;
 
       broadcast_actor_keyframes(
-        &self.socket,
-        &mut self.clients,
+        &mut *self.packet_orchestrator.borrow_mut(),
         area,
         self.config.max_payload_size,
         id,
@@ -2210,8 +2205,7 @@ impl Net {
         previous_area.remove_bot(id);
 
         broadcast_to_area(
-          &self.socket,
-          &mut self.clients,
+          &mut *self.packet_orchestrator.borrow_mut(),
           previous_area,
           Reliability::ReliableOrdered,
           ServerPacket::ActorDisconnected {
@@ -2230,7 +2224,7 @@ impl Net {
       area.add_bot(id.to_string());
 
       ensure_assets(
-        &self.socket,
+        &mut *self.packet_orchestrator.borrow_mut(),
         self.config.max_payload_size,
         &self.asset_manager,
         &mut self.clients,
@@ -2239,8 +2233,7 @@ impl Net {
       );
 
       broadcast_to_area(
-        &self.socket,
-        &mut self.clients,
+        &mut *self.packet_orchestrator.borrow_mut(),
         area,
         Reliability::ReliableOrdered,
         bot.create_spawn_packet(bot.x, bot.y, bot.z, warp_in),
@@ -2263,12 +2256,7 @@ impl Net {
     self.active_plugin = active_plugin;
   }
 
-  pub(super) fn broadcast(&mut self, reliability: Reliability, packet: ServerPacket) {
-    broadcast(&self.socket, &mut self.clients, reliability, packet);
-  }
-
   pub(super) fn tick(&mut self) {
-    self.resend_backed_up_packets();
     self.broadcast_bot_positions();
     self.broadcast_map_changes();
   }
@@ -2299,8 +2287,7 @@ impl Net {
       };
 
       broadcast_to_area(
-        &self.socket,
-        &mut self.clients,
+        &mut *self.packet_orchestrator.borrow_mut(),
         area,
         Reliability::UnreliableSequenced,
         packet,
@@ -2320,7 +2307,7 @@ impl Net {
 
         self.asset_manager.set_asset(map_path.clone(), map_asset);
         update_cached_clients(
-          &self.socket,
+          &mut *self.packet_orchestrator.borrow_mut(),
           self.config.max_payload_size,
           &self.asset_manager,
           &mut self.clients,
@@ -2332,8 +2319,7 @@ impl Net {
         };
 
         broadcast_to_area(
-          &self.socket,
-          &mut self.clients,
+          &mut *self.packet_orchestrator.borrow_mut(),
           area,
           Reliability::ReliableOrdered,
           packet,
@@ -2341,17 +2327,10 @@ impl Net {
       }
     }
   }
-
-  fn resend_backed_up_packets(&mut self) {
-    for client in self.clients.values_mut() {
-      client.packet_shipper.resend_backed_up_packets(&self.socket);
-    }
-  }
 }
 
 fn broadcast_actor_keyframes(
-  socket: &UdpSocket,
-  clients: &mut HashMap<String, Client>,
+  packet_orchestrator: &mut PacketOrchestrator,
   area: &Area,
   max_payload_size: usize,
   id: &str,
@@ -2389,41 +2368,38 @@ fn broadcast_actor_keyframes(
 
   let mut last_chunk = None;
 
+  let mut packets = Vec::new();
+  use crate::packets::build_packet;
+
   for chunk in chunks {
     if let Some(chunk) = last_chunk {
-      broadcast_to_area(
-        socket,
-        clients,
-        area,
-        Reliability::ReliableOrdered,
-        ServerPacket::ActorPropertyKeyFrames {
-          ticket: id,
-          tail: false,
-          keyframes: chunk,
-        },
-      )
+      packets.push(build_packet(ServerPacket::ActorPropertyKeyFrames {
+        ticket: id,
+        tail: false,
+        keyframes: chunk,
+      }));
     }
 
     last_chunk = Some(chunk)
   }
 
   if let Some(chunk) = last_chunk {
-    broadcast_to_area(
-      socket,
-      clients,
-      area,
-      Reliability::ReliableOrdered,
-      ServerPacket::ActorPropertyKeyFrames {
-        ticket: id,
-        tail: true,
-        keyframes: chunk,
-      },
-    )
+    packets.push(build_packet(ServerPacket::ActorPropertyKeyFrames {
+      ticket: id,
+      tail: true,
+      keyframes: chunk,
+    }));
   }
+
+  packet_orchestrator.broadcast_byte_packets_to_room(
+    area.get_id(),
+    Reliability::ReliableOrdered,
+    &packets,
+  );
 }
 
 fn update_cached_clients(
-  socket: &UdpSocket,
+  packet_orchestrator: &mut PacketOrchestrator,
   max_payload_size: usize,
   asset_manager: &AssetManager,
   clients: &mut HashMap<String, Client>,
@@ -2461,9 +2437,7 @@ fn update_cached_clients(
             .collect();
         }
 
-        for bytes in &byte_vecs {
-          client.packet_shipper.send_bytes(socket, reliability, bytes);
-        }
+        packet_orchestrator.send_byte_packets(client.socket_address, reliability, &byte_vecs);
       }
     }
   }
@@ -2476,59 +2450,22 @@ fn update_cached_clients(
       .collect();
 
     for client in &mut clients_to_update {
-      for bytes in &byte_vecs {
-        client.packet_shipper.send_bytes(socket, reliability, bytes);
-      }
+      packet_orchestrator.send_byte_packets(client.socket_address, reliability, &byte_vecs);
     }
   }
 }
 
-fn broadcast(
-  socket: &UdpSocket,
-  clients: &mut HashMap<String, Client>,
-  reliability: Reliability,
-  packet: ServerPacket,
-) {
-  use crate::packets::build_packet;
-
-  let bytes = build_packet(packet);
-
-  for client in clients.values_mut() {
-    client
-      .packet_shipper
-      .send_bytes(socket, reliability, &bytes);
-  }
-}
-
 fn broadcast_to_area(
-  socket: &UdpSocket,
-  clients: &mut HashMap<String, Client>,
+  packet_orchestrator: &mut PacketOrchestrator,
   area: &Area,
   reliability: Reliability,
   packet: ServerPacket,
 ) {
-  use crate::packets::build_packet;
-  broadcast_bytes_to_area(socket, clients, area, reliability, build_packet(packet));
-}
-
-fn broadcast_bytes_to_area(
-  socket: &UdpSocket,
-  clients: &mut HashMap<String, Client>,
-  area: &Area,
-  reliability: Reliability,
-  bytes: Vec<u8>,
-) {
-  for player_id in area.get_connected_players() {
-    let client = clients.get_mut(player_id).unwrap();
-
-    client
-      .packet_shipper
-      .send_bytes(socket, reliability, &bytes);
-  }
+  packet_orchestrator.broadcast_to_room(area.get_id(), reliability, packet);
 }
 
 fn ensure_asset(
-  socket: &UdpSocket,
+  packet_orchestrator: &mut PacketOrchestrator,
   max_payload_size: usize,
   asset_manager: &AssetManager,
   clients: &mut HashMap<String, Client>,
@@ -2577,17 +2514,17 @@ fn ensure_asset(
         client.cached_assets.insert(asset_path.to_string());
       }
 
-      for bytes in &byte_vecs {
-        client
-          .packet_shipper
-          .send_bytes(socket, Reliability::ReliableOrdered, bytes);
-      }
+      packet_orchestrator.send_byte_packets(
+        client.socket_address,
+        Reliability::ReliableOrdered,
+        &byte_vecs,
+      );
     }
   }
 }
 
 fn ensure_assets<'a, I>(
-  socket: &UdpSocket,
+  packet_orchestrator: &mut PacketOrchestrator,
   max_payload_size: usize,
   asset_manager: &AssetManager,
   clients: &mut HashMap<String, Client>,
@@ -2598,7 +2535,7 @@ fn ensure_assets<'a, I>(
 {
   for asset_path in asset_paths {
     ensure_asset(
-      socket,
+      packet_orchestrator,
       max_payload_size,
       asset_manager,
       clients,

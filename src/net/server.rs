@@ -2,10 +2,12 @@ use super::boot::Boot;
 use super::plugin_wrapper::PluginWrapper;
 use super::Net;
 use crate::packets::{
-  build_unreliable_packet, ClientPacket, PacketSorter, Reliability, ServerPacket,
+  build_unreliable_packet, ClientPacket, PacketOrchestrator, PacketSorter, Reliability,
+  ServerPacket,
 };
 use crate::plugins::PluginInterface;
 use crate::threads::{create_clock_thread, create_listening_thread, ThreadMessage};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::net::UdpSocket;
 use std::rc::Rc;
@@ -60,7 +62,16 @@ impl Server {
     println!("Server listening on: {}", self.config.port);
 
     let socket = Rc::new(socket);
-    let mut net = Net::new(socket.clone(), self.config.clone());
+    let packet_orchestrator = Rc::new(RefCell::new(PacketOrchestrator::new(
+      socket.clone(),
+      self.config.resend_budget,
+    )));
+
+    let mut net = Net::new(
+      socket.clone(),
+      packet_orchestrator.clone(),
+      self.config.clone(),
+    );
 
     self.plugin_wrapper.init(&mut net);
 
@@ -114,10 +125,15 @@ impl Server {
             let _ = socket.send_to(&buf, boot.socket_address);
           }
 
+          packet_orchestrator.borrow_mut().resend_backed_up_packets();
+
           net.tick();
 
           if last_heartbeat.elapsed().as_secs_f32() >= self.config.heartbeat_rate {
-            net.broadcast(Reliability::Reliable, ServerPacket::Heartbeat);
+            packet_orchestrator
+              .borrow_mut()
+              .broadcast(Reliability::Reliable, ServerPacket::Heartbeat);
+
             last_heartbeat = time;
           }
         }
@@ -126,9 +142,9 @@ impl Server {
           headers,
           packet,
         } => {
-          if headers.id == 0
-            && headers.reliability.is_reliable()
-            && !self.packet_sorter_map.contains_key(&socket_address)
+          let is_reliable = headers.reliability.is_reliable();
+
+          if headers.id == 0 && is_reliable && !self.packet_sorter_map.contains_key(&socket_address)
           {
             // received the first reliable packet, store a new connection
             let packet_sorter = PacketSorter::new(socket_address);
@@ -143,11 +159,23 @@ impl Server {
             let packets = packet_sorter.sort_packet(&socket, headers, packet);
 
             for packet in packets {
-              self.handle_packet(&mut net, &socket, socket_address, packet);
+              self.handle_packet(
+                &mut net,
+                &packet_orchestrator,
+                &socket,
+                socket_address,
+                packet,
+              );
             }
-          } else {
+          } else if !is_reliable {
             // ignoring errors, no packet sorter = never connected
-            let _ = self.handle_packet(&mut net, &socket, socket_address, packet);
+            let _ = self.handle_packet(
+              &mut net,
+              &packet_orchestrator,
+              &socket,
+              socket_address,
+              packet,
+            );
           }
         }
       }
@@ -157,6 +185,7 @@ impl Server {
   fn handle_packet(
     &mut self,
     net: &mut Net,
+    packet_orchestrator: &RefCell<PacketOrchestrator>,
     socket: &std::net::UdpSocket,
     socket_address: std::net::SocketAddr,
     client_packet: ClientPacket,
@@ -192,16 +221,16 @@ impl Server {
             is_valid = asset.last_modified == last_modified;
           }
 
-          if let Some(client) = net.get_client_mut(player_id) {
-            if is_valid {
+          if is_valid {
+            if let Some(client) = net.get_client_mut(player_id) {
               client.cached_assets.insert(path);
-            } else {
-              client.packet_shipper.send(
-                socket,
-                Reliability::ReliableOrdered,
-                ServerPacket::RemoveAsset { path: &path },
-              );
             }
+          } else {
+            packet_orchestrator.borrow_mut().send(
+              socket_address,
+              Reliability::ReliableOrdered,
+              ServerPacket::RemoveAsset { path: &path },
+            );
           }
         }
         ClientPacket::AssetStream { asset_type, data } => {
@@ -240,8 +269,9 @@ impl Server {
             );
           }
 
-          let client = net.get_client_mut(player_id).unwrap();
-          client.packet_shipper.acknowledged(reliability, id);
+          packet_orchestrator
+            .borrow_mut()
+            .acknowledged(socket_address, reliability, id);
         }
         ClientPacket::Authorize {
           origin_address: _,
@@ -467,10 +497,8 @@ impl Server {
             .plugin_wrapper
             .handle_post_selection(net, player_id, &post_id);
 
-          let client = net.get_client_mut(player_id).unwrap();
-
-          client.packet_shipper.send(
-            socket,
+          packet_orchestrator.borrow_mut().send(
+            socket_address,
             Reliability::ReliableOrdered,
             ServerPacket::PostSelectionAck,
           );

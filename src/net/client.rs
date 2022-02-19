@@ -1,12 +1,10 @@
 use super::{Actor, Direction, PlayerData, WidgetTracker};
-use crate::packets::PacketShipper;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::net::SocketAddr;
 
 pub(super) struct Client {
   pub socket_address: SocketAddr,
-  pub packet_shipper: PacketShipper,
   pub actor: Actor,
   pub warp_in: bool,
   pub warp_area: String,
@@ -39,7 +37,6 @@ impl Client {
     spawn_y: f32,
     spawn_z: f32,
     spawn_direction: Direction,
-    resend_budget: usize,
   ) -> Client {
     use super::asset;
     use std::time::Instant;
@@ -49,7 +46,6 @@ impl Client {
 
     Client {
       socket_address,
-      packet_shipper: PacketShipper::new(socket_address, resend_budget),
       actor: Actor {
         id: id.clone(),
         name,
