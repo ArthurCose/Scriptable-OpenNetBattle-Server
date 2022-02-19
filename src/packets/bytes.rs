@@ -76,7 +76,6 @@ pub fn read_f32(buf: &mut &[u8]) -> Option<f32> {
   Some(float)
 }
 
-#[allow(dead_code)]
 pub fn read_string_u8(buf: &mut &[u8]) -> Option<String> {
   let len = read_byte(buf)? as usize;
   read_string(buf, len)
@@ -93,11 +92,9 @@ fn read_string(buf: &mut &[u8], len: usize) -> Option<String> {
     return None;
   }
 
-  let string_slice = std::str::from_utf8(&buf[..len]).ok();
+  let string = String::from_utf8_lossy(&buf[..len]).to_string();
 
   *buf = &buf[len..];
-
-  let string = String::from(string_slice?);
 
   Some(string)
 }
@@ -152,7 +149,6 @@ pub fn write_f32(buf: &mut Vec<u8>, data: f32) {
   buf.extend(&buf_32);
 }
 
-#[allow(dead_code)]
 pub fn write_string_u8(buf: &mut Vec<u8>, data: &str) {
   let len = if data.len() < u8::MAX.into() {
     data.len() as u8
