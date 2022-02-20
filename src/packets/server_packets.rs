@@ -70,6 +70,8 @@ enum ServerPacketId {
   ActorAnimate,
   ActorPropertyKeyFrames,
   ActorMinimapColor,
+  SynchronizeUpdates,
+  EndSynchronization,
 }
 
 #[derive(Debug)]
@@ -323,6 +325,8 @@ pub enum ServerPacket<'a> {
     ticket: &'a str,
     color: (u8, u8, u8, u8),
   },
+  SynchronizeUpdates,
+  EndSynchronization,
 }
 
 pub fn build_unreliable_packet(packet: ServerPacket) -> Vec<u8> {
@@ -873,6 +877,12 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
       buf.push(g);
       buf.push(b);
       buf.push(a);
+    }
+    ServerPacket::SynchronizeUpdates => {
+      write_u16(buf, ServerPacketId::SynchronizeUpdates as u16);
+    }
+    ServerPacket::EndSynchronization => {
+      write_u16(buf, ServerPacketId::EndSynchronization as u16);
     }
   }
 

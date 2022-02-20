@@ -2241,6 +2241,20 @@ impl Net {
     }
   }
 
+  pub fn request_update_synchronization(&mut self) {
+    self
+      .packet_orchestrator
+      .borrow_mut()
+      .request_update_synchronization();
+  }
+
+  pub fn request_disable_update_synchronization(&mut self) {
+    self
+      .packet_orchestrator
+      .borrow_mut()
+      .request_disable_update_synchronization();
+  }
+
   pub fn message_server(&mut self, address: String, port: u16, data: Vec<u8>) {
     use crate::jobs::message_server::message_server;
 

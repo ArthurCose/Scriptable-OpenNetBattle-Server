@@ -285,6 +285,7 @@ Commented functions are in development and require changes to the client (specif
   - [Widget API](#widget-api)
   - [Player Data API](#player-data-api)
   - [Asset API](#asset-api)
+  - [Update Synchronization API](#update-synchronization-api)
 - [Async API](#async-api)
 
 ### Entry Functions
@@ -540,6 +541,18 @@ Net.remove_asset(server_path)
 Net.has_asset(server_path)
 Net.get_asset_type(server_path)
 Net.get_asset_size(server_path)
+```
+
+#### Update Synchronization API
+
+```Lua
+Net.synchronize(function()
+  -- Net updates here will wait to be processed on clients when every update is received
+end)
+
+-- automatically called by the above function, be careful when using these directly
+Net.request_update_synchronization()
+Net.request_disable_update_synchronization()
 ```
 
 ### Async API

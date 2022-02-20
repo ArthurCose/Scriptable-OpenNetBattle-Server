@@ -33,6 +33,10 @@ impl PacketShipper {
     }
   }
 
+  pub fn get_destination(&self) -> std::net::SocketAddr {
+    self.socket_address
+  }
+
   pub fn send(&mut self, socket: &UdpSocket, reliability: Reliability, packet: ServerPacket) {
     self.send_bytes(socket, reliability, &build_packet(packet));
   }
