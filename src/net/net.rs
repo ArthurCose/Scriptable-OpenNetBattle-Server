@@ -807,7 +807,7 @@ impl Net {
     }
 
     let max_payload_size = self.config.max_payload_size;
-    let chunk_state: Rc<RefCell<(usize, Option<String>)>> = Rc::new(RefCell::new((0, None)));
+    let chunk_state: RefCell<(usize, Option<String>)> = RefCell::new((0, None));
 
     let calc_chunk_limit = |_| {
       // reliability + id + type
@@ -891,7 +891,7 @@ impl Net {
     let max_payload_size = self.config.max_payload_size;
 
     let reference = reference.map(|reference_str| reference_str.to_string());
-    let last_id = Rc::new(RefCell::new(reference.clone()));
+    let last_id = RefCell::new(reference.clone());
 
     let calc_chunk_limit = |_| {
       // reliability + id + type
@@ -964,7 +964,7 @@ impl Net {
     let max_payload_size = self.config.max_payload_size;
 
     let reference = reference.map(|reference_str| reference_str.to_string());
-    let last_id = Rc::new(RefCell::new(reference.clone()));
+    let last_id = RefCell::new(reference.clone());
 
     let calc_chunk_limit = |_| {
       // reliability + id + type
