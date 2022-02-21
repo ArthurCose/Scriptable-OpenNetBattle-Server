@@ -72,7 +72,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let visible: Option<bool> = table.get("visible")?;
     let x: Option<f32> = table.get("x")?;
     let y: Option<f32> = table.get("y")?;
-    let layer: Option<usize> = table.get("layer")?;
+    let layer: Option<usize> = table.get("z")?;
     let width: Option<f32> = table.get("width")?;
     let height: Option<f32> = table.get("height")?;
     let rotation: Option<f32> = table.get("rotation")?;
