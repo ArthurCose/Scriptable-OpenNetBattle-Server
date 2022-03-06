@@ -1486,7 +1486,7 @@ impl Net {
     self
       .packet_orchestrator
       .borrow_mut()
-      .leave_room(client.socket_address, area_id);
+      .leave_room(client.socket_address, previous_area.get_id());
 
     client.warp_area = area_id.to_string();
 
@@ -1525,7 +1525,13 @@ impl Net {
     );
 
     let area_id = client.warp_area.clone();
-    let area = self.areas.get_mut(&area_id).unwrap();
+    let area = if let Some(area) = self.areas.get_mut(&area_id) {
+      area
+    } else {
+      self.kick_player(player_id, "Area destroyed", true);
+      return;
+    };
+
     let texture_path = client.actor.texture_path.clone();
     let animation_path = client.actor.animation_path.clone();
 
