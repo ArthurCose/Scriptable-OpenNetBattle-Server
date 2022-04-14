@@ -105,7 +105,7 @@ Home Warp:
 
 - Tile Objects only
 - Visible in minimap
-- Players will be warped home if they walk into the tile this object is centered on
+- Players will be warped home if colliding with the warp
 - Custom properties:
   - Direction: string
     - Left
