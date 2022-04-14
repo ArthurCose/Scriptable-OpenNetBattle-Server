@@ -1648,7 +1648,6 @@ impl Net {
   pub(super) fn store_player_assets(&mut self, player_id: &str) -> Option<(String, String)> {
     use super::asset;
     use super::client::find_longest_frame_length;
-    use std::array::IntoIter;
 
     let client = self.clients.get_mut(player_id).unwrap();
 
@@ -1695,7 +1694,7 @@ impl Net {
       ),
     ];
 
-    for (path, data) in IntoIter::new(player_assets) {
+    for (path, data) in player_assets.into_iter() {
       self.set_asset(
         path,
         Asset {
