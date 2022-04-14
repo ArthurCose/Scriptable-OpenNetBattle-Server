@@ -1,0 +1,3 @@
+# `cargo install cargo-about`
+# `cargo about generate about.hbs > licenses.html`
+accepted = ["MPL-2.0", "MIT", "Apache-2.0", "BSD-3-Clause", "GPL-3.0"]
