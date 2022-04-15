@@ -205,7 +205,14 @@ impl PacketOrchestrator {
 
   pub fn send_by_id(&mut self, id: &str, reliability: Reliability, packet: ServerPacket) {
     if let Some(shipper) = self.client_id_map.get_mut(id) {
-      shipper.borrow_mut().send(&self.socket, reliability, packet)
+      internal_send_packet(
+        self.synchronize_updates,
+        &mut self.synchronize_locked_clients,
+        &self.socket,
+        shipper,
+        reliability,
+        packet,
+      );
     }
   }
 
@@ -217,11 +224,14 @@ impl PacketOrchestrator {
     packets: Vec<ServerPacket>,
   ) {
     if let Some(shipper) = self.client_id_map.get_mut(id) {
-      let mut shipper = shipper.borrow_mut();
-
-      for packet in packets {
-        shipper.send(&self.socket, reliability, packet)
-      }
+      internal_send_packets(
+        self.synchronize_updates,
+        &mut self.synchronize_locked_clients,
+        &self.socket,
+        shipper,
+        reliability,
+        packets,
+      );
     }
   }
 
@@ -232,11 +242,14 @@ impl PacketOrchestrator {
     packets: &[Vec<u8>],
   ) {
     if let Some(shipper) = self.client_id_map.get_mut(id) {
-      let mut shipper = shipper.borrow_mut();
-
-      for bytes in packets {
-        shipper.send_bytes(&self.socket, reliability, bytes)
-      }
+      internal_send_byte_packets(
+        self.synchronize_updates,
+        &mut self.synchronize_locked_clients,
+        &self.socket,
+        shipper,
+        reliability,
+        packets,
+      );
     }
   }
 
