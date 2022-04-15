@@ -6,6 +6,7 @@ use std::rc::Rc;
 pub struct PacketOrchestrator {
   socket: Rc<std::net::UdpSocket>,
   resend_budget: usize,
+  client_id_map: HashMap<String, Rc<RefCell<PacketShipper>>>,
   client_room_map: HashMap<std::net::SocketAddr, Vec<String>>,
   shipper_map: HashMap<std::net::SocketAddr, Rc<RefCell<PacketShipper>>>,
   rooms: HashMap<String, Vec<Rc<RefCell<PacketShipper>>>>,
@@ -19,6 +20,7 @@ impl PacketOrchestrator {
     PacketOrchestrator {
       socket,
       resend_budget,
+      client_id_map: HashMap::new(),
       client_room_map: HashMap::new(),
       shipper_map: HashMap::new(),
       rooms: HashMap::new(),
@@ -61,14 +63,15 @@ impl PacketOrchestrator {
     self.synchronize_updates = false;
   }
 
-  pub fn add_client(&mut self, socket_address: std::net::SocketAddr) {
-    self.shipper_map.insert(
+  pub fn add_client(&mut self, socket_address: std::net::SocketAddr, id: String) {
+    let shipper = Rc::new(RefCell::new(PacketShipper::new(
       socket_address,
-      Rc::new(RefCell::new(PacketShipper::new(
-        socket_address,
-        self.resend_budget,
-      ))),
-    );
+      self.resend_budget,
+    )));
+
+    self.client_id_map.insert(id, shipper.clone());
+
+    self.shipper_map.insert(socket_address, shipper);
 
     self.client_room_map.insert(socket_address, Vec::new());
   }
@@ -197,6 +200,43 @@ impl PacketOrchestrator {
         reliability,
         packets,
       );
+    }
+  }
+
+  pub fn send_by_id(&mut self, id: &str, reliability: Reliability, packet: ServerPacket) {
+    if let Some(shipper) = self.client_id_map.get_mut(id) {
+      shipper.borrow_mut().send(&self.socket, reliability, packet)
+    }
+  }
+
+  #[allow(dead_code)]
+  pub fn send_packets_by_id(
+    &mut self,
+    id: &str,
+    reliability: Reliability,
+    packets: Vec<ServerPacket>,
+  ) {
+    if let Some(shipper) = self.client_id_map.get_mut(id) {
+      let mut shipper = shipper.borrow_mut();
+
+      for packet in packets {
+        shipper.send(&self.socket, reliability, packet)
+      }
+    }
+  }
+
+  pub fn send_byte_packets_by_id(
+    &mut self,
+    id: &str,
+    reliability: Reliability,
+    packets: &[Vec<u8>],
+  ) {
+    if let Some(shipper) = self.client_id_map.get_mut(id) {
+      let mut shipper = shipper.borrow_mut();
+
+      for bytes in packets {
+        shipper.send_bytes(&self.socket, reliability, bytes)
+      }
     }
   }
 
@@ -458,7 +498,7 @@ mod tests {
     let room_c = String::from("C");
 
     orchestrator.join_room(addr, room_c.clone());
-    orchestrator.add_client(addr);
+    orchestrator.add_client(addr, String::new());
     orchestrator.join_room(addr, room_a.clone());
     orchestrator.join_room(addr, room_b.clone());
 

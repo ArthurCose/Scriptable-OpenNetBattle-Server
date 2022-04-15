@@ -506,7 +506,7 @@ fn resolve_asset_data(path: &std::path::Path, data: &[u8]) -> AssetData {
     .to_str()
     .unwrap_or_default();
 
-  match extension {
+  match extension.to_lowercase().as_str() {
     "png" | "bmp" => AssetData::Texture(data.to_vec()),
     "flac" | "mp3" | "wav" | "mid" | "midi" | "ogg" => AssetData::Audio(data.to_vec()),
     "zip" => AssetData::Data(data.to_vec()),
