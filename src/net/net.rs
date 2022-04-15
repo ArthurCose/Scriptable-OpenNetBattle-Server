@@ -308,11 +308,10 @@ impl Net {
       use_custom_emotes,
     };
 
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
-      target_id,
-      Reliability::Reliable,
-      packet,
-    );
+    self
+      .packet_orchestrator
+      .borrow_mut()
+      .send_by_id(target_id, Reliability::Reliable, packet);
   }
 
   pub fn set_player_minimap_color(&mut self, id: &str, color: (u8, u8, u8, u8)) {
@@ -438,7 +437,7 @@ impl Net {
       asset_path,
     );
 
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       id,
       Reliability::ReliableOrdered,
       ServerPacket::Preload { asset_path },
@@ -455,7 +454,7 @@ impl Net {
       path,
     );
 
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       id,
       Reliability::ReliableOrdered,
       ServerPacket::PlaySound { path },
@@ -463,7 +462,7 @@ impl Net {
   }
 
   pub fn exclude_object_for_player(&mut self, id: &str, object_id: u32) {
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       id,
       Reliability::ReliableOrdered,
       ServerPacket::ExcludeObject { id: object_id },
@@ -471,7 +470,7 @@ impl Net {
   }
 
   pub fn include_object_for_player(&mut self, id: &str, object_id: u32) {
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       id,
       Reliability::ReliableOrdered,
       ServerPacket::IncludeObject { id: object_id },
@@ -479,7 +478,7 @@ impl Net {
   }
 
   pub fn exclude_actor_for_player(&mut self, id: &str, actor_id: &str) {
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       id,
       Reliability::ReliableOrdered,
       ServerPacket::ExcludeActor { actor_id },
@@ -487,7 +486,7 @@ impl Net {
   }
 
   pub fn include_actor_for_player(&mut self, id: &str, actor_id: &str) {
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       id,
       Reliability::ReliableOrdered,
       ServerPacket::IncludeActor { actor_id },
@@ -495,7 +494,7 @@ impl Net {
   }
 
   pub fn move_player_camera(&mut self, id: &str, x: f32, y: f32, z: f32, hold_time: f32) {
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       id,
       Reliability::ReliableOrdered,
       ServerPacket::MoveCamera { x, y, z, hold_time },
@@ -503,7 +502,7 @@ impl Net {
   }
 
   pub fn slide_player_camera(&mut self, id: &str, x: f32, y: f32, z: f32, duration: f32) {
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       id,
       Reliability::ReliableOrdered,
       ServerPacket::SlideCamera { x, y, z, duration },
@@ -511,7 +510,7 @@ impl Net {
   }
 
   pub fn shake_player_camera(&mut self, id: &str, strength: f32, duration: f32) {
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       id,
       Reliability::ReliableOrdered,
       ServerPacket::ShakeCamera { strength, duration },
@@ -519,7 +518,7 @@ impl Net {
   }
 
   pub fn fade_player_camera(&mut self, id: &str, color: (u8, u8, u8, u8), duration: f32) {
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       id,
       Reliability::ReliableOrdered,
       ServerPacket::FadeCamera { duration, color },
@@ -527,7 +526,7 @@ impl Net {
   }
 
   pub fn track_with_player_camera(&mut self, id: &str, actor_id: Option<&str>) {
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       id,
       Reliability::ReliableOrdered,
       ServerPacket::TrackWithCamera { actor_id },
@@ -535,7 +534,7 @@ impl Net {
   }
 
   pub fn unlock_player_camera(&mut self, id: &str) {
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       id,
       Reliability::ReliableOrdered,
       ServerPacket::UnlockCamera,
@@ -1030,7 +1029,7 @@ impl Net {
   }
 
   pub fn close_bbs(&mut self, player_id: &str) {
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       player_id,
       Reliability::ReliableOrdered,
       ServerPacket::CloseBBS,
@@ -1169,7 +1168,7 @@ impl Net {
       &whitelist_path.to_string(),
     );
 
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       player_id,
       Reliability::ReliableOrdered,
       ServerPacket::ModWhitelist { whitelist_path },
@@ -1480,7 +1479,7 @@ impl Net {
     );
 
     if warp_in {
-      self.packet_orchestrator.borrow_mut().broadcast_to_room(
+      self.packet_orchestrator.borrow_mut().send_by_id(
         id,
         Reliability::ReliableOrdered,
         ServerPacket::TransferWarp,
@@ -1567,7 +1566,7 @@ impl Net {
     data: &str,
     warp_out: bool,
   ) {
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       id,
       Reliability::ReliableOrdered,
       ServerPacket::TransferServer {
@@ -1582,7 +1581,7 @@ impl Net {
   }
 
   pub fn request_authorization(&mut self, id: &str, address: &str, port: u16, data: &[u8]) {
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       id,
       Reliability::ReliableOrdered,
       ServerPacket::Authorize {
@@ -1637,8 +1636,7 @@ impl Net {
     let id = client.actor.id.clone();
 
     let mut packet_orchestrator = self.packet_orchestrator.borrow_mut();
-    packet_orchestrator.add_client(client.socket_address);
-    packet_orchestrator.join_room(client.socket_address, id.clone());
+    packet_orchestrator.add_client(client.socket_address, id.clone());
 
     self.clients.insert(id.clone(), client);
 
@@ -1759,7 +1757,7 @@ impl Net {
   }
 
   pub(super) fn connect_client(&mut self, player_id: &str) {
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       player_id,
       Reliability::ReliableOrdered,
       ServerPacket::CompleteConnection,
@@ -1834,7 +1832,7 @@ impl Net {
     self
       .packet_orchestrator
       .borrow_mut()
-      .broadcast_byte_packets_to_room(player_id, Reliability::ReliableOrdered, &packets);
+      .send_byte_packets_by_id(player_id, Reliability::ReliableOrdered, &packets);
   }
 
   // handles first join and completed transfer
