@@ -1189,7 +1189,7 @@ impl Net {
       );
     }
 
-    self.packet_orchestrator.borrow_mut().broadcast_to_room(
+    self.packet_orchestrator.borrow_mut().send_by_id(
       player_id,
       Reliability::ReliableOrdered,
       ServerPacket::ModBlacklist { blacklist_path },
