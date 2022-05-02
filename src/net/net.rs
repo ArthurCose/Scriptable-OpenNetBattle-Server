@@ -533,11 +533,34 @@ impl Net {
     );
   }
 
+  pub fn enable_camera_controls(&mut self, id: &str, dist_x: f32, dist_y: f32) {
+    self.packet_orchestrator.borrow_mut().send_by_id(
+      id, 
+      Reliability::ReliableOrdered, 
+      ServerPacket::EnableCameraControls { dist_x: dist_x, dist_y: dist_y })
+  }
+
   pub fn unlock_player_camera(&mut self, id: &str) {
     self.packet_orchestrator.borrow_mut().send_by_id(
       id,
       Reliability::ReliableOrdered,
       ServerPacket::UnlockCamera,
+    );
+  }
+
+  pub fn enable_camera_zoom(&mut self, id: &str) {
+    self.packet_orchestrator.borrow_mut().send_by_id(
+      id,
+      Reliability::ReliableOrdered, 
+      ServerPacket::EnableCameraZoom
+    );
+  }
+
+  pub fn disable_camera_zoom(&mut self, id: &str) {
+    self.packet_orchestrator.borrow_mut().send_by_id(
+      id,
+      Reliability::ReliableOrdered, 
+      ServerPacket::DisableCameraZoom
     );
   }
 

@@ -30,13 +30,17 @@ function bot.on_interact(player_id)
     return
   end
 
-  Net.lock_player_input(player_id)
-  bot.question_player(player_id, "HELLO! ARE YOU DOING WELL TODAY?")
+  -- Net.lock_player_input(player_id)
+  -- bot.question_player(player_id, "HELLO! ARE YOU DOING WELL TODAY?")
 
-  bot.talking_to = player_id
+  --  bot.talking_to = player_id
 
   local player_pos = Net.get_player_position(player_id)
   Net.set_bot_direction(bot._id, Direction.from_points(bot, player_pos))
+
+  -- Net.enable_camera_zoom(player_id);
+
+  Net.enable_camera_controls(player_id, 100, 50)
 end
 
 function bot.on_response(player_id, response)
@@ -44,7 +48,31 @@ function bot.on_response(player_id, response)
     return
   end
 
-  if response == 1 then
+  -- format:
+  -- items = { name: string, description: string, price: number }[]
+  --[[ local items = {
+    {
+      name="Water",
+      description="Wet",
+      price=300
+    },
+    {
+      name="Shoe",
+      description="Put this on your feet",
+      price=600
+    },
+    {
+      name="Air",
+      description="You breathe this",
+      price=1000
+    }
+  }
+
+  Net.open_shop(player_id, items) --]]
+  
+
+  --[[
+    if response == 1 then
     -- bot.message_player(player_id, "THAT'S GREAT!");
     bot.message_player(player_id, "IT'S NIGHT TIME!");
     Net.fade_player_camera(player_id, {r=70, g=0, b=255, a=80}, 0.5)
@@ -57,6 +85,7 @@ function bot.on_response(player_id, response)
   Net.unlock_player_input(player_id)
 
   bot.talking_to = nil
+  --]]
 end
 
 -- server events

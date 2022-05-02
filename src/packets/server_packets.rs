@@ -39,7 +39,10 @@ enum ServerPacketId {
   ShakeCamera,
   FadeCamera,
   TrackWithCamera,
+  EnableCameraControls,
   UnlockCamera,
+  EnableCameraZoom,
+  DisableCameraZoom,
   LockInput,
   UnlockInput,
   Teleport,
@@ -188,7 +191,13 @@ pub enum ServerPacket<'a> {
   TrackWithCamera {
     actor_id: Option<&'a str>,
   },
+  EnableCameraControls {
+    dist_x: f32,
+    dist_y: f32
+  },
   UnlockCamera,
+  EnableCameraZoom,
+  DisableCameraZoom,
   LockInput,
   UnlockInput,
   Teleport {
@@ -534,8 +543,19 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
         write_string_u16(buf, actor_id);
       }
     }
+    ServerPacket::EnableCameraControls { dist_x, dist_y } => {
+      write_u16(buf, ServerPacketId::EnableCameraControls as u16);
+      write_f32(buf, dist_x);
+      write_f32(buf, dist_y);
+    }
     ServerPacket::UnlockCamera => {
       write_u16(buf, ServerPacketId::UnlockCamera as u16);
+    }
+    ServerPacket::EnableCameraZoom => {
+      write_u16(buf, ServerPacketId::EnableCameraZoom as u16);
+    }
+    ServerPacket::DisableCameraZoom => {
+      write_u16(buf, ServerPacketId::DisableCameraZoom as u16);
     }
     ServerPacket::LockInput => {
       write_u16(buf, ServerPacketId::LockInput as u16);
