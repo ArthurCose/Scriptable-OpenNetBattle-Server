@@ -41,7 +41,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       .borrow_mut()
       .get_mut(player_id_str)
     {
-      tracker.track_textbox(api_ctx.script_path.clone());
+      tracker.track_textbox(api_ctx.script_index);
 
       net.message_player(
         player_id_str,
@@ -70,7 +70,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       .borrow_mut()
       .get_mut(player_id_str)
     {
-      tracker.track_textbox(api_ctx.script_path.clone());
+      tracker.track_textbox(api_ctx.script_index);
 
       net.question_player(
         player_id_str,
@@ -101,7 +101,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       .borrow_mut()
       .get_mut(player_id_str)
     {
-      tracker.track_textbox(api_ctx.script_path.clone());
+      tracker.track_textbox(api_ctx.script_index);
 
       net.quiz_player(
         player_id_str,
@@ -128,7 +128,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       .borrow_mut()
       .get_mut(player_id_str)
     {
-      tracker.track_textbox(api_ctx.script_path.clone());
+      tracker.track_textbox(api_ctx.script_index);
 
       net.prompt_player(
         player_id_str,
@@ -158,7 +158,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       .borrow_mut()
       .get_mut(player_id_str)
     {
-      tracker.track_board(api_ctx.script_path.clone());
+      tracker.track_board(api_ctx.script_index);
 
       let color = (
         color_table.get("r")?,
@@ -300,7 +300,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       .borrow_mut()
       .get_mut(player_id_str)
     {
-      tracker.track_shop(api_ctx.script_path.clone());
+      tracker.track_shop(api_ctx.script_index);
       let mut net = api_ctx.net_ref.borrow_mut();
 
       let mut items = Vec::new();
