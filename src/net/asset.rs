@@ -1,3 +1,5 @@
+use log::*;
+
 #[derive(Clone, Debug)]
 pub struct Asset {
   pub data: AssetData,
@@ -426,7 +428,7 @@ impl Asset {
     });
 
     if let Err(e) = result {
-      println!(
+      error!(
         "Failed to load \"entry.lua\" in \"{}\":\n{}",
         path.display(),
         e
@@ -485,7 +487,7 @@ fn resolve_asset_data(path: &std::path::Path, data: &[u8]) -> AssetData {
       let translated_data = translate_tsx(path, &original_data);
 
       if translated_data == None {
-        println!("Invalid .tsx file: {:?}", path);
+        warn!("Invalid .tsx file: {:?}", path);
       }
 
       AssetData::Text(translated_data.unwrap_or_else(|| original_data.to_string()))

@@ -7,6 +7,7 @@ use crate::packets::{
 };
 use crate::plugins::PluginInterface;
 use crate::threads::{create_clock_thread, create_listening_thread, ThreadMessage};
+use log::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::net::UdpSocket;
@@ -59,7 +60,7 @@ impl Server {
 
     socket.take_error()?;
 
-    println!("Server listening on: {}", self.config.port);
+    info!("Server listening on: {}", self.config.port);
 
     let socket = Rc::new(socket);
     let packet_orchestrator = Rc::new(RefCell::new(PacketOrchestrator::new(
@@ -79,7 +80,7 @@ impl Server {
     create_clock_thread(tx.clone());
     create_listening_thread(tx, socket.try_clone()?, (*self.config).clone());
 
-    println!("Server started");
+    info!("Server started");
 
     let mut time = Instant::now();
     let mut last_heartbeat = Instant::now();
@@ -151,7 +152,7 @@ impl Server {
             self.packet_sorter_map.insert(socket_address, packet_sorter);
 
             if self.config.log_connections {
-              println!("{} connected", socket_address);
+              debug!("{} connected", socket_address);
             }
           }
 
@@ -194,7 +195,7 @@ impl Server {
       match client_packet {
         ClientPacket::VersionRequest => {
           if self.config.log_packets {
-            println!("Received bad VersionRequest packet from {}", socket_address);
+            debug!("Received bad VersionRequest packet from {}", socket_address);
           }
 
           let buf = build_unreliable_packet(ServerPacket::VersionInfo {
@@ -204,7 +205,7 @@ impl Server {
         }
         ClientPacket::Heartbeat => {
           if self.config.log_packets {
-            println!("Received Heartbeat packet from {}", socket_address);
+            debug!("Received Heartbeat packet from {}", socket_address);
           }
         }
         ClientPacket::AssetFound {
@@ -212,7 +213,7 @@ impl Server {
           last_modified,
         } => {
           if self.config.log_packets {
-            println!("Received AssetFound packet from {}", socket_address);
+            debug!("Received AssetFound packet from {}", socket_address);
           }
 
           let mut is_valid = false;
@@ -235,7 +236,7 @@ impl Server {
         }
         ClientPacket::AssetStream { asset_type, data } => {
           if self.config.log_packets {
-            println!("Received AssetStream packet from {}", socket_address);
+            debug!("Received AssetStream packet from {}", socket_address);
           }
 
           let client = net.get_client_mut(player_id).unwrap();
@@ -263,7 +264,7 @@ impl Server {
         }
         ClientPacket::Ack { reliability, id } => {
           if self.config.log_packets {
-            println!(
+            debug!(
               "Received Ack for {:?} {} from {}",
               reliability, id, socket_address
             );
@@ -280,7 +281,7 @@ impl Server {
           data: _,
         } => {
           if self.config.log_packets {
-            println!("Received bad Authorize packet from {}", socket_address);
+            debug!("Received bad Authorize packet from {}", socket_address);
           }
         }
         ClientPacket::Login {
@@ -289,12 +290,12 @@ impl Server {
           data: _,
         } => {
           if self.config.log_packets {
-            println!("Received bad Login packet from {}", socket_address);
+            debug!("Received bad Login packet from {}", socket_address);
           }
         }
         ClientPacket::RequestJoin => {
           if self.config.log_packets {
-            println!("Received RequestJoin packet from {}", socket_address);
+            debug!("Received RequestJoin packet from {}", socket_address);
           }
 
           net.spawn_client(player_id);
@@ -304,12 +305,12 @@ impl Server {
           net.connect_client(player_id);
 
           if self.config.log_connections {
-            println!("{} connected", player_id);
+            debug!("{} connected", player_id);
           }
         }
         ClientPacket::Logout => {
           if self.config.log_packets {
-            println!("Received Logout packet from {}", socket_address);
+            debug!("Received Logout packet from {}", socket_address);
           }
 
           self.disconnect_client(net, &socket_address, "Leaving", true);
@@ -322,7 +323,7 @@ impl Server {
           direction,
         } => {
           if self.config.log_packets {
-            println!("Received Position packet from {}", socket_address);
+            debug!("Received Position packet from {}", socket_address);
           }
 
           let client = net.get_client_mut(player_id).unwrap();
@@ -345,7 +346,7 @@ impl Server {
         }
         ClientPacket::Ready { time } => {
           if self.config.log_packets {
-            println!("Received Ready packet from {}", socket_address);
+            debug!("Received Ready packet from {}", socket_address);
           }
 
           let client = net.get_client_mut(player_id).unwrap();
@@ -365,14 +366,14 @@ impl Server {
         }
         ClientPacket::TransferredOut => {
           if self.config.log_packets {
-            println!("Received TransferredOut packet from {}", socket_address);
+            debug!("Received TransferredOut packet from {}", socket_address);
           }
 
           net.complete_transfer(player_id);
         }
         ClientPacket::CustomWarp { tile_object_id } => {
           if self.config.log_packets {
-            println!("Received CustomWarp packet from {}", socket_address);
+            debug!("Received CustomWarp packet from {}", socket_address);
           }
 
           self
@@ -385,7 +386,7 @@ impl Server {
           max_health,
         } => {
           if self.config.log_packets {
-            println!("Received AvatarChange packet from {}", socket_address);
+            debug!("Received AvatarChange packet from {}", socket_address);
           }
 
           if let Some((texture_path, animation_path)) = net.store_player_assets(player_id) {
@@ -408,7 +409,7 @@ impl Server {
         }
         ClientPacket::Emote { emote_id } => {
           if self.config.log_packets {
-            println!("Received Emote packet from {}", socket_address);
+            debug!("Received Emote packet from {}", socket_address);
           }
 
           let prevent_default = self
@@ -424,7 +425,7 @@ impl Server {
           button,
         } => {
           if self.config.log_packets {
-            println!("Received ObjectInteraction packet from {}", socket_address);
+            debug!("Received ObjectInteraction packet from {}", socket_address);
           }
 
           self
@@ -433,7 +434,7 @@ impl Server {
         }
         ClientPacket::ActorInteraction { actor_id, button } => {
           if self.config.log_packets {
-            println!("Received ActorInteraction packet from {}", socket_address);
+            debug!("Received ActorInteraction packet from {}", socket_address);
           }
 
           self
@@ -442,7 +443,7 @@ impl Server {
         }
         ClientPacket::TileInteraction { x, y, z, button } => {
           if self.config.log_packets {
-            println!("Received TileInteraction packet from {}", socket_address);
+            debug!("Received TileInteraction packet from {}", socket_address);
           }
 
           self
@@ -451,7 +452,7 @@ impl Server {
         }
         ClientPacket::TextBoxResponse { response } => {
           if self.config.log_packets {
-            println!("Received TextBoxResponse packet from {}", socket_address);
+            debug!("Received TextBoxResponse packet from {}", socket_address);
           }
 
           self
@@ -460,7 +461,7 @@ impl Server {
         }
         ClientPacket::PromptResponse { response } => {
           if self.config.log_packets {
-            println!("Received PromptResponse packet from {}", socket_address);
+            debug!("Received PromptResponse packet from {}", socket_address);
           }
 
           self
@@ -469,28 +470,28 @@ impl Server {
         }
         ClientPacket::BoardOpen => {
           if self.config.log_packets {
-            println!("Received BoardOpen packet from {}", socket_address);
+            debug!("Received BoardOpen packet from {}", socket_address);
           }
 
           self.plugin_wrapper.handle_board_open(net, player_id);
         }
         ClientPacket::BoardClose => {
           if self.config.log_packets {
-            println!("Received BoardClose packet from {}", socket_address);
+            debug!("Received BoardClose packet from {}", socket_address);
           }
 
           self.plugin_wrapper.handle_board_close(net, player_id);
         }
         ClientPacket::PostRequest => {
           if self.config.log_packets {
-            println!("Received PostRequest packet from {}", socket_address);
+            debug!("Received PostRequest packet from {}", socket_address);
           }
 
           self.plugin_wrapper.handle_post_request(net, player_id);
         }
         ClientPacket::PostSelection { post_id } => {
           if self.config.log_packets {
-            println!("Received PostSelection packet from {}", socket_address);
+            debug!("Received PostSelection packet from {}", socket_address);
           }
 
           self
@@ -505,14 +506,14 @@ impl Server {
         }
         ClientPacket::ShopClose => {
           if self.config.log_packets {
-            println!("Received ShopClose packet from {}", socket_address);
+            debug!("Received ShopClose packet from {}", socket_address);
           }
 
           self.plugin_wrapper.handle_shop_close(net, player_id);
         }
         ClientPacket::ShopPurchase { item_name } => {
           if self.config.log_packets {
-            println!("Received ShopPurchase packet from {}", socket_address);
+            debug!("Received ShopPurchase packet from {}", socket_address);
           }
 
           self
@@ -521,7 +522,7 @@ impl Server {
         }
         ClientPacket::BattleResults { battle_stats } => {
           if self.config.log_packets {
-            println!("Received BattleResults packet from {}", socket_address);
+            debug!("Received BattleResults packet from {}", socket_address);
           }
 
           self
@@ -531,7 +532,7 @@ impl Server {
         ClientPacket::ServerMessage { data } => {
           // this should never happen but 🤷‍♂️
           if self.config.log_packets {
-            println!("Received ServerMessage packet from {}", socket_address);
+            debug!("Received ServerMessage packet from {}", socket_address);
           }
 
           self
@@ -543,7 +544,7 @@ impl Server {
       match client_packet {
         ClientPacket::VersionRequest => {
           if self.config.log_packets {
-            println!("Received VersionRequest packet from {}", socket_address);
+            debug!("Received VersionRequest packet from {}", socket_address);
           }
 
           let buf = build_unreliable_packet(ServerPacket::VersionInfo {
@@ -567,7 +568,7 @@ impl Server {
           data,
         } => {
           if self.config.log_packets {
-            println!("Received Login packet from {}", socket_address);
+            debug!("Received Login packet from {}", socket_address);
           }
 
           let player_id = net.add_client(socket_address, username, identity);
@@ -585,9 +586,9 @@ impl Server {
         }
         _ => {
           if self.config.log_packets {
-            println!("Received bad packet from {}", socket_address);
-            println!("{:?}", client_packet);
-            println!("Connected clients: {:?}", self.player_id_map.keys());
+            debug!("Received bad packet from {}", socket_address);
+            debug!("{:?}", client_packet);
+            debug!("Connected clients: {:?}", self.player_id_map.keys());
           }
         }
       }
@@ -609,14 +610,14 @@ impl Server {
       net.remove_player(&player_id, warp_out);
 
       if self.config.log_connections {
-        println!("{} disconnected for {}", player_id, reason);
+        debug!("{} disconnected for {}", player_id, reason);
       }
     }
 
     self.packet_sorter_map.remove(socket_address);
 
     if self.config.log_connections {
-      println!("{} disconnected for {}", socket_address, reason);
+      debug!("{} disconnected for {}", socket_address, reason);
     }
   }
 }

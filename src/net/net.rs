@@ -6,6 +6,7 @@ use super::map::Map;
 use super::server::ServerConfig;
 use super::{Actor, Area, Asset, AssetData, BbsPost, Direction, Item, PlayerData, ShopItem};
 use crate::packets::{create_asset_stream, PacketOrchestrator, Reliability, ServerPacket};
+use log::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::net::UdpSocket;
@@ -1203,14 +1204,14 @@ impl Net {
       let asset = if let Some(asset) = self.asset_manager.get_asset(asset_path) {
         asset
       } else {
-        println!("No asset found with path \"{}\"", asset_path);
+        warn!("No asset found with path \"{}\"", asset_path);
         continue;
       };
 
       let package_info = if let Some(package_info) = asset.resolve_package_info() {
         package_info
       } else {
-        println!("\"{}\" is not a package", asset_path);
+        warn!("\"{}\" is not a package", asset_path);
         continue;
       };
 
@@ -1262,14 +1263,14 @@ impl Net {
       let asset = if let Some(asset) = self.asset_manager.get_asset(asset_path) {
         asset
       } else {
-        println!("No asset found with path \"{}\"", asset_path);
+        warn!("No asset found with path \"{}\"", asset_path);
         continue;
       };
 
       let package_category = if let Some(package_info) = asset.resolve_package_info() {
         package_info.category
       } else {
-        println!("\"{}\" is not a package", asset_path);
+        warn!("\"{}\" is not a package", asset_path);
         continue;
       };
 
@@ -1384,7 +1385,7 @@ impl Net {
     let item = if let Some(item) = self.items.get(&item_id) {
       item
     } else {
-      println!("No item found with id \"{}\"", item_id);
+      warn!("No item found with id \"{}\"", item_id);
       return;
     };
 
@@ -1914,12 +1915,12 @@ impl Net {
 
   pub fn add_bot(&mut self, bot: Actor, warp_in: bool) {
     if self.bots.contains_key(&bot.id) {
-      println!("A bot with id \"{}\" already exists!", bot.id);
+      warn!("A bot with id \"{}\" already exists!", bot.id);
       return;
     }
 
     if self.clients.contains_key(&bot.id) {
-      println!("A player with id \"{}\" exists, can't create bot!", bot.id);
+      warn!("A player with id \"{}\" exists, can't create bot!", bot.id);
       return;
     }
 
@@ -2458,7 +2459,7 @@ fn ensure_asset(
   let assets_to_send = asset_manager.get_flattened_dependency_chain(asset_path);
 
   if assets_to_send.is_empty() {
-    println!("No asset found with path \"{}\"", asset_path);
+    warn!("No asset found with path \"{}\"", asset_path);
     return;
   }
 
@@ -2466,7 +2467,7 @@ fn ensure_asset(
     let asset = if let Some(asset) = asset_manager.get_asset(asset_path) {
       asset
     } else {
-      println!("No asset found with path \"{}\"", asset_path);
+      warn!("No asset found with path \"{}\"", asset_path);
       continue;
     };
 
