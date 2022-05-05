@@ -580,6 +580,17 @@ Async.message_server(address, port, data) -- you will not know if this succeeds,
 Async.sleep(duration) -- promise, value = nil
 ```
 
+### Asyncified Net API
+
+Async alternatives to some Net API functions. Promises return nil if the user disconnects.
+
+```lua
+Async.message_player(player_id, message, mug_texture_path?, mug_animation_path?) -- promise, value = number?
+Async.question_player(player_id, question, mug_texture_path?, mug_animation_path?) -- promise, value = number?
+Async.quiz_player(player_id, option_a?, option_b?, option_c?, mug_texture_path?, mug_animation_path?) -- promise, value = number?
+Async.prompt_player(player_id, character_limit?, default_text?) -- promise, value = string?
+```
+
 ## Building the Project
 
 This project is built with Rust, so after installing Cargo, you can compile and run the project with `cargo run`
