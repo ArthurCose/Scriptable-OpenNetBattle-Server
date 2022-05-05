@@ -22,8 +22,8 @@ impl log::Log for Logger {
         log::Level::Error => println!("{}", msg.red()),
         log::Level::Warn => println!("{}", msg.yellow()),
         log::Level::Info => println!("{}", msg),
-        log::Level::Debug => println!("{}", msg.green()),
-        log::Level::Trace => println!("{}", msg.green()),
+        log::Level::Debug => println!("{}", msg.white().dimmed()),
+        log::Level::Trace => println!("{}", msg.white().dimmed()),
       };
     }
   }

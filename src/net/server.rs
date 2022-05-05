@@ -7,6 +7,7 @@ use crate::packets::{
 };
 use crate::plugins::PluginInterface;
 use crate::threads::{create_clock_thread, create_listening_thread, ThreadMessage};
+use colored::*;
 use log::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -60,7 +61,10 @@ impl Server {
 
     socket.take_error()?;
 
-    info!("Server listening on: {}", self.config.port);
+    info!(
+      "{}",
+      format!("Server listening on: {}", self.config.port).bold()
+    );
 
     let socket = Rc::new(socket);
     let packet_orchestrator = Rc::new(RefCell::new(PacketOrchestrator::new(
@@ -80,7 +84,7 @@ impl Server {
     create_clock_thread(tx.clone());
     create_listening_thread(tx, socket.try_clone()?, (*self.config).clone());
 
-    info!("Server started");
+    info!("{}", "Server started".bright_green().bold());
 
     let mut time = Instant::now();
     let mut last_heartbeat = Instant::now();
