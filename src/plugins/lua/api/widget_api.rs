@@ -25,7 +25,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(is_shopping)
   });
 
-  lua_api.add_dynamic_function("Net", "message_player", |api_ctx, lua_ctx, params| {
+  lua_api.add_dynamic_function("Net", "_message_player", |api_ctx, lua_ctx, params| {
     let (player_id, message, mug_texture_path, mug_animation_path): (
       rlua::String,
       rlua::String,
@@ -54,7 +54,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
-  lua_api.add_dynamic_function("Net", "question_player", |api_ctx, lua_ctx, params| {
+  lua_api.add_dynamic_function("Net", "_question_player", |api_ctx, lua_ctx, params| {
     let (player_id, message, mug_texture_path, mug_animation_path): (
       rlua::String,
       rlua::String,
@@ -83,7 +83,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
-  lua_api.add_dynamic_function("Net", "quiz_player", |api_ctx, lua_ctx, params| {
+  lua_api.add_dynamic_function("Net", "_quiz_player", |api_ctx, lua_ctx, params| {
     let (player_id, option_a, option_b, option_c, mug_texture_path, mug_animation_path): (
       rlua::String,
       Option<rlua::String>,
@@ -116,7 +116,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
-  lua_api.add_dynamic_function("Net", "prompt_player", |api_ctx, lua_ctx, params| {
+  lua_api.add_dynamic_function("Net", "_prompt_player", |api_ctx, lua_ctx, params| {
     let (player_id, character_limit, message): (rlua::String, Option<u16>, Option<rlua::String>) =
       lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;

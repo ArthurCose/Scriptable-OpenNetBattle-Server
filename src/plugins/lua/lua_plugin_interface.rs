@@ -11,11 +11,9 @@ pub struct LuaPluginInterface {
   scripts: Vec<Lua>,
   all_scripts: Vec<usize>,
   authorization_listeners: Vec<usize>,
-  player_request_listeners: Vec<usize>,
   player_connect_listeners: Vec<usize>,
   player_join_listeners: Vec<usize>,
   player_transfer_listeners: Vec<usize>,
-  player_disconnect_listeners: Vec<usize>,
   player_move_listeners: Vec<usize>,
   player_avatar_change_listeners: Vec<usize>,
   player_emote_listeners: Vec<usize>,
@@ -37,11 +35,9 @@ impl LuaPluginInterface {
       scripts: Vec::new(),
       all_scripts: Vec::new(),
       authorization_listeners: Vec::new(),
-      player_request_listeners: Vec::new(),
       player_connect_listeners: Vec::new(),
       player_join_listeners: Vec::new(),
       player_transfer_listeners: Vec::new(),
-      player_disconnect_listeners: Vec::new(),
       player_move_listeners: Vec::new(),
       player_avatar_change_listeners: Vec::new(),
       player_emote_listeners: Vec::new(),
@@ -139,13 +135,6 @@ impl LuaPluginInterface {
       }
 
       if globals
-        .get::<_, rlua::Function>("handle_player_request")
-        .is_ok()
-      {
-        self.player_request_listeners.push(script_index);
-      }
-
-      if globals
         .get::<_, rlua::Function>("handle_player_connect")
         .is_ok()
       {
@@ -164,13 +153,6 @@ impl LuaPluginInterface {
         .is_ok()
       {
         self.player_transfer_listeners.push(script_index);
-      }
-
-      if globals
-        .get::<_, rlua::Function>("handle_player_disconnect")
-        .is_ok()
-      {
-        self.player_disconnect_listeners.push(script_index);
       }
 
       if globals
@@ -251,7 +233,6 @@ impl PluginInterface for LuaPluginInterface {
   }
 
   fn tick(&mut self, net: &mut Net, delta_time: f32) {
-    // async_api.lua
     handle_event(
       &mut self.scripts,
       &self.all_scripts,
@@ -260,7 +241,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "_server_internal_tick",
+      "_server_internal_tick", // async_api.lua
       |_, callback| callback.call(delta_time),
     );
   }
@@ -300,13 +281,13 @@ impl PluginInterface for LuaPluginInterface {
 
     handle_event(
       &mut self.scripts,
-      &self.player_request_listeners,
+      &self.all_scripts,
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_player_request",
+      "_server_internal_request", // async_api.lua
       |_, callback| callback.call((player_id, data)),
     );
   }
@@ -356,13 +337,13 @@ impl PluginInterface for LuaPluginInterface {
   fn handle_player_disconnect(&mut self, net: &mut Net, player_id: &str) {
     handle_event(
       &mut self.scripts,
-      &self.player_disconnect_listeners,
+      &self.all_scripts,
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_player_disconnect",
+      "_server_internal_disconnect", // async_api.lua
       |_, callback| callback.call(player_id),
     );
 
@@ -543,7 +524,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_textbox_response",
+      "_server_internal_textbox",
       |_, callback| callback.call((player_id, response)),
     );
   }
@@ -566,7 +547,7 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_textbox_response",
+      "_server_internal_textbox",
       |_, callback| callback.call((player_id, response.clone())),
     );
   }
