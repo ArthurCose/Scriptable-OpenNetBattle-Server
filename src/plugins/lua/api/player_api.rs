@@ -562,9 +562,8 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let tracker_pair = battle_tracker.get_pair_mut(player_1_id_str, player_2_id_str);
 
     if let Some((tracker_1, tracker_2)) = tracker_pair {
-      tracker_1.push_back(api_ctx.script_path.clone());
-      tracker_2.push_back(api_ctx.script_path.clone());
-  
+      tracker_1.push_back(api_ctx.script_index);
+      tracker_2.push_back(api_ctx.script_index);
       net.initiate_pvp(player_1_id_str, player_2_id_str);
     }
 
@@ -635,7 +634,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       .borrow_mut()
       .get_mut(player_id_str)
     {
-      tracker.push_back(api_ctx.script_path.clone());
+      tracker.push_back(api_ctx.script_index);
 
       net.initiate_encounter(player_id_str, package_id_str, data.as_deref());
     }

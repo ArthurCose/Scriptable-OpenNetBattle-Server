@@ -8,25 +8,23 @@ use std::collections::HashMap;
 use std::collections::VecDeque;
 
 pub struct LuaPluginInterface {
-  scripts: HashMap<std::path::PathBuf, Lua>,
-  tick_listeners: Vec<std::path::PathBuf>,
-  authorization_listeners: Vec<std::path::PathBuf>,
-  player_request_listeners: Vec<std::path::PathBuf>,
-  player_connect_listeners: Vec<std::path::PathBuf>,
-  player_join_listeners: Vec<std::path::PathBuf>,
-  player_transfer_listeners: Vec<std::path::PathBuf>,
-  player_disconnect_listeners: Vec<std::path::PathBuf>,
-  player_move_listeners: Vec<std::path::PathBuf>,
-  player_avatar_change_listeners: Vec<std::path::PathBuf>,
-  player_emote_listeners: Vec<std::path::PathBuf>,
-  custom_warp_listeners: Vec<std::path::PathBuf>,
-  object_interaction_listeners: Vec<std::path::PathBuf>,
-  actor_interaction_listeners: Vec<std::path::PathBuf>,
-  tile_interaction_listeners: Vec<std::path::PathBuf>,
-  battle_results_listeners: Vec<std::path::PathBuf>,
-  server_message_listeners: Vec<std::path::PathBuf>,
-  widget_trackers: HashMap<String, WidgetTracker<std::path::PathBuf>>,
-  battle_trackers: HashMap<String, VecDeque<std::path::PathBuf>>,
+  scripts: Vec<Lua>,
+  all_scripts: Vec<usize>,
+  authorization_listeners: Vec<usize>,
+  player_connect_listeners: Vec<usize>,
+  player_join_listeners: Vec<usize>,
+  player_transfer_listeners: Vec<usize>,
+  player_move_listeners: Vec<usize>,
+  player_avatar_change_listeners: Vec<usize>,
+  player_emote_listeners: Vec<usize>,
+  custom_warp_listeners: Vec<usize>,
+  object_interaction_listeners: Vec<usize>,
+  actor_interaction_listeners: Vec<usize>,
+  tile_interaction_listeners: Vec<usize>,
+  battle_results_listeners: Vec<usize>,
+  server_message_listeners: Vec<usize>,
+  widget_trackers: HashMap<String, WidgetTracker<usize>>,
+  battle_trackers: HashMap<String, VecDeque<usize>>,
   promise_manager: JobPromiseManager,
   lua_api: LuaApi,
 }
@@ -34,14 +32,12 @@ pub struct LuaPluginInterface {
 impl LuaPluginInterface {
   pub fn new() -> LuaPluginInterface {
     LuaPluginInterface {
-      scripts: HashMap::new(),
-      tick_listeners: Vec::new(),
+      scripts: Vec::new(),
+      all_scripts: Vec::new(),
       authorization_listeners: Vec::new(),
-      player_request_listeners: Vec::new(),
       player_connect_listeners: Vec::new(),
       player_join_listeners: Vec::new(),
       player_transfer_listeners: Vec::new(),
-      player_disconnect_listeners: Vec::new(),
       player_move_listeners: Vec::new(),
       player_avatar_change_listeners: Vec::new(),
       player_emote_listeners: Vec::new(),
@@ -90,7 +86,10 @@ impl LuaPluginInterface {
   ) -> rlua::Result<()> {
     let net_ref = RefCell::new(net_ref);
 
-    let lua_env = unsafe { Lua::new_with_debug() };
+    let script_index = self.scripts.len();
+    self.scripts.push(Lua::new());
+
+    let lua_env = self.scripts.last_mut().unwrap();
 
     lua_env.context(|lua_ctx| {
       let widget_tracker_ref = RefCell::new(&mut self.widget_trackers);
@@ -98,7 +97,7 @@ impl LuaPluginInterface {
       let promise_manager_ref = RefCell::new(&mut self.promise_manager);
 
       let api_ctx = ApiContext {
-        script_path: &script_path,
+        script_index,
         net_ref: &net_ref,
         widget_tracker_ref: &widget_tracker_ref,
         battle_tracker_ref: &battle_tracker_ref,
@@ -126,119 +125,101 @@ impl LuaPluginInterface {
         Ok(())
       })?;
 
-      self.tick_listeners.push(script_path.clone());
+      self.all_scripts.push(script_index);
 
       if globals
         .get::<_, rlua::Function>("handle_authorization")
         .is_ok()
       {
-        self.authorization_listeners.push(script_path.clone());
-      }
-
-      if globals
-        .get::<_, rlua::Function>("handle_player_request")
-        .is_ok()
-      {
-        self.player_request_listeners.push(script_path.clone());
+        self.authorization_listeners.push(script_index);
       }
 
       if globals
         .get::<_, rlua::Function>("handle_player_connect")
         .is_ok()
       {
-        self.player_connect_listeners.push(script_path.clone());
+        self.player_connect_listeners.push(script_index);
       }
 
       if globals
         .get::<_, rlua::Function>("handle_player_join")
         .is_ok()
       {
-        self.player_join_listeners.push(script_path.clone());
+        self.player_join_listeners.push(script_index);
       }
 
       if globals
         .get::<_, rlua::Function>("handle_player_transfer")
         .is_ok()
       {
-        self.player_transfer_listeners.push(script_path.clone());
-      }
-
-      if globals
-        .get::<_, rlua::Function>("handle_player_disconnect")
-        .is_ok()
-      {
-        self.player_disconnect_listeners.push(script_path.clone());
+        self.player_transfer_listeners.push(script_index);
       }
 
       if globals
         .get::<_, rlua::Function>("handle_player_move")
         .is_ok()
       {
-        self.player_move_listeners.push(script_path.clone());
+        self.player_move_listeners.push(script_index);
       }
 
       if globals
         .get::<_, rlua::Function>("handle_player_avatar_change")
         .is_ok()
       {
-        self
-          .player_avatar_change_listeners
-          .push(script_path.clone());
+        self.player_avatar_change_listeners.push(script_index);
       }
 
       if globals
         .get::<_, rlua::Function>("handle_player_emote")
         .is_ok()
       {
-        self.player_emote_listeners.push(script_path.clone());
+        self.player_emote_listeners.push(script_index);
       }
 
       if globals
         .get::<_, rlua::Function>("handle_custom_warp")
         .is_ok()
       {
-        self.custom_warp_listeners.push(script_path.clone());
+        self.custom_warp_listeners.push(script_index);
       }
 
       if globals
         .get::<_, rlua::Function>("handle_object_interaction")
         .is_ok()
       {
-        self.object_interaction_listeners.push(script_path.clone());
+        self.object_interaction_listeners.push(script_index);
       }
 
       if globals
         .get::<_, rlua::Function>("handle_actor_interaction")
         .is_ok()
       {
-        self.actor_interaction_listeners.push(script_path.clone());
+        self.actor_interaction_listeners.push(script_index);
       }
 
       if globals
         .get::<_, rlua::Function>("handle_tile_interaction")
         .is_ok()
       {
-        self.tile_interaction_listeners.push(script_path.clone());
+        self.tile_interaction_listeners.push(script_index);
       }
 
       if globals
         .get::<_, rlua::Function>("handle_battle_results")
         .is_ok()
       {
-        self.battle_results_listeners.push(script_path.clone());
+        self.battle_results_listeners.push(script_index);
       }
 
       if globals
         .get::<_, rlua::Function>("handle_server_message")
         .is_ok()
       {
-        self.server_message_listeners.push(script_path.clone());
+        self.server_message_listeners.push(script_index);
       }
 
       Ok(())
     })?;
-
-    self.scripts.insert(script_path, lua_env);
 
     Ok(())
   }
@@ -252,16 +233,15 @@ impl PluginInterface for LuaPluginInterface {
   }
 
   fn tick(&mut self, net: &mut Net, delta_time: f32) {
-    // async_api.lua
     handle_event(
       &mut self.scripts,
-      &self.tick_listeners,
+      &self.all_scripts,
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "_server_internal_tick",
+      "_server_internal_tick", // async_api.lua
       |_, callback| callback.call(delta_time),
     );
   }
@@ -301,13 +281,13 @@ impl PluginInterface for LuaPluginInterface {
 
     handle_event(
       &mut self.scripts,
-      &self.player_request_listeners,
+      &self.all_scripts,
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_player_request",
+      "_server_internal_request", // async_api.lua
       |_, callback| callback.call((player_id, data)),
     );
   }
@@ -357,13 +337,13 @@ impl PluginInterface for LuaPluginInterface {
   fn handle_player_disconnect(&mut self, net: &mut Net, player_id: &str) {
     handle_event(
       &mut self.scripts,
-      &self.player_disconnect_listeners,
+      &self.all_scripts,
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_player_disconnect",
+      "_server_internal_disconnect", // async_api.lua
       |_, callback| callback.call(player_id),
     );
 
@@ -529,8 +509,8 @@ impl PluginInterface for LuaPluginInterface {
   fn handle_textbox_response(&mut self, net: &mut Net, player_id: &str, response: u8) {
     let tracker = self.widget_trackers.get_mut(player_id).unwrap();
 
-    let script_path = if let Some(script_path) = tracker.pop_textbox() {
-      script_path
+    let script_index = if let Some(script_index) = tracker.pop_textbox() {
+      script_index
     } else {
       // protect against attackers
       return;
@@ -538,13 +518,13 @@ impl PluginInterface for LuaPluginInterface {
 
     handle_event(
       &mut self.scripts,
-      &[script_path],
+      &[script_index],
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_textbox_response",
+      "_server_internal_textbox",
       |_, callback| callback.call((player_id, response)),
     );
   }
@@ -552,8 +532,8 @@ impl PluginInterface for LuaPluginInterface {
   fn handle_prompt_response(&mut self, net: &mut Net, player_id: &str, response: String) {
     let tracker = self.widget_trackers.get_mut(player_id).unwrap();
 
-    let script_path = if let Some(script_path) = tracker.pop_textbox() {
-      script_path
+    let script_index = if let Some(script_index) = tracker.pop_textbox() {
+      script_index
     } else {
       // protect against attackers
       return;
@@ -561,13 +541,13 @@ impl PluginInterface for LuaPluginInterface {
 
     handle_event(
       &mut self.scripts,
-      &[script_path],
+      &[script_index],
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_textbox_response",
+      "_server_internal_textbox",
       |_, callback| callback.call((player_id, response.clone())),
     );
   }
@@ -577,8 +557,8 @@ impl PluginInterface for LuaPluginInterface {
 
     tracker.open_board();
 
-    let script_path = if let Some(script_path) = tracker.current_board() {
-      script_path.clone()
+    let script_index = if let Some(script_index) = tracker.current_board() {
+      script_index.clone()
     } else {
       // protect against attackers
       return;
@@ -586,7 +566,7 @@ impl PluginInterface for LuaPluginInterface {
 
     handle_event(
       &mut self.scripts,
-      &[script_path],
+      &[script_index],
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
@@ -600,8 +580,8 @@ impl PluginInterface for LuaPluginInterface {
   fn handle_board_close(&mut self, net: &mut Net, player_id: &str) {
     let tracker = self.widget_trackers.get_mut(player_id).unwrap();
 
-    let script_path = if let Some(script_path) = tracker.close_board() {
-      script_path
+    let script_index = if let Some(script_index) = tracker.close_board() {
+      script_index
     } else {
       // protect against attackers
       return;
@@ -609,7 +589,7 @@ impl PluginInterface for LuaPluginInterface {
 
     handle_event(
       &mut self.scripts,
-      &[script_path],
+      &[script_index],
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
@@ -623,8 +603,8 @@ impl PluginInterface for LuaPluginInterface {
   fn handle_post_request(&mut self, net: &mut Net, player_id: &str) {
     let tracker = self.widget_trackers.get_mut(player_id).unwrap();
 
-    let script_path = if let Some(script_path) = tracker.current_board() {
-      script_path.clone()
+    let script_index = if let Some(script_index) = tracker.current_board() {
+      script_index.clone()
     } else {
       // protect against attackers
       return;
@@ -632,7 +612,7 @@ impl PluginInterface for LuaPluginInterface {
 
     handle_event(
       &mut self.scripts,
-      &[script_path],
+      &[script_index],
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
@@ -646,8 +626,8 @@ impl PluginInterface for LuaPluginInterface {
   fn handle_post_selection(&mut self, net: &mut Net, player_id: &str, post_id: &str) {
     let tracker = self.widget_trackers.get_mut(player_id).unwrap();
 
-    let script_path = if let Some(script_path) = tracker.current_board() {
-      script_path.clone()
+    let script_index = if let Some(script_index) = tracker.current_board() {
+      script_index.clone()
     } else {
       // protect against attackers
       return;
@@ -655,7 +635,7 @@ impl PluginInterface for LuaPluginInterface {
 
     handle_event(
       &mut self.scripts,
-      &[script_path],
+      &[script_index],
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
@@ -669,8 +649,8 @@ impl PluginInterface for LuaPluginInterface {
   fn handle_shop_close(&mut self, net: &mut Net, player_id: &str) {
     let tracker = self.widget_trackers.get_mut(player_id).unwrap();
 
-    let script_path = if let Some(script_path) = tracker.close_shop() {
-      script_path
+    let script_index = if let Some(script_index) = tracker.close_shop() {
+      script_index
     } else {
       // protect against attackers
       return;
@@ -678,7 +658,7 @@ impl PluginInterface for LuaPluginInterface {
 
     handle_event(
       &mut self.scripts,
-      &[script_path],
+      &[script_index],
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
@@ -692,8 +672,8 @@ impl PluginInterface for LuaPluginInterface {
   fn handle_shop_purchase(&mut self, net: &mut Net, player_id: &str, item_name: &str) {
     let tracker = self.widget_trackers.get_mut(player_id).unwrap();
 
-    let script_path = if let Some(script_path) = tracker.current_shop() {
-      script_path.clone()
+    let script_index = if let Some(script_index) = tracker.current_shop() {
+      script_index.clone()
     } else {
       // protect against attackers
       return;
@@ -701,7 +681,7 @@ impl PluginInterface for LuaPluginInterface {
 
     handle_event(
       &mut self.scripts,
-      &[script_path],
+      &[script_index],
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
@@ -715,8 +695,8 @@ impl PluginInterface for LuaPluginInterface {
   fn handle_battle_results(&mut self, net: &mut Net, player_id: &str, battle_stats: &BattleStats) {
     let tracker = self.battle_trackers.get_mut(player_id).unwrap();
 
-    let script_path = if let Some(script_path) = tracker.pop_front() {
-      script_path
+    let script_index = if let Some(script_index) = tracker.pop_front() {
+      script_index
     } else {
       // protect against attackers
       return;
@@ -724,7 +704,7 @@ impl PluginInterface for LuaPluginInterface {
 
     handle_event(
       &mut self.scripts,
-      &[script_path],
+      &[script_index],
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
@@ -785,10 +765,10 @@ impl PluginInterface for LuaPluginInterface {
 
 #[allow(clippy::too_many_arguments)]
 fn handle_event<F>(
-  scripts: &mut HashMap<std::path::PathBuf, Lua>,
-  event_listeners: &[std::path::PathBuf],
-  widget_tracker: &mut HashMap<String, WidgetTracker<std::path::PathBuf>>,
-  battle_tracker: &mut HashMap<String, VecDeque<std::path::PathBuf>>,
+  scripts: &mut Vec<Lua>,
+  event_listeners: &[usize],
+  widget_tracker: &mut HashMap<String, WidgetTracker<usize>>,
+  battle_tracker: &mut HashMap<String, VecDeque<usize>>,
   promise_manager: &mut JobPromiseManager,
   lua_api: &mut LuaApi,
   net: &mut Net,
@@ -806,12 +786,12 @@ fn handle_event<F>(
     let promise_manager_ref = RefCell::new(promise_manager);
 
     // loop over scripts
-    for script_path in event_listeners {
+    for script_index in event_listeners {
       // grab the lua_env (should always be true)
-      if let Some(lua_env) = scripts.get_mut(script_path) {
+      if let Some(lua_env) = scripts.get_mut(*script_index) {
         // enter the lua context
         let api_ctx = ApiContext {
-          script_path,
+          script_index: *script_index,
           net_ref: &net_ref,
           widget_tracker_ref: &widget_tracker_ref,
           battle_tracker_ref: &battle_tracker_ref,

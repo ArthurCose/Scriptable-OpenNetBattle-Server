@@ -151,3 +151,91 @@ function Async._promise_from_id(id)
 
   return promise
 end
+
+-- asyncified textboxes
+
+Async._textbox_resolvers = {}
+Async._next_textbox_promise = {}
+
+function _server_internal_textbox(player_id, response)
+  if handle_textbox_response then
+    handle_textbox_response(player_id, response)
+  end
+
+  local next_promise = Async._next_textbox_promise[player_id]
+
+  if next_promise[1] == 0 then
+    local resolvers = Async._textbox_resolvers[player_id]
+    local resolve = table.remove(resolvers, 1)
+
+    if resolve == nil then
+      return
+    end
+
+    if #next_promise > 1 then
+      table.remove(next_promise, 1)
+    end
+
+    resolve(response)
+  else
+    next_promise[1] = next_promise[1] - 1
+  end
+end
+
+function _server_internal_disconnect(player_id)
+  Async._next_textbox_promise[player_id] = nil
+  Async._textbox_resolvers[player_id] = nil
+
+  if handle_player_disconnect then
+    handle_player_disconnect(player_id)
+  end
+end
+
+function _server_internal_request(player_id, data)
+  Async._next_textbox_promise[player_id] = {0}
+  Async._textbox_resolvers[player_id] = {}
+
+  if handle_player_request then
+    handle_player_request(player_id, data)
+  end
+end
+
+local function create_textbox_api(function_name)
+  local delegate_name = "Net._" .. function_name
+
+  Async[function_name] = function (player_id, ...)
+    local resolvers = Async._textbox_resolvers[player_id]
+
+    if resolvers == nil then
+      -- player has disconnected or never existed
+      return Async.create_promise(function(resolve) resolve(nil) end)
+    end
+
+    Net._delegate(delegate_name, player_id, ...)
+
+    return Async.create_promise(function(resolve)
+      local next_promise = Async._next_textbox_promise[player_id]
+
+      resolvers[#resolvers + 1] = resolve
+      next_promise[#resolvers + 1] = 0
+    end)
+  end
+
+  Net[function_name] = function (player_id, ...)
+    local next_promise = Async._next_textbox_promise[player_id]
+
+    if next_promise == nil then
+      -- player has disconnected or never existed
+      return
+    end
+
+    next_promise[#next_promise] = next_promise[#next_promise] + 1
+
+    Net._delegate(delegate_name, player_id, ...)
+  end
+end
+
+create_textbox_api("message_player")
+create_textbox_api("question_player")
+create_textbox_api("quiz_player")
+create_textbox_api("prompt_player")

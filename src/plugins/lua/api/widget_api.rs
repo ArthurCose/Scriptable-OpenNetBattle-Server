@@ -25,7 +25,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(is_shopping)
   });
 
-  lua_api.add_dynamic_function("Net", "message_player", |api_ctx, lua_ctx, params| {
+  lua_api.add_dynamic_function("Net", "_message_player", |api_ctx, lua_ctx, params| {
     let (player_id, message, mug_texture_path, mug_animation_path): (
       rlua::String,
       rlua::String,
@@ -41,7 +41,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       .borrow_mut()
       .get_mut(player_id_str)
     {
-      tracker.track_textbox(api_ctx.script_path.clone());
+      tracker.track_textbox(api_ctx.script_index);
 
       net.message_player(
         player_id_str,
@@ -54,7 +54,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
-  lua_api.add_dynamic_function("Net", "question_player", |api_ctx, lua_ctx, params| {
+  lua_api.add_dynamic_function("Net", "_question_player", |api_ctx, lua_ctx, params| {
     let (player_id, message, mug_texture_path, mug_animation_path): (
       rlua::String,
       rlua::String,
@@ -70,7 +70,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       .borrow_mut()
       .get_mut(player_id_str)
     {
-      tracker.track_textbox(api_ctx.script_path.clone());
+      tracker.track_textbox(api_ctx.script_index);
 
       net.question_player(
         player_id_str,
@@ -83,7 +83,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
-  lua_api.add_dynamic_function("Net", "quiz_player", |api_ctx, lua_ctx, params| {
+  lua_api.add_dynamic_function("Net", "_quiz_player", |api_ctx, lua_ctx, params| {
     let (player_id, option_a, option_b, option_c, mug_texture_path, mug_animation_path): (
       rlua::String,
       Option<rlua::String>,
@@ -101,7 +101,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       .borrow_mut()
       .get_mut(player_id_str)
     {
-      tracker.track_textbox(api_ctx.script_path.clone());
+      tracker.track_textbox(api_ctx.script_index);
 
       net.quiz_player(
         player_id_str,
@@ -116,7 +116,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
-  lua_api.add_dynamic_function("Net", "prompt_player", |api_ctx, lua_ctx, params| {
+  lua_api.add_dynamic_function("Net", "_prompt_player", |api_ctx, lua_ctx, params| {
     let (player_id, character_limit, message): (rlua::String, Option<u16>, Option<rlua::String>) =
       lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
@@ -128,7 +128,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       .borrow_mut()
       .get_mut(player_id_str)
     {
-      tracker.track_textbox(api_ctx.script_path.clone());
+      tracker.track_textbox(api_ctx.script_index);
 
       net.prompt_player(
         player_id_str,
@@ -158,7 +158,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       .borrow_mut()
       .get_mut(player_id_str)
     {
-      tracker.track_board(api_ctx.script_path.clone());
+      tracker.track_board(api_ctx.script_index);
 
       let color = (
         color_table.get("r")?,
@@ -300,7 +300,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       .borrow_mut()
       .get_mut(player_id_str)
     {
-      tracker.track_shop(api_ctx.script_path.clone());
+      tracker.track_shop(api_ctx.script_index);
       let mut net = api_ctx.net_ref.borrow_mut();
 
       let mut items = Vec::new();
