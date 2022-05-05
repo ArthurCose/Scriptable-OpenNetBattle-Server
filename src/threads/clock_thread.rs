@@ -1,4 +1,5 @@
 use crate::threads::ThreadMessage;
+use log::*;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::mpsc;
 use std::sync::Arc;
@@ -16,7 +17,7 @@ pub fn create_clock_thread(tx: mpsc::Sender<ThreadMessage>) {
 
     if behind_count > 1 {
       behind_counter.fetch_sub(1, Ordering::Relaxed);
-      println!("Server running behind, skipping tick");
+      warn!("Server running behind, skipping tick");
       continue;
     }
 

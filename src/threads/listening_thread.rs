@@ -1,6 +1,7 @@
 use crate::net::ServerConfig;
 use crate::packets::parse_client_packet;
 use crate::threads::ThreadMessage;
+use log::*;
 use std::net::UdpSocket;
 use std::sync::mpsc;
 
@@ -38,7 +39,7 @@ async fn listen_loop(
     let filled_buf = &buf[..number_of_bytes];
 
     if config.log_packets {
-      println!("Received packet from {}", src_addr);
+      debug!("Received packet from {}", src_addr);
     }
 
     if let Some((headers, packet)) = parse_client_packet(filled_buf) {
@@ -49,8 +50,8 @@ async fn listen_loop(
       })
       .unwrap();
     } else {
-      println!("Received unknown packet from {}", src_addr);
-      println!("{:?}", filled_buf);
+      debug!("Received unknown packet from {}", src_addr);
+      debug!("{:?}", filled_buf);
     }
   }
 }

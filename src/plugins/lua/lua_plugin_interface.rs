@@ -2,6 +2,7 @@ use super::api::{ApiContext, LuaApi};
 use crate::jobs::JobPromiseManager;
 use crate::net::{BattleStats, Net, WidgetTracker};
 use crate::plugins::PluginInterface;
+use log::*;
 use rlua::Lua;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -72,7 +73,7 @@ impl LuaPluginInterface {
       }
 
       if let Err(err) = self.load_script(net_ref, script_path.to_path_buf()) {
-        println!("{}", err)
+        error!("{}", err)
       }
     }
 
@@ -228,7 +229,7 @@ impl LuaPluginInterface {
 impl PluginInterface for LuaPluginInterface {
   fn init(&mut self, net: &mut Net) {
     if let Err(err) = self.load_scripts(net) {
-      println!("Failed to load lua scripts: {}", err);
+      error!("Failed to load lua scripts: {}", err);
     }
   }
 
@@ -804,7 +805,7 @@ fn handle_event<F>(
 
             if let Ok(func) = globals.get::<_, rlua::Function>(event_fn_name) {
               if let Err(err) = fn_caller(lua_ctx, func) {
-                println!("{}", err);
+                error!("{}", err);
               }
             }
 
@@ -819,6 +820,6 @@ fn handle_event<F>(
   };
 
   if let Err(err) = call_lua() {
-    println!("{:#}", err);
+    error!("{:#}", err);
   }
 }

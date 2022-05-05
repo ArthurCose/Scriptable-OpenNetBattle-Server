@@ -1,5 +1,6 @@
 use super::job_promise::{JobPromise, PromiseValue};
 use super::web_request::web_request_internal;
+use log::*;
 
 pub fn web_download(
   destination: String,
@@ -15,7 +16,7 @@ pub fn web_download(
     let response = match web_request_internal(url, method, headers, body).await {
       Ok(response) => response,
       Err(err) => {
-        println!("{}", err);
+        warn!("{}", err);
         thread_promise.set_value(PromiseValue::Success(false));
         return;
       }
@@ -23,7 +24,7 @@ pub fn web_download(
 
     // writing to file
     if let Err(err) = save_response(destination, response).await {
-      println!("{}", err);
+      warn!("{}", err);
       thread_promise.set_value(PromiseValue::Success(false));
       return;
     }

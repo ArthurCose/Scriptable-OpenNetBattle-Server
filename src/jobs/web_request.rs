@@ -1,4 +1,5 @@
 use super::job_promise::{JobPromise, PromiseValue};
+use log::*;
 
 pub struct HttpResponse {
   pub status: u16,
@@ -19,7 +20,7 @@ pub fn web_request(
     let mut response = match web_request_internal(url, method, headers, body).await {
       Ok(response) => response,
       Err(err) => {
-        println!("{}", err);
+        warn!("{}", err);
         thread_promise.set_value(PromiseValue::None);
         return;
       }
@@ -35,7 +36,7 @@ pub fn web_request(
     let body = match response.body_bytes().await {
       Ok(body) => body,
       Err(err) => {
-        println!("{}", err);
+        warn!("{}", err);
 
         thread_promise.set_value(PromiseValue::None);
         return;

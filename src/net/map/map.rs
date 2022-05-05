@@ -3,6 +3,7 @@ use super::map_layer::MapLayer;
 use super::map_object::{MapObject, MapObjectData, MapObjectSpecification};
 use super::Tile;
 use crate::helpers::unwrap_and_parse_or_default;
+use log::*;
 use std::collections::HashMap;
 
 #[derive(Clone)]
@@ -132,7 +133,7 @@ impl Map {
             });
 
           if data_element.attr("encoding") != Some("csv") {
-            println!(
+            warn!(
               "{}: Layer \"{}\" is using incorrect format, only CSV format is supported! (Check map properties)",
               map.name, name
             );
@@ -159,7 +160,7 @@ impl Map {
           map.indicate_layer_offset_issues(name, object_layers, child);
 
           if object_layers + 1 != map.layers.len() {
-            println!("{}: Layer \"{}\" will link to layer {}! (Layer order starting from bottom is Tile, Object, Tile, Object, etc)", map.name, name, object_layers);
+            warn!("{}: Layer \"{}\" will link to layer {}! (Layer order starting from bottom is Tile, Object, Tile, Object, etc)", map.name, name, object_layers);
           }
 
           for object_element in child.children() {
@@ -195,15 +196,15 @@ impl Map {
     }
 
     if map_element.attr("orientation") != Some("isometric") {
-      println!("{}: Only Isometric orientation is supported!", map.name);
+      warn!("{}: Only Isometric orientation is supported!", map.name);
     }
 
     if map_element.attr("infinite") == Some("1") {
-      println!("{}: Infinite maps are not supported!", map.name);
+      warn!("{}: Infinite maps are not supported!", map.name);
     }
 
     if !matches!(map_element.attr("staggerindex"), None | Some("odd")) {
-      println!("{}: Stagger Index must be set to Odd!", map.name);
+      warn!("{}: Stagger Index must be set to Odd!", map.name);
     }
 
     map
@@ -221,14 +222,14 @@ impl Map {
     let correct_vertical_offset = layer_index as i32 * -((self.tile_height / 2) as i32);
 
     if manual_horizontal_offset != 0 {
-      println!(
+      warn!(
         "{}: Layer \"{}\" has incorrect horizontal offset! (Should be 0)",
         self.name, layer_name
       );
     }
 
     if manual_vertical_offset != correct_vertical_offset {
-      println!(
+      warn!(
         "{}: Layer \"{}\" has incorrect vertical offset! (Should be {})",
         self.name, layer_name, correct_vertical_offset
       );

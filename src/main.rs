@@ -1,5 +1,6 @@
 mod helpers;
 mod jobs;
+mod logger;
 mod net;
 mod packets;
 mod plugins;
@@ -10,6 +11,8 @@ use plugins::LuaPluginInterface;
 use std::net::IpAddr;
 
 fn main() {
+  logger::init();
+
   let matches = clap::App::new("OpenNetBattle Server")
     .arg(
       clap::Arg::with_name("port")

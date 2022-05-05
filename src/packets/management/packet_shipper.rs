@@ -2,6 +2,7 @@ use super::super::bytes::write_u64;
 use super::super::server_packets::*;
 use super::reliability::Reliability;
 use crate::threads::clock_thread::TICK_RATE;
+use log::*;
 use std::net::UdpSocket;
 
 struct BackedUpPacket {
@@ -129,7 +130,7 @@ impl PacketShipper {
   pub fn acknowledged(&mut self, reliability: Reliability, id: u64) {
     match reliability {
       Reliability::Unreliable | Reliability::UnreliableSequenced => {
-        println!("Client is acknowledging unreliable packets?")
+        debug!("Client is acknowledging unreliable packets?")
       }
       Reliability::Reliable => self.acknowledged_reliable(id),
       Reliability::ReliableOrdered => self.acknowledged_reliable_ordered(id),
