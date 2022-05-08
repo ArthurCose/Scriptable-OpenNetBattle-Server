@@ -4,7 +4,7 @@ use crate::net::Item;
 
 pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Net", "get_player_secret", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -17,7 +17,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_player_element", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -30,7 +30,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_player_health", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -43,7 +43,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "set_player_health", |api_ctx, lua_ctx, params| {
-    let (player_id, health): (rlua::String, u32) = lua_ctx.unpack_multi(params)?;
+    let (player_id, health): (mlua::String, u32) = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -57,7 +57,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "get_player_max_health",
     |api_ctx, lua_ctx, params| {
-      let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+      let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
       let player_id_str = player_id.to_str()?;
 
       let net = api_ctx.net_ref.borrow();
@@ -74,7 +74,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "set_player_max_health",
     |api_ctx, lua_ctx, params| {
-      let (player_id, max_health): (rlua::String, u32) = lua_ctx.unpack_multi(params)?;
+      let (player_id, max_health): (mlua::String, u32) = lua_ctx.unpack_multi(params)?;
       let player_id_str = player_id.to_str()?;
 
       let mut net = api_ctx.net_ref.borrow_mut();
@@ -86,7 +86,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   );
 
   lua_api.add_dynamic_function("Net", "get_player_emotion", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -99,7 +99,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "set_player_emotion", |api_ctx, lua_ctx, params| {
-    let (player_id, emotion): (rlua::String, u8) = lua_ctx.unpack_multi(params)?;
+    let (player_id, emotion): (mlua::String, u8) = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -110,7 +110,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_player_money", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -123,7 +123,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "set_player_money", |api_ctx, lua_ctx, params| {
-    let (player_id, money): (rlua::String, u32) = lua_ctx.unpack_multi(params)?;
+    let (player_id, money): (mlua::String, u32) = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -134,7 +134,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_player_items", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -147,7 +147,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "give_player_item", |api_ctx, lua_ctx, params| {
-    let (player_id, item_id): (rlua::String, String) = lua_ctx.unpack_multi(params)?;
+    let (player_id, item_id): (mlua::String, String) = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -158,7 +158,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "remove_player_item", |api_ctx, lua_ctx, params| {
-    let (player_id, item_id): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+    let (player_id, item_id): (mlua::String, mlua::String) = lua_ctx.unpack_multi(params)?;
     let (player_id_str, item_id_str) = (player_id.to_str()?, item_id.to_str()?);
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -169,7 +169,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "player_has_item", |api_ctx, lua_ctx, params| {
-    let (player_id, item_id): (rlua::String, String) = lua_ctx.unpack_multi(params)?;
+    let (player_id, item_id): (mlua::String, String) = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -182,7 +182,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "create_item", |api_ctx, lua_ctx, params| {
-    let (item_id, item_table): (String, rlua::Table) = lua_ctx.unpack_multi(params)?;
+    let (item_id, item_table): (String, mlua::Table) = lua_ctx.unpack_multi(params)?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
@@ -197,7 +197,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_item_name", |api_ctx, lua_ctx, params| {
-    let item_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let item_id: mlua::String = lua_ctx.unpack_multi(params)?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
@@ -208,7 +208,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_item_description", |api_ctx, lua_ctx, params| {
-    let item_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let item_id: mlua::String = lua_ctx.unpack_multi(params)?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 

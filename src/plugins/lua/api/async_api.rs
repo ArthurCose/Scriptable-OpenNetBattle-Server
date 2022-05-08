@@ -55,20 +55,20 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
             let body = lua_ctx.create_string(&response_data.body)?;
             table.set("body", body)?;
 
-            Some(rlua::Value::Table(table))
+            Some(mlua::Value::Table(table))
           }
           PromiseValue::Bytes(bytes) => {
             let lua_string = lua_ctx.create_string(&bytes)?;
 
-            Some(rlua::Value::String(lua_string))
+            Some(mlua::Value::String(lua_string))
           }
-          PromiseValue::Success(success) => Some(rlua::Value::Boolean(success)),
+          PromiseValue::Success(success) => Some(mlua::Value::Boolean(success)),
           PromiseValue::ServerInfo { max_message_size } => {
             let table = lua_ctx.create_table()?;
 
             table.set("max_message_size", max_message_size)?;
 
-            Some(rlua::Value::Table(table))
+            Some(mlua::Value::Table(table))
           }
           PromiseValue::None => None,
         }
@@ -83,7 +83,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Async", "request", |api_ctx, lua_ctx, params| {
     use crate::jobs::web_request::web_request;
 
-    let (url, options): (String, Option<rlua::Table>) = lua_ctx.unpack_multi(params)?;
+    let (url, options): (String, Option<mlua::Table>) = lua_ctx.unpack_multi(params)?;
 
     let method: String;
     let body: Option<Vec<u8>>;
@@ -95,12 +95,12 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       body = options
         .get("body")
         .ok()
-        .map(|lua_string: rlua::String| lua_string.as_bytes().to_vec());
+        .map(|lua_string: mlua::String| lua_string.as_bytes().to_vec());
 
       headers = options
         .get("headers")
         .ok()
-        .map(|table: rlua::Table| {
+        .map(|table: mlua::Table| {
           table
             .pairs()
             .filter_map(|result| {
@@ -125,7 +125,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Async", "download", |api_ctx, lua_ctx, params| {
     use crate::jobs::web_download::web_download;
 
-    let (path, url, options): (String, String, Option<rlua::Table>) =
+    let (path, url, options): (String, String, Option<mlua::Table>) =
       lua_ctx.unpack_multi(params)?;
 
     let method: String;
@@ -138,12 +138,12 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
       body = options
         .get("body")
         .ok()
-        .map(|lua_string: rlua::String| lua_string.as_bytes().to_vec());
+        .map(|lua_string: mlua::String| lua_string.as_bytes().to_vec());
 
       headers = options
         .get("headers")
         .ok()
-        .map(|table: rlua::Table| {
+        .map(|table: mlua::Table| {
           table
             .pairs()
             .filter_map(|result| {
@@ -179,7 +179,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Async", "write_file", |api_ctx, lua_ctx, params| {
-    let (path, content): (String, rlua::String) = lua_ctx.unpack_multi(params)?;
+    let (path, content): (String, mlua::String) = lua_ctx.unpack_multi(params)?;
 
     use crate::jobs::write_file::write_file;
 
@@ -203,7 +203,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Async", "message_server", |api_ctx, lua_ctx, params| {
-    let (address, port, data): (String, u16, rlua::String) = lua_ctx.unpack_multi(params)?;
+    let (address, port, data): (String, u16, mlua::String) = lua_ctx.unpack_multi(params)?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
@@ -214,16 +214,16 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 }
 
 fn create_lua_promise<'a>(
-  lua_ctx: &rlua::Context<'a>,
+  lua_ctx: &'a mlua::Lua,
   promise_manager_ref: &RefCell<&mut JobPromiseManager>,
   promise: JobPromise,
-) -> rlua::Result<rlua::Table<'a>> {
+) -> mlua::Result<mlua::Table<'a>> {
   let mut promise_manager = promise_manager_ref.borrow_mut();
   let id = promise_manager.add_promise(promise);
 
-  let async_api: rlua::Table = lua_ctx.globals().get("Async")?;
-  let create_promise: rlua::Function = async_api.get("_promise_from_id")?;
-  let lua_promise: rlua::Table = create_promise.call(id)?;
+  let async_api: mlua::Table = lua_ctx.globals().get("Async")?;
+  let create_promise: mlua::Function = async_api.get("_promise_from_id")?;
+  let lua_promise: mlua::Table = create_promise.call(id)?;
 
   Ok(lua_promise)
 }

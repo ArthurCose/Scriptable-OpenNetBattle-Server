@@ -1,4 +1,5 @@
 /target
+/dist
 .vscode
 
 # for viewing maps with client side resources

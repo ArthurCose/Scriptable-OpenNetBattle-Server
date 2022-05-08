@@ -7,30 +7,30 @@ pub fn inject_static(lua_api: &mut LuaApi) {
 
     globals.set(
       "print",
-      lua_ctx.create_function(|_lua_ctx, args: rlua::MultiValue| {
+      lua_ctx.create_function(|_lua_ctx, args: mlua::MultiValue| {
         info!("{}", format_args(args));
-        Ok(rlua::Value::Nil)
+        Ok(mlua::Value::Nil)
       })?,
     )?;
 
     globals.set(
       "printerr",
-      lua_ctx.create_function(|_lua_ctx, args: rlua::MultiValue| {
+      lua_ctx.create_function(|_lua_ctx, args: mlua::MultiValue| {
         error!("{}", format_args(args));
-        Ok(rlua::Value::Nil)
+        Ok(mlua::Value::Nil)
       })?,
     )?;
 
     globals.set(
       "tostring",
-      lua_ctx.create_function(|_lua_ctx, value: rlua::Value| Ok(tostring(value)))?,
+      lua_ctx.create_function(|_lua_ctx, value: mlua::Value| Ok(tostring(value)))?,
     )?;
 
     Ok(())
   });
 }
 
-fn format_args(args: rlua::MultiValue) -> String {
+fn format_args(args: mlua::MultiValue) -> String {
   args
     .into_iter()
     .map(tostring)
@@ -38,9 +38,9 @@ fn format_args(args: rlua::MultiValue) -> String {
     .join("\t")
 }
 
-fn tostring(value: rlua::Value) -> String {
+fn tostring(value: mlua::Value) -> String {
   match value {
-    rlua::Value::String(lua_string) => String::from_utf8_lossy(lua_string.as_bytes()).to_string(),
+    mlua::Value::String(lua_string) => String::from_utf8_lossy(lua_string.as_bytes()).to_string(),
     _ => super::lua_helpers::lua_value_to_string(value, "\t", 0),
   }
 }

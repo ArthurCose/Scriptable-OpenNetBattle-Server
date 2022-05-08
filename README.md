@@ -567,6 +567,7 @@ Note: paths in this section use system paths and not asset paths.
 -- promise objects returned by most async functions
 promise.and_then(function(value))
 
+Async.await(async_iterator) -- iterator
 Async.await(promise) -- value -- for coroutines
 Async.await_all(promises) -- values[] -- for coroutines
 Async.promisify(coroutine) -- promise
@@ -591,10 +592,38 @@ Async.quiz_player(player_id, option_a?, option_b?, option_c?, mug_texture_path?,
 Async.prompt_player(player_id, character_limit?, default_text?) -- promise, value = string?
 ```
 
+### Event Emitters
+
+```lua
+local emitter = Net.EventEmitter.new()
+emitter:emit(event_name, ...)
+emitter:on(event_name, function(...))
+emitter:once(event_name, function(...))
+emitter:on_any(function(event_name, ...))
+emitter:on_any_once(function(event_name, ...))
+emitter:remove_listener(event_name, callback)
+emitter:remove_on_any_listener(callback)
+emitter:async_iter(event_name) -- iterator that returns promises, value = ...
+emitter:async_iter_all(event_name) -- iterator that returns promises, value = event_name, ...
+emitter:destroy() -- allows async iterators to complete
+```
+
+### Lua STD Changes
+
+`print` and `tostring` will display tables.
+
+`printerr` will output red text to stdout.
+
 ## Building the Project
 
 This project is built with Rust, so after installing Cargo, you can compile and run the project with `cargo run`
 
 For a standalone executable you can run `cargo build --release` and copy just the executable from `target/build`
 
-If you are interested in understanding the source before making changes, check out the [achitecture document](./ARCHITECTURE.md)
+If you are interested in understanding the source before making changes, check out the [achitecture document](./ARCHITECTURE.md).
+
+### Distributing
+
+Install cargo-about: `cargo install cargo-about`
+
+Run `cargo run --bin create_distributable`, a folder named `dist` will be created.

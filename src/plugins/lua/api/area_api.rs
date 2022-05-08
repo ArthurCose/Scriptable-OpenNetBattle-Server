@@ -8,7 +8,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Net", "list_areas", |api_ctx, lua_ctx, _| {
     let net = api_ctx.net_ref.borrow();
 
-    let area_ids: rlua::Result<Vec<rlua::String>> = net
+    let area_ids: mlua::Result<Vec<mlua::String>> = net
       .get_areas()
       .map(|area| lua_ctx.create_string(area.get_id()))
       .collect();
@@ -17,7 +17,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "update_area", |api_ctx, lua_ctx, params| {
-    let (area_id, data): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+    let (area_id, data): (mlua::String, mlua::String) = lua_ctx.unpack_multi(params)?;
     let (area_id_str, data_str) = (area_id.to_str()?, data.to_str()?);
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -33,7 +33,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "clone_area", |api_ctx, lua_ctx, params| {
-    let (area_id, new_id): (rlua::String, String) = lua_ctx.unpack_multi(params)?;
+    let (area_id, new_id): (mlua::String, String) = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -50,7 +50,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "map_to_string", |api_ctx, lua_ctx, params| {
-    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -64,7 +64,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "remove_area", |api_ctx, lua_ctx, params| {
-    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -75,7 +75,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_width", |api_ctx, lua_ctx, params| {
-    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -88,7 +88,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_height", |api_ctx, lua_ctx, params| {
-    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -101,7 +101,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_layer_count", |api_ctx, lua_ctx, params| {
-    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -114,7 +114,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_tile_width", |api_ctx, lua_ctx, params| {
-    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -127,7 +127,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_tile_height", |api_ctx, lua_ctx, params| {
-    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -143,7 +143,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "get_area_custom_properties",
     |api_ctx, lua_ctx, params| {
-      let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+      let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
       let area_id_str = area_id.to_str()?;
 
       let net = api_ctx.net_ref.borrow();
@@ -160,7 +160,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "get_area_custom_property",
     |api_ctx, lua_ctx, params| {
-      let (area_id, name): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+      let (area_id, name): (mlua::String, mlua::String) = lua_ctx.unpack_multi(params)?;
       let (area_id_str, name_str) = (area_id.to_str()?, name.to_str()?);
 
       let net = api_ctx.net_ref.borrow();
@@ -180,7 +180,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "set_area_custom_property",
     |api_ctx, lua_ctx, params| {
-      let (area_id, name, value): (rlua::String, rlua::String, String) =
+      let (area_id, name, value): (mlua::String, mlua::String, String) =
         lua_ctx.unpack_multi(params)?;
       let (area_id_str, name_str) = (area_id.to_str()?, name.to_str()?);
 
@@ -197,7 +197,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   );
 
   lua_api.add_dynamic_function("Net", "get_area_name", |api_ctx, lua_ctx, params| {
-    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -210,7 +210,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "set_area_name", |api_ctx, lua_ctx, params| {
-    let (area_id, name): (rlua::String, String) = lua_ctx.unpack_multi(params)?;
+    let (area_id, name): (mlua::String, String) = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -227,7 +227,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_song", |api_ctx, lua_ctx, params| {
-    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -240,7 +240,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "set_song", |api_ctx, lua_ctx, params| {
-    let (area_id, path): (rlua::String, String) = lua_ctx.unpack_multi(params)?;
+    let (area_id, path): (mlua::String, String) = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -257,7 +257,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_background", |api_ctx, lua_ctx, params| {
-    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -284,7 +284,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "get_background_velocity",
     |api_ctx, lua_ctx, params| {
-      let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+      let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
       let area_id_str = area_id.to_str()?;
 
       let net = api_ctx.net_ref.borrow();
@@ -307,7 +307,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
   lua_api.add_dynamic_function("Net", "set_background", |api_ctx, lua_ctx, params| {
     let (area_id, texture_path, animation_path, vel_x, vel_y, parallax): (
-      rlua::String,
+      mlua::String,
       String,
       Option<String>,
       Option<f32>,
@@ -336,7 +336,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "get_background_parallax",
     |api_ctx, lua_ctx, params| {
-      let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+      let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
       let area_id_str = area_id.to_str()?;
 
       let net = api_ctx.net_ref.borrow();
@@ -354,7 +354,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   );
 
   lua_api.add_dynamic_function("Net", "get_foreground", |api_ctx, lua_ctx, params| {
-    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -381,7 +381,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "get_foreground_velocity",
     |api_ctx, lua_ctx, params| {
-      let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+      let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
       let area_id_str = area_id.to_str()?;
 
       let net = api_ctx.net_ref.borrow();
@@ -406,7 +406,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "get_foreground_parallax",
     |api_ctx, lua_ctx, params| {
-      let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+      let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
       let area_id_str = area_id.to_str()?;
 
       let net = api_ctx.net_ref.borrow();
@@ -425,7 +425,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
   lua_api.add_dynamic_function("Net", "set_foreground", |api_ctx, lua_ctx, params| {
     let (area_id, texture_path, animation_path, vel_x, vel_y, parallax): (
-      rlua::String,
+      mlua::String,
       String,
       Option<String>,
       Option<f32>,
@@ -451,7 +451,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_spawn_position", |api_ctx, lua_ctx, params| {
-    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -471,7 +471,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "set_spawn_position", |api_ctx, lua_ctx, params| {
-    let (area_id, x, y, z): (rlua::String, f32, f32, f32) = lua_ctx.unpack_multi(params)?;
+    let (area_id, x, y, z): (mlua::String, f32, f32, f32) = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -488,7 +488,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_spawn_direction", |api_ctx, lua_ctx, params| {
-    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -503,7 +503,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "set_spawn_direction", |api_ctx, lua_ctx, params| {
-    let (area_id, direction_string): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+    let (area_id, direction_string): (mlua::String, mlua::String) = lua_ctx.unpack_multi(params)?;
     let (area_id_str, direction_str) = (area_id.to_str()?, direction_string.to_str()?);
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -521,7 +521,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "list_tilesets", |api_ctx, lua_ctx, params| {
-    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -529,7 +529,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     if let Some(area) = net.get_area(area_id_str) {
       let map = area.get_map();
       let tilesets = map.get_tilesets();
-      let tileset_paths: rlua::Result<Vec<rlua::String>> = tilesets
+      let tileset_paths: mlua::Result<Vec<mlua::String>> = tilesets
         .iter()
         .map(|tileset| lua_ctx.create_string(&tileset.path))
         .collect();
@@ -541,7 +541,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_tileset", |api_ctx, lua_ctx, params| {
-    let (area_id, path): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+    let (area_id, path): (mlua::String, mlua::String) = lua_ctx.unpack_multi(params)?;
     let (area_id_str, path_str) = (area_id.to_str()?, path.to_str()?);
 
     let net = api_ctx.net_ref.borrow();
@@ -559,14 +559,14 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
         return lua_ctx.pack_multi(Some(table));
       }
 
-      lua_ctx.pack_multi(rlua::Nil)
+      lua_ctx.pack_multi(mlua::Nil)
     } else {
       Err(create_area_error(area_id_str))
     }
   });
 
   lua_api.add_dynamic_function("Net", "get_tileset_for_tile", |api_ctx, lua_ctx, params| {
-    let (area_id, tile_gid): (rlua::String, u32) = lua_ctx.unpack_multi(params)?;
+    let (area_id, tile_gid): (mlua::String, u32) = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -587,14 +587,14 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
         return lua_ctx.pack_multi(Some(table));
       }
 
-      lua_ctx.pack_multi(rlua::Nil)
+      lua_ctx.pack_multi(mlua::Nil)
     } else {
       Err(create_area_error(area_id_str))
     }
   });
 
   lua_api.add_dynamic_function("Net", "get_tile", |api_ctx, lua_ctx, params| {
-    let (area_id, x, y, z): (rlua::String, i32, i32, i32) = lua_ctx.unpack_multi(params)?;
+    let (area_id, x, y, z): (mlua::String, i32, i32, i32) = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -628,7 +628,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
   lua_api.add_dynamic_function("Net", "set_tile", |api_ctx, lua_ctx, params| {
     let (area_id, x, y, z, gid, flip_horizontal, flip_vertical, rotate): (
-      rlua::String,
+      mlua::String,
       i32,
       i32,
       i32,
@@ -664,7 +664,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "provide_asset", |api_ctx, lua_ctx, params| {
-    let (area_id, asset_path): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+    let (area_id, asset_path): (mlua::String, mlua::String) = lua_ctx.unpack_multi(params)?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
@@ -674,7 +674,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "play_sound", |api_ctx, lua_ctx, params| {
-    let (area_id, asset_path): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+    let (area_id, asset_path): (mlua::String, mlua::String) = lua_ctx.unpack_multi(params)?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 

@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Arthur <arthurcose@gmail.com>"]
 edition = "2021"
 license = "GPL-3.0"
+default-run = "net_battle_server"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
@@ -12,7 +13,7 @@ futures = "0.3"
 surf = "2.2"
 byteorder = "1.4"
 uuid = { version = "0.8", features = ["v4"] }
-rlua = "0.17"
+mlua = { version = "0.7", features = ["vendored", "lua54"] }
 clap = "2.33"
 minidom = "0.12"
 itertools = "0.10"
@@ -24,3 +25,4 @@ closure = "0.3"
 flate2 = "1.0.22"
 log = "0.4.17"
 colored = "2.0.0"
+fs_extra = "1.2"

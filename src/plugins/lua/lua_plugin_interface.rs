@@ -3,7 +3,7 @@ use crate::jobs::JobPromiseManager;
 use crate::net::{BattleStats, Net, WidgetTracker};
 use crate::plugins::PluginInterface;
 use log::*;
-use rlua::Lua;
+use mlua::Lua;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::collections::VecDeque;
@@ -84,143 +84,139 @@ impl LuaPluginInterface {
     &mut self,
     net_ref: &mut Net,
     script_path: std::path::PathBuf,
-  ) -> rlua::Result<()> {
+  ) -> mlua::Result<()> {
     let net_ref = RefCell::new(net_ref);
 
     let script_index = self.scripts.len();
     self.scripts.push(Lua::new());
 
-    let lua_env = self.scripts.last_mut().unwrap();
+    let lua_ctx = self.scripts.last_mut().unwrap();
 
-    lua_env.context(|lua_ctx| {
-      let widget_tracker_ref = RefCell::new(&mut self.widget_trackers);
-      let battle_tracker_ref = RefCell::new(&mut self.battle_trackers);
-      let promise_manager_ref = RefCell::new(&mut self.promise_manager);
+    let widget_tracker_ref = RefCell::new(&mut self.widget_trackers);
+    let battle_tracker_ref = RefCell::new(&mut self.battle_trackers);
+    let promise_manager_ref = RefCell::new(&mut self.promise_manager);
 
-      let api_ctx = ApiContext {
-        script_index,
-        net_ref: &net_ref,
-        widget_tracker_ref: &widget_tracker_ref,
-        battle_tracker_ref: &battle_tracker_ref,
-        promise_manager_ref: &promise_manager_ref,
-      };
+    let api_ctx = ApiContext {
+      script_index,
+      net_ref: &net_ref,
+      widget_tracker_ref: &widget_tracker_ref,
+      battle_tracker_ref: &battle_tracker_ref,
+      promise_manager_ref: &promise_manager_ref,
+    };
 
-      let globals = lua_ctx.globals();
+    let globals = lua_ctx.globals();
 
-      self.lua_api.inject_static(&lua_ctx)?;
+    self.lua_api.inject_static(&lua_ctx)?;
 
-      self.lua_api.inject_dynamic(lua_ctx, api_ctx, |_| {
-        let parent_path = script_path
-          .parent()
-          .unwrap_or_else(|| std::path::Path::new(""));
-        let stem = script_path.file_stem().unwrap_or_default();
-        let path = parent_path.join(stem);
-        let path_str = path.to_str().unwrap_or_default();
+    self.lua_api.inject_dynamic(lua_ctx, api_ctx, |_| {
+      let parent_path = script_path
+        .parent()
+        .unwrap_or_else(|| std::path::Path::new(""));
+      let stem = script_path.file_stem().unwrap_or_default();
+      let path = parent_path.join(stem);
+      let path_str = path.to_str().unwrap_or_default();
 
-        let final_path = &path_str[2..]; // chop off the ./
+      let final_path = &path_str[2..]; // chop off the ./
 
-        // using require to load the script for better error messages (logs the path of the file)
-        let require: rlua::Function = globals.get("require")?;
-        require.call::<&str, ()>(final_path)?;
-
-        Ok(())
-      })?;
-
-      self.all_scripts.push(script_index);
-
-      if globals
-        .get::<_, rlua::Function>("handle_authorization")
-        .is_ok()
-      {
-        self.authorization_listeners.push(script_index);
-      }
-
-      if globals
-        .get::<_, rlua::Function>("handle_player_connect")
-        .is_ok()
-      {
-        self.player_connect_listeners.push(script_index);
-      }
-
-      if globals
-        .get::<_, rlua::Function>("handle_player_join")
-        .is_ok()
-      {
-        self.player_join_listeners.push(script_index);
-      }
-
-      if globals
-        .get::<_, rlua::Function>("handle_player_transfer")
-        .is_ok()
-      {
-        self.player_transfer_listeners.push(script_index);
-      }
-
-      if globals
-        .get::<_, rlua::Function>("handle_player_move")
-        .is_ok()
-      {
-        self.player_move_listeners.push(script_index);
-      }
-
-      if globals
-        .get::<_, rlua::Function>("handle_player_avatar_change")
-        .is_ok()
-      {
-        self.player_avatar_change_listeners.push(script_index);
-      }
-
-      if globals
-        .get::<_, rlua::Function>("handle_player_emote")
-        .is_ok()
-      {
-        self.player_emote_listeners.push(script_index);
-      }
-
-      if globals
-        .get::<_, rlua::Function>("handle_custom_warp")
-        .is_ok()
-      {
-        self.custom_warp_listeners.push(script_index);
-      }
-
-      if globals
-        .get::<_, rlua::Function>("handle_object_interaction")
-        .is_ok()
-      {
-        self.object_interaction_listeners.push(script_index);
-      }
-
-      if globals
-        .get::<_, rlua::Function>("handle_actor_interaction")
-        .is_ok()
-      {
-        self.actor_interaction_listeners.push(script_index);
-      }
-
-      if globals
-        .get::<_, rlua::Function>("handle_tile_interaction")
-        .is_ok()
-      {
-        self.tile_interaction_listeners.push(script_index);
-      }
-
-      if globals
-        .get::<_, rlua::Function>("handle_battle_results")
-        .is_ok()
-      {
-        self.battle_results_listeners.push(script_index);
-      }
-
-      if globals
-        .get::<_, rlua::Function>("handle_server_message")
-        .is_ok()
-      {
-        self.server_message_listeners.push(script_index);
-      }
+      // using require to load the script for better error messages (logs the path of the file)
+      let require: mlua::Function = globals.get("require")?;
+      require.call::<&str, ()>(final_path)?;
 
       Ok(())
     })?;
+
+    self.all_scripts.push(script_index);
+
+    if globals
+      .get::<_, mlua::Function>("handle_authorization")
+      .is_ok()
+    {
+      self.authorization_listeners.push(script_index);
+    }
+
+    if globals
+      .get::<_, mlua::Function>("handle_player_connect")
+      .is_ok()
+    {
+      self.player_connect_listeners.push(script_index);
+    }
+
+    if globals
+      .get::<_, mlua::Function>("handle_player_join")
+      .is_ok()
+    {
+      self.player_join_listeners.push(script_index);
+    }
+
+    if globals
+      .get::<_, mlua::Function>("handle_player_transfer")
+      .is_ok()
+    {
+      self.player_transfer_listeners.push(script_index);
+    }
+
+    if globals
+      .get::<_, mlua::Function>("handle_player_move")
+      .is_ok()
+    {
+      self.player_move_listeners.push(script_index);
+    }
+
+    if globals
+      .get::<_, mlua::Function>("handle_player_avatar_change")
+      .is_ok()
+    {
+      self.player_avatar_change_listeners.push(script_index);
+    }
+
+    if globals
+      .get::<_, mlua::Function>("handle_player_emote")
+      .is_ok()
+    {
+      self.player_emote_listeners.push(script_index);
+    }
+
+    if globals
+      .get::<_, mlua::Function>("handle_custom_warp")
+      .is_ok()
+    {
+      self.custom_warp_listeners.push(script_index);
+    }
+
+    if globals
+      .get::<_, mlua::Function>("handle_object_interaction")
+      .is_ok()
+    {
+      self.object_interaction_listeners.push(script_index);
+    }
+
+    if globals
+      .get::<_, mlua::Function>("handle_actor_interaction")
+      .is_ok()
+    {
+      self.actor_interaction_listeners.push(script_index);
+    }
+
+    if globals
+      .get::<_, mlua::Function>("handle_tile_interaction")
+      .is_ok()
+    {
+      self.tile_interaction_listeners.push(script_index);
+    }
+
+    if globals
+      .get::<_, mlua::Function>("handle_battle_results")
+      .is_ok()
+    {
+      self.battle_results_listeners.push(script_index);
+    }
+
+    if globals
+      .get::<_, mlua::Function>("handle_server_message")
+      .is_ok()
+    {
+      self.server_message_listeners.push(script_index);
+    }
 
     Ok(())
   }
@@ -776,11 +772,11 @@ fn handle_event<F>(
   event_fn_name: &str,
   fn_caller: F,
 ) where
-  F: for<'lua> FnMut(rlua::Context<'lua>, rlua::Function<'lua>) -> rlua::Result<()>,
+  F: for<'lua> FnMut(&'lua mlua::Lua, mlua::Function<'lua>) -> mlua::Result<()>,
 {
   let mut fn_caller = fn_caller;
 
-  let call_lua = || -> rlua::Result<()> {
+  let call_lua = || -> mlua::Result<()> {
     let net_ref = RefCell::new(net);
     let widget_tracker_ref = RefCell::new(widget_tracker);
     let battle_tracker_ref = RefCell::new(battle_tracker);
@@ -788,33 +784,27 @@ fn handle_event<F>(
 
     // loop over scripts
     for script_index in event_listeners {
-      // grab the lua_env (should always be true)
-      if let Some(lua_env) = scripts.get_mut(*script_index) {
-        // enter the lua context
-        let api_ctx = ApiContext {
-          script_index: *script_index,
-          net_ref: &net_ref,
-          widget_tracker_ref: &widget_tracker_ref,
-          battle_tracker_ref: &battle_tracker_ref,
-          promise_manager_ref: &promise_manager_ref,
-        };
+      let lua_ctx = scripts.get_mut(*script_index).unwrap();
 
-        lua_env.context(|lua_ctx| -> rlua::Result<()> {
-          lua_api.inject_dynamic(lua_ctx, api_ctx, |lua_ctx| {
-            let globals = lua_ctx.globals();
+      let api_ctx = ApiContext {
+        script_index: *script_index,
+        net_ref: &net_ref,
+        widget_tracker_ref: &widget_tracker_ref,
+        battle_tracker_ref: &battle_tracker_ref,
+        promise_manager_ref: &promise_manager_ref,
+      };
 
-            if let Ok(func) = globals.get::<_, rlua::Function>(event_fn_name) {
-              if let Err(err) = fn_caller(lua_ctx, func) {
-                error!("{}", err);
-              }
-            }
+      lua_api.inject_dynamic(lua_ctx, api_ctx, |lua_ctx| {
+        let globals = lua_ctx.globals();
 
-            Ok(())
-          })?;
+        if let Ok(func) = globals.get::<_, mlua::Function>(event_fn_name) {
+          if let Err(err) = fn_caller(lua_ctx, func) {
+            error!("{}", err);
+          }
+        }
 
-          Ok(())
-        })?
-      }
+        Ok(())
+      })?;
     }
     Ok(())
   };
