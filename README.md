@@ -542,6 +542,12 @@ emitter:async_iter_all(event_name) -- iterator that returns promises, value = ev
 emitter:destroy() -- allows async iterators to complete
 ```
 
+### Lua STD Changes
+
+`print` and `tostring` will display tables.
+
+`printerr` will output red text to stdout.
+
 ## Building the Project
 
 This project is built with Rust, so after installing Cargo, you can compile and run the project with `cargo run`.

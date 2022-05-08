@@ -1,6 +1,6 @@
 pub fn optional_lua_string_to_optional_str<'a>(
-  optional_string: &'a Option<rlua::String>,
-) -> rlua::Result<Option<&'a str>> {
+  optional_string: &'a Option<mlua::String>,
+) -> mlua::Result<Option<&'a str>> {
   optional_string
     .as_ref()
     .map(|lua_string| lua_string.to_str())
@@ -8,28 +8,50 @@ pub fn optional_lua_string_to_optional_str<'a>(
 }
 
 pub fn optional_lua_string_to_str<'a>(
-  optional_string: &'a Option<rlua::String>,
-) -> rlua::Result<&'a str> {
+  optional_string: &'a Option<mlua::String>,
+) -> mlua::Result<&'a str> {
   Ok(optional_lua_string_to_optional_str(optional_string)?.unwrap_or_default())
 }
 
 pub fn lua_value_to_string(
-  value: rlua::Value,
+  value: mlua::Value,
   indentation: &str,
   indentation_level: usize,
 ) -> String {
+  let mut root_table = None;
+  lua_value_to_string_internal(value, indentation, indentation_level, &mut root_table)
+}
+
+fn lua_value_to_string_internal<'lua>(
+  value: mlua::Value<'lua>,
+  indentation: &str,
+  indentation_level: usize,
+  root_table: &mut Option<mlua::Table<'lua>>,
+) -> String {
   match value {
-    rlua::Value::Table(table) => {
+    mlua::Value::Table(table) => {
+      let circular_reference = match &root_table {
+        Some(root_table) => root_table.equals(table.clone()).unwrap_or_default(),
+        None => {
+          *root_table = Some(table.clone());
+          false
+        }
+      };
+
+      if circular_reference {
+        return String::from("Circular Reference");
+      }
+
       let pair_strings: Vec<String> = table
         .pairs()
-        .map(|pair: rlua::Result<(rlua::Value, rlua::Value)>| {
+        .map(|pair: mlua::Result<(mlua::Value, mlua::Value)>| {
           let (key, value) = pair.unwrap();
 
           format!(
             "{}[{}] = {}",
             indentation,
-            lua_value_to_string(key, indentation, indentation_level + 1),
-            lua_value_to_string(value, indentation, indentation_level + 1),
+            lua_value_to_string_internal(key, indentation, indentation_level + 1, root_table),
+            lua_value_to_string_internal(value, indentation, indentation_level + 1, root_table),
           )
         })
         .collect();
@@ -54,21 +76,21 @@ pub fn lua_value_to_string(
         )
       }
     }
-    rlua::Value::String(lua_string) => format!(
+    mlua::Value::String(lua_string) => format!(
       // wrap with ""
       "\"{}\"",
       // escape "
       String::from_utf8_lossy(lua_string.as_bytes()).replace('"', "\"")
     ),
-    rlua::Value::Number(n) => n.to_string(),
-    rlua::Value::Integer(i) => i.to_string(),
-    rlua::Value::Boolean(b) => b.to_string(),
-    rlua::Value::Nil => String::from("nil"),
+    mlua::Value::Number(n) => n.to_string(),
+    mlua::Value::Integer(i) => i.to_string(),
+    mlua::Value::Boolean(b) => b.to_string(),
+    mlua::Value::Nil => String::from("nil"),
     // these will create errors
-    rlua::Value::Function(_) => String::from("Function"),
-    rlua::Value::Thread(_) => String::from("Thread"),
-    rlua::Value::LightUserData(_) => String::from("LightUserData"),
-    rlua::Value::UserData(_) => String::from("UserData"),
-    rlua::Value::Error(_) => String::from("Error"),
+    mlua::Value::Function(_) => String::from("Function"),
+    mlua::Value::Thread(_) => String::from("Thread"),
+    mlua::Value::LightUserData(_) => String::from("LightUserData"),
+    mlua::Value::UserData(_) => String::from("UserData"),
+    mlua::Value::Error(_) => String::from("Error"),
   }
 }

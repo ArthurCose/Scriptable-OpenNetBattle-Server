@@ -6,14 +6,14 @@ use crate::net::Direction;
 #[allow(clippy::type_complexity)]
 pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Net", "list_players", |api_ctx, lua_ctx, params| {
-    let area_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let area_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
     if let Some(area) = net.get_area_mut(area_id_str) {
       let connected_players_iter = area.get_connected_players().iter();
-      let result: rlua::Result<Vec<rlua::String>> = connected_players_iter
+      let result: mlua::Result<Vec<mlua::String>> = connected_players_iter
         .map(|player_id| lua_ctx.create_string(player_id))
         .collect();
 
@@ -24,7 +24,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "is_player", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -35,7 +35,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_player_area", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow_mut();
@@ -48,7 +48,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_player_ip", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -61,7 +61,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_player_name", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow_mut();
@@ -74,7 +74,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "set_player_name", |api_ctx, lua_ctx, params| {
-    let (player_id, name): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+    let (player_id, name): (mlua::String, mlua::String) = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -85,7 +85,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_player_direction", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -100,7 +100,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_player_position", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -118,7 +118,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_player_mugshot", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -135,7 +135,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_player_avatar", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
     let net = api_ctx.net_ref.borrow();
 
@@ -151,7 +151,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "set_player_avatar", |api_ctx, lua_ctx, params| {
-    let (player_id, texture_path, animation_path): (rlua::String, rlua::String, rlua::String) =
+    let (player_id, texture_path, animation_path): (mlua::String, mlua::String, mlua::String) =
       lua_ctx.unpack_multi(params)?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -166,7 +166,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "set_player_emote", |api_ctx, lua_ctx, params| {
-    let (player_id, emote_id, use_custom_emotes): (rlua::String, u8, Option<bool>) =
+    let (player_id, emote_id, use_custom_emotes): (mlua::String, u8, Option<bool>) =
       lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
@@ -186,8 +186,8 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "exclusive_player_emote",
     |api_ctx, lua_ctx, params| {
       let (target_id, emoter_id, emote_id, use_custom_emotes): (
-        rlua::String,
-        rlua::String,
+        mlua::String,
+        mlua::String,
         u8,
         Option<bool>,
       ) = lua_ctx.unpack_multi(params)?;
@@ -210,7 +210,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "set_player_minimap_color",
     |api_ctx, lua_ctx, params| {
-      let (player_id, color_table): (rlua::String, rlua::Table) = lua_ctx.unpack_multi(params)?;
+      let (player_id, color_table): (mlua::String, mlua::Table) = lua_ctx.unpack_multi(params)?;
       let player_id_str = player_id.to_str()?;
 
       let mut net = api_ctx.net_ref.borrow_mut();
@@ -229,7 +229,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   );
 
   lua_api.add_dynamic_function("Net", "animate_player", |api_ctx, lua_ctx, params| {
-    let (player_id, name, loop_option): (rlua::String, rlua::String, Option<bool>) =
+    let (player_id, name, loop_option): (mlua::String, mlua::String, Option<bool>) =
       lua_ctx.unpack_multi(params)?;
     let (player_id_str, name_str) = (player_id.to_str()?, name.to_str()?);
 
@@ -248,7 +248,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     |api_ctx, lua_ctx, params| {
       use super::actor_property_animation::parse_animation;
 
-      let (player_id, keyframe_tables): (rlua::String, Vec<rlua::Table>) =
+      let (player_id, keyframe_tables): (mlua::String, Vec<mlua::Table>) =
         lua_ctx.unpack_multi(params)?;
       let player_id_str = player_id.to_str()?;
 
@@ -262,7 +262,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   );
 
   lua_api.add_dynamic_function("Net", "is_player_busy", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -276,7 +276,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "provide_asset_for_player",
     |api_ctx, lua_ctx, params| {
-      let (player_id, asset_path): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+      let (player_id, asset_path): (mlua::String, mlua::String) = lua_ctx.unpack_multi(params)?;
       let (player_id_str, asset_path_str) = (player_id.to_str()?, asset_path.to_str()?);
 
       let mut net = api_ctx.net_ref.borrow_mut();
@@ -291,7 +291,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "play_sound_for_player",
     |api_ctx, lua_ctx, params| {
-      let (player_id, asset_path): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+      let (player_id, asset_path): (mlua::String, mlua::String) = lua_ctx.unpack_multi(params)?;
       let (player_id_str, asset_path_str) = (player_id.to_str()?, asset_path.to_str()?);
 
       let mut net = api_ctx.net_ref.borrow_mut();
@@ -306,7 +306,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "exclude_object_for_player",
     |api_ctx, lua_ctx, params| {
-      let (player_id, object_id): (rlua::String, u32) = lua_ctx.unpack_multi(params)?;
+      let (player_id, object_id): (mlua::String, u32) = lua_ctx.unpack_multi(params)?;
       let player_id_str = player_id.to_str()?;
 
       let mut net = api_ctx.net_ref.borrow_mut();
@@ -321,7 +321,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "include_object_for_player",
     |api_ctx, lua_ctx, params| {
-      let (player_id, object_id): (rlua::String, u32) = lua_ctx.unpack_multi(params)?;
+      let (player_id, object_id): (mlua::String, u32) = lua_ctx.unpack_multi(params)?;
       let player_id_str = player_id.to_str()?;
 
       let mut net = api_ctx.net_ref.borrow_mut();
@@ -336,7 +336,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "exclude_actor_for_player",
     |api_ctx, lua_ctx, params| {
-      let (player_id, actor_id): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+      let (player_id, actor_id): (mlua::String, mlua::String) = lua_ctx.unpack_multi(params)?;
       let (player_id_str, actor_id_str) = (player_id.to_str()?, actor_id.to_str()?);
 
       let mut net = api_ctx.net_ref.borrow_mut();
@@ -351,7 +351,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "include_actor_for_player",
     |api_ctx, lua_ctx, params| {
-      let (player_id, actor_id): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+      let (player_id, actor_id): (mlua::String, mlua::String) = lua_ctx.unpack_multi(params)?;
       let (player_id_str, actor_id_str) = (player_id.to_str()?, actor_id.to_str()?);
 
       let mut net = api_ctx.net_ref.borrow_mut();
@@ -363,7 +363,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   );
 
   lua_api.add_dynamic_function("Net", "move_player_camera", |api_ctx, lua_ctx, params| {
-    let (player_id, x, y, z, duration): (rlua::String, f32, f32, f32, Option<f32>) =
+    let (player_id, x, y, z, duration): (mlua::String, f32, f32, f32, Option<f32>) =
       lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
@@ -375,7 +375,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "slide_player_camera", |api_ctx, lua_ctx, params| {
-    let (player_id, x, y, z, duration): (rlua::String, f32, f32, f32, f32) =
+    let (player_id, x, y, z, duration): (mlua::String, f32, f32, f32, f32) =
       lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
@@ -387,7 +387,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "shake_player_camera", |api_ctx, lua_ctx, params| {
-    let (player_id, strength, duration): (rlua::String, f32, f32) = lua_ctx.unpack_multi(params)?;
+    let (player_id, strength, duration): (mlua::String, f32, f32) = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -398,7 +398,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "fade_player_camera", |api_ctx, lua_ctx, params| {
-    let (player_id, color, duration): (rlua::String, rlua::Table, f32) =
+    let (player_id, color, duration): (mlua::String, mlua::Table, f32) =
       lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
@@ -422,7 +422,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "track_with_player_camera",
     |api_ctx, lua_ctx, params| {
-      let (player_id, actor_id): (rlua::String, Option<rlua::String>) =
+      let (player_id, actor_id): (mlua::String, Option<mlua::String>) =
         lua_ctx.unpack_multi(params)?;
       let player_id_str = player_id.to_str()?;
 
@@ -440,7 +440,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "is_player_input_locked",
     |api_ctx, lua_ctx, params| {
-      let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+      let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
       let player_id_str = player_id.to_str()?;
 
       let net = api_ctx.net_ref.borrow();
@@ -452,7 +452,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   );
 
   lua_api.add_dynamic_function("Net", "unlock_player_camera", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -463,7 +463,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "lock_player_input", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -474,7 +474,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "unlock_player_input", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -486,12 +486,12 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
   lua_api.add_dynamic_function("Net", "teleport_player", |api_ctx, lua_ctx, params| {
     let (player_id, warp, x, y, z, direction_option): (
-      rlua::String,
+      mlua::String,
       bool,
       f32,
       f32,
       f32,
-      Option<rlua::String>,
+      Option<mlua::String>,
     ) = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
@@ -507,7 +507,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Net", "initiate_pvp", |api_ctx, lua_ctx, params| {
     use multi_mut::HashMapMultiMut;
 
-    let (player_1_id, player_2_id, _): (rlua::String, rlua::String, Option<rlua::String>) =
+    let (player_1_id, player_2_id, _): (mlua::String, mlua::String, Option<mlua::String>) =
       lua_ctx.unpack_multi(params)?;
     let (player_1_id_str, player_2_id_str) = (player_1_id.to_str()?, player_2_id.to_str()?);
 
@@ -528,7 +528,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "Net",
     "set_mod_whitelist_for_player",
     |api_ctx, lua_ctx, params| {
-      let (player_id, whitelist_path): (rlua::String, rlua::String) =
+      let (player_id, whitelist_path): (mlua::String, mlua::String) =
         lua_ctx.unpack_multi(params)?;
       let player_id_str = player_id.to_str()?;
       let whitelist_path_str = whitelist_path.to_str()?;
@@ -542,7 +542,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   );
 
   lua_api.add_dynamic_function("Net", "offer_package", |api_ctx, lua_ctx, params| {
-    let (player_id, package_id): (rlua::String, rlua::String) = lua_ctx.unpack_multi(params)?;
+    let (player_id, package_id): (mlua::String, mlua::String) = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
     let package_id_str = package_id.to_str()?;
 
@@ -554,7 +554,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "initiate_encounter", |api_ctx, lua_ctx, params| {
-    let (player_id, package_id, data_value): (rlua::String, rlua::String, Option<rlua::Value>) =
+    let (player_id, package_id, data_value): (mlua::String, mlua::String, Option<mlua::Value>) =
       lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
     let package_id_str = package_id.to_str()?;
@@ -576,7 +576,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "is_player_battling", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -587,7 +587,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "is_player_busy", |api_ctx, lua_ctx, params| {
-    let player_id: rlua::String = lua_ctx.unpack_multi(params)?;
+    let player_id: mlua::String = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
     let net = api_ctx.net_ref.borrow();
@@ -599,13 +599,13 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
   lua_api.add_dynamic_function("Net", "transfer_player", |api_ctx, lua_ctx, params| {
     let (player_id, area_id, warp_in_option, x_option, y_option, z_option, direction_option): (
-      rlua::String,
-      rlua::String,
+      mlua::String,
+      mlua::String,
       Option<bool>,
       Option<f32>,
       Option<f32>,
       Option<f32>,
-      Option<rlua::String>,
+      Option<mlua::String>,
     ) = lua_ctx.unpack_multi(params)?;
     let (player_id_str, area_id_str) = (player_id.to_str()?, area_id.to_str()?);
 
@@ -632,11 +632,11 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
   lua_api.add_dynamic_function("Net", "transfer_server", |api_ctx, lua_ctx, params| {
     let (player_id, address, port, warp_out_option, data_option): (
-      rlua::String,
-      rlua::String,
+      mlua::String,
+      mlua::String,
       u16,
       Option<bool>,
-      Option<rlua::String>,
+      Option<mlua::String>,
     ) = lua_ctx.unpack_multi(params)?;
     let (player_id_str, address_str) = (player_id.to_str()?, address.to_str()?);
 
@@ -655,10 +655,10 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     "request_authorization",
     |api_ctx, lua_ctx, params| {
       let (player_id, address, port, data_option): (
-        rlua::String,
-        rlua::String,
+        mlua::String,
+        mlua::String,
         u16,
-        Option<rlua::String>,
+        Option<mlua::String>,
       ) = lua_ctx.unpack_multi(params)?;
       let (player_id_str, address_str) = (player_id.to_str()?, address.to_str()?);
 
@@ -676,7 +676,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   );
 
   lua_api.add_dynamic_function("Net", "kick_player", |api_ctx, lua_ctx, params| {
-    let (player_id, reason, warp_out_option): (rlua::String, rlua::String, Option<bool>) =
+    let (player_id, reason, warp_out_option): (mlua::String, mlua::String, Option<bool>) =
       lua_ctx.unpack_multi(params)?;
     let (player_id_str, reason_str) = (player_id.to_str()?, reason.to_str()?);
 

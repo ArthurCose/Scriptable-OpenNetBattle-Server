@@ -1,7 +1,7 @@
 use crate::net::actor_property_animation::{ActorProperty, Ease, KeyFrame};
 use crate::net::Direction;
 
-pub fn parse_animation(keyframe_tables: Vec<rlua::Table>) -> rlua::Result<Vec<KeyFrame>> {
+pub fn parse_animation(keyframe_tables: Vec<mlua::Table>) -> mlua::Result<Vec<KeyFrame>> {
   let mut animation = Vec::new();
 
   for keyframe_table in keyframe_tables {
@@ -12,10 +12,10 @@ pub fn parse_animation(keyframe_tables: Vec<rlua::Table>) -> rlua::Result<Vec<Ke
       duration: duration_option.unwrap_or_default(),
     };
 
-    let property_tables: Vec<rlua::Table> = keyframe_table.get("properties")?;
+    let property_tables: Vec<mlua::Table> = keyframe_table.get("properties")?;
 
     for property_table in property_tables {
-      let property_name: rlua::String = property_table.get("property")?;
+      let property_name: mlua::String = property_table.get("property")?;
       let property_name_str = property_name.to_str()?;
 
       let property = match property_name_str {
@@ -28,7 +28,7 @@ pub fn parse_animation(keyframe_tables: Vec<rlua::Table>) -> rlua::Result<Vec<Ke
         "ScaleY" => ActorProperty::ScaleY(property_table.get("value")?),
         "Rotation" => ActorProperty::Rotation(property_table.get("value")?),
         "Direction" => {
-          let value: rlua::String = property_table.get("value")?;
+          let value: mlua::String = property_table.get("value")?;
 
           ActorProperty::Direction(Direction::from(value.to_str()?))
         }
@@ -36,11 +36,11 @@ pub fn parse_animation(keyframe_tables: Vec<rlua::Table>) -> rlua::Result<Vec<Ke
         "Sound Effect Loop" => ActorProperty::SoundEffectLoop(property_table.get("value")?),
         _ => {
           let error_string = format!("Unknown Property: {}", property_name_str);
-          return Err(rlua::Error::RuntimeError(error_string));
+          return Err(mlua::Error::RuntimeError(error_string));
         }
       };
 
-      let ease_name_option: Option<rlua::String> = property_table.get("ease")?;
+      let ease_name_option: Option<mlua::String> = property_table.get("ease")?;
 
       let ease = match ease_name_option {
         Some(ease_name) => {
@@ -53,7 +53,7 @@ pub fn parse_animation(keyframe_tables: Vec<rlua::Table>) -> rlua::Result<Vec<Ke
             "Floor" => Ease::Floor,
             _ => {
               let error_string = format!("Unknown Ease: {}", ease_name_str);
-              return Err(rlua::Error::RuntimeError(error_string));
+              return Err(mlua::Error::RuntimeError(error_string));
             }
           }
         }

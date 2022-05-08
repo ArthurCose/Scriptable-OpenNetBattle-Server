@@ -223,7 +223,7 @@ impl Asset {
     use closure::closure;
     use std::cell::RefCell;
 
-    let lua = rlua::Lua::new();
+    let lua_ctx = mlua::Lua::new();
 
     let alternate_names = RefCell::new(alternate_names);
     let dependencies = RefCell::new(dependencies);
@@ -233,8 +233,8 @@ impl Asset {
       category: PackageCategory::Library,
     });
 
-    let result = lua.context(|lua_ctx| -> rlua::Result<()> {
-      lua_ctx.scope(|scope| -> rlua::Result<()> {
+    let result = (|| -> mlua::Result<()> {
+      lua_ctx.scope(|scope| -> mlua::Result<()> {
         let globals = lua_ctx.globals();
 
         globals.set("_card_props", lua_ctx.create_table()?)?;
@@ -292,7 +292,7 @@ impl Asset {
 
         package_table.set(
           "declare_package_id",
-          scope.create_function_mut(|_, (_, id): (rlua::Table, String)| {
+          scope.create_function_mut(|_, (_, id): (mlua::Table, String)| {
             package_info.borrow_mut().id = id;
             Ok(())
           })?,
@@ -301,7 +301,7 @@ impl Asset {
         // name resolution
         package_table.set(
           "set_name",
-          scope.create_function_mut(|_, (_, name): (rlua::Table, String)| {
+          scope.create_function_mut(|_, (_, name): (mlua::Table, String)| {
             package_info.borrow_mut().name = name;
             Ok(())
           })?,
@@ -310,7 +310,7 @@ impl Asset {
         // resolving category
         let create_category_stub = |category: PackageCategory| {
           scope.create_function_mut(
-            closure!(move category, ref package_info, |_, _: rlua::MultiValue| {
+            closure!(move category, ref package_info, |_, _: mlua::MultiValue| {
               package_info.borrow_mut().category = category;
 
               Ok(())
@@ -326,10 +326,10 @@ impl Asset {
         package_table.set("set_codes", create_category_stub(PackageCategory::Card)?)?;
         package_table.set(
           "get_card_props",
-          scope.create_function_mut(|lua_ctx, _: rlua::Table| {
+          scope.create_function_mut(|lua_ctx, _: mlua::Table| {
             package_info.borrow_mut().category = PackageCategory::Card;
 
-            let card_props: rlua::Table = lua_ctx.globals().get("_card_props")?;
+            let card_props: mlua::Table = lua_ctx.globals().get("_card_props")?;
 
             Ok(card_props)
           })?,
@@ -353,9 +353,9 @@ impl Asset {
         )?;
 
         // stubs
-        let create_nil_stub = || scope.create_function_mut(|_, _: rlua::MultiValue| Ok(()));
+        let create_nil_stub = || scope.create_function_mut(|_, _: mlua::MultiValue| Ok(()));
         let create_table_stub =
-          || scope.create_function_mut(|lua_ctx, _: rlua::MultiValue| lua_ctx.create_table());
+          || scope.create_function_mut(|lua_ctx, _: mlua::MultiValue| lua_ctx.create_table());
 
         globals.set("_modpath", "")?;
         globals.set("_folderpath", "")?;
@@ -394,23 +394,23 @@ impl Asset {
         lua_ctx.load(&entry_script).exec()?;
 
         if let Ok(requires_scripts_func) =
-          globals.get::<&str, rlua::Function>("package_requires_scripts")
+          globals.get::<&str, mlua::Function>("package_requires_scripts")
         {
           requires_scripts_func.call(())?;
         }
 
-        let init_func: rlua::Function = globals.get("package_init")?;
+        let init_func: mlua::Function = globals.get("package_init")?;
         init_func.call(package_table)?;
 
         // encounter detection
-        let package_build_func: rlua::Value = globals.get("package_build")?;
+        let package_build_func: mlua::Value = globals.get("package_build")?;
 
-        if let rlua::Value::Function(_) = package_build_func {
+        if let mlua::Value::Function(_) = package_build_func {
           package_info.borrow_mut().category = PackageCategory::Encounter;
         }
 
         // name resolution
-        let card_props: rlua::Table = lua_ctx.globals().get("_card_props")?;
+        let card_props: mlua::Table = lua_ctx.globals().get("_card_props")?;
 
         if let Ok(card_name) = card_props.get("shortname") {
           package_info.borrow_mut().name = card_name;
@@ -425,7 +425,7 @@ impl Asset {
         .insert(0, AssetID::Package(package_info.into_inner()));
 
       Ok(())
-    });
+    })();
 
     if let Err(e) = result {
       error!(

@@ -3,7 +3,7 @@ use crate::net::{Asset, AssetData};
 
 pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Net", "update_asset", |api_ctx, lua_ctx, params| {
-    let (path, data): (String, rlua::String) = lua_ctx.unpack_multi(params)?;
+    let (path, data): (String, mlua::String) = lua_ctx.unpack_multi(params)?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
@@ -16,7 +16,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "remove_asset", |api_ctx, lua_ctx, params| {
-    let path: rlua::String = lua_ctx.unpack_multi(params)?;
+    let path: mlua::String = lua_ctx.unpack_multi(params)?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
 
@@ -26,7 +26,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "has_asset", |api_ctx, lua_ctx, params| {
-    let path: rlua::String = lua_ctx.unpack_multi(params)?;
+    let path: mlua::String = lua_ctx.unpack_multi(params)?;
     let path_str = path.to_str()?;
     let net = api_ctx.net_ref.borrow();
 
@@ -36,7 +36,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_asset_type", |api_ctx, lua_ctx, params| {
-    let path: rlua::String = lua_ctx.unpack_multi(params)?;
+    let path: mlua::String = lua_ctx.unpack_multi(params)?;
     let path_str = path.to_str()?;
     let net = api_ctx.net_ref.borrow();
 
@@ -55,7 +55,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   });
 
   lua_api.add_dynamic_function("Net", "get_asset_size", |api_ctx, lua_ctx, params| {
-    let path: rlua::String = lua_ctx.unpack_multi(params)?;
+    let path: mlua::String = lua_ctx.unpack_multi(params)?;
     let path_str = path.to_str()?;
     let net = api_ctx.net_ref.borrow();
 

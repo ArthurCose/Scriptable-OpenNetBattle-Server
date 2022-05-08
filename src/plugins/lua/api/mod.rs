@@ -28,12 +28,12 @@ pub struct ApiContext<'lua_scope, 'a> {
 
 type RustLuaFunction = dyn for<'lua> FnMut(
   &ApiContext,
-  rlua::Context<'lua>,
-  rlua::MultiValue<'lua>,
-) -> rlua::Result<rlua::MultiValue<'lua>>;
+  &'lua mlua::Lua,
+  mlua::MultiValue<'lua>,
+) -> mlua::Result<mlua::MultiValue<'lua>>;
 
 pub struct LuaApi {
-  static_function_injectors: Vec<Box<dyn Fn(&rlua::Context) -> rlua::Result<()>>>,
+  static_function_injectors: Vec<Box<dyn Fn(&mlua::Lua) -> mlua::Result<()>>>,
   dynamic_function_table_and_name_pairs: Vec<(String, String)>,
   dynamic_functions: HashMap<String, Box<RustLuaFunction>>,
   table_names: Vec<String>,
@@ -71,7 +71,7 @@ impl LuaApi {
 
   pub(self) fn add_static_injector<F>(&mut self, injector: F)
   where
-    F: 'static + Send + Fn(&rlua::Context) -> rlua::Result<()>,
+    F: 'static + Send + Fn(&mlua::Lua) -> mlua::Result<()>,
   {
     self.static_function_injectors.push(Box::new(injector));
   }
@@ -81,9 +81,9 @@ impl LuaApi {
     F: 'static
       + for<'lua> Fn(
         &ApiContext,
-        rlua::Context<'lua>,
-        rlua::MultiValue<'lua>,
-      ) -> rlua::Result<rlua::MultiValue<'lua>>,
+        &'lua mlua::Lua,
+        mlua::MultiValue<'lua>,
+      ) -> mlua::Result<mlua::MultiValue<'lua>>,
   {
     let table_name = String::from(table_name);
     let function_name = String::from(function_name);
@@ -96,7 +96,7 @@ impl LuaApi {
     self.dynamic_functions.insert(function_id, Box::new(func));
   }
 
-  pub fn inject_static(&self, lua_ctx: &rlua::Context) -> rlua::Result<()> {
+  pub fn inject_static(&self, lua_ctx: &mlua::Lua) -> mlua::Result<()> {
     let globals = lua_ctx.globals();
 
     for table_name in &self.table_names {
@@ -108,18 +108,18 @@ impl LuaApi {
     }
 
     for (table_name, function_name) in &self.dynamic_function_table_and_name_pairs {
-      let table: rlua::Table = globals.get(table_name.as_str())?;
+      let table: mlua::Table = globals.get(table_name.as_str())?;
 
       let function_id = table_name.clone() + "." + function_name;
 
       table.set(
         function_name.as_str(),
-        lua_ctx.create_function(move |lua_ctx, values: rlua::MultiValue| {
+        lua_ctx.create_function(move |lua_ctx, values: mlua::MultiValue| {
           let globals = lua_ctx.globals();
-          let net_table: rlua::Table = globals.get("Net")?;
-          let func: rlua::Function = net_table.get("_delegate")?;
+          let net_table: mlua::Table = globals.get("Net")?;
+          let func: mlua::Function = net_table.get("_delegate")?;
 
-          let value: rlua::Value = func.call((function_id.as_str(), values))?;
+          let value: mlua::Value = func.call((function_id.as_str(), values))?;
 
           Ok(value)
         })?,
@@ -131,29 +131,29 @@ impl LuaApi {
 
   pub fn inject_dynamic<'lua, F>(
     &mut self,
-    lua_ctx: rlua::Context<'lua>,
+    lua_ctx: &'lua mlua::Lua,
     api_ctx: ApiContext,
     wrapped_fn: F,
-  ) -> rlua::Result<()>
+  ) -> mlua::Result<()>
   where
-    F: FnMut(rlua::Context) -> rlua::Result<()>,
+    F: FnMut(&'lua mlua::Lua) -> mlua::Result<()>,
   {
     let mut wrapped_fn = wrapped_fn;
 
-    lua_ctx.scope(move |scope| -> rlua::Result<()> {
+    lua_ctx.scope(move |scope| -> mlua::Result<()> {
       let globals = lua_ctx.globals();
-      let table: rlua::Table = globals.get("Net")?;
+      let table: mlua::Table = globals.get("Net")?;
 
       table.set(
         "_delegate",
         scope.create_function_mut(
-          move |lua_ctx, (function_id, params): (String, rlua::MultiValue)| {
+          move |lua_ctx, (function_id, params): (String, mlua::MultiValue)| {
             let func = self.dynamic_functions.get_mut(&function_id);
 
             if let Some(func) = func {
               func(&api_ctx, lua_ctx, params)
             } else {
-              Err(rlua::Error::RuntimeError(format!(
+              Err(mlua::Error::RuntimeError(format!(
                 "Function \"{}\" does not exist",
                 function_id
               )))
