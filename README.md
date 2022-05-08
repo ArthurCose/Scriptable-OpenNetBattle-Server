@@ -547,3 +547,9 @@ emitter:destroy() -- allows async iterators to complete
 This project is built with Rust, so after installing Cargo, you can compile and run the project with `cargo run`.
 
 If you are interested in understanding the source before making changes, check out the [achitecture document](./ARCHITECTURE.md).
+
+### Distributing
+
+Install cargo-about: `cargo install cargo-about`
+
+Run `cargo run --bin create_distributable`, a folder named `dist` will be created.
