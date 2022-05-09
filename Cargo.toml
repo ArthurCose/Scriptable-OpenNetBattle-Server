@@ -10,7 +10,7 @@ default-run = "net_battle_server"
 [dependencies]
 async-std = "1.9"
 futures = "0.3"
-surf = "2.2"
+isahc = "1.7.1"
 byteorder = "1.4"
 uuid = { version = "0.8", features = ["v4"] }
 mlua = { version = "0.7", features = ["vendored", "lua54"] }
