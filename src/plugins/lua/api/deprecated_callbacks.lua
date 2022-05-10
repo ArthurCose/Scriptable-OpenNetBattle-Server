@@ -1,6 +1,6 @@
 local function backwards_compat(event_name, old_name, callback)
   if _G[old_name] then
-    warn(old_name.."() is deprecated use Net:on(\""..event_name.."\", function(event) end)")
+    warn(old_name.."() is deprecated, use Net:on(\""..event_name.."\", function(event) end)")
 
     Net:on(event_name,  callback)
   end

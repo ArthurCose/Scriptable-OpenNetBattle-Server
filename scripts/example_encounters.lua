@@ -16,17 +16,17 @@ encounters_table["default"] = {
 
 Encounters.setup(encounters_table)
 
-function handle_player_join(player_id)
-  Encounters.track_player(player_id)
-end
+Net:on("player_join", function(event)
+  Encounters.track_player(event.player_id)
+end)
 
-function handle_player_disconnect(player_id)
+Net:on("player_disconnect", function(event)
   -- Drop will forget this player entry record
   -- Also useful to stop tracking players for things like cutscenes or
   -- repel items
-  Encounters.drop_player(player_id)
-end
+  Encounters.drop_player(event.player_id)
+end)
 
-function handle_player_move(player_id, x, y, z)
-  Encounters.handle_player_move(player_id, x, y, z)
-end
+Net:on("player_move", function(event)
+  Encounters.handle_player_move(event.player_id, event.x, event.y, event.z)
+end)

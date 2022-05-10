@@ -1,17 +1,22 @@
 local requests = {}
 local questioned_requests = {}
 
-function handle_player_connect(player_id)
-  requests[player_id] = {}
-end
+Net:on("player_connect", function(event)
+  requests[event.player_id] = {}
+end)
 
-function handle_player_disconnect(player_id)
+Net:on("player_disconnect", function(event)
+  local player_id = event.player_id
+
   requests[player_id] = nil
   questioned_requests[player_id] = nil
-end
+end)
 
-function handle_actor_interaction(player_id, other_id, button)
-  if button ~= 0 then return end
+Net:on("actor_interaction", function(event)
+  local player_id = event.player_id
+  local other_id = event.actor_id
+
+  if event.button ~= 0 then return end
 
   if requests[other_id] == nil then
     -- other_id is not a player id, since they're not registered in the request list
@@ -52,10 +57,12 @@ function handle_actor_interaction(player_id, other_id, button)
   )
 
   questioned_requests[player_id] = other_id
-end
+end)
 
-function handle_textbox_response(player_id, response)
-  if response == 0 then
+Net:on("textbox_response", function(event)
+  local player_id = event.player_id
+
+  if event.response == 0 then
     -- response was no, no action needs to be taken
     questioned_requests[player_id] = nil
     return
@@ -79,4 +86,4 @@ function handle_textbox_response(player_id, response)
   end
 
   questioned_requests[player_id] = nil
-end
+end)
