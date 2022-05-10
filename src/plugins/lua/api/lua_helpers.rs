@@ -91,6 +91,6 @@ fn lua_value_to_string_internal<'lua>(
     mlua::Value::Thread(_) => String::from("Thread"),
     mlua::Value::LightUserData(_) => String::from("LightUserData"),
     mlua::Value::UserData(_) => String::from("UserData"),
-    mlua::Value::Error(_) => String::from("Error"),
+    mlua::Value::Error(error) => format!("\"{}\"", error),
   }
 }
