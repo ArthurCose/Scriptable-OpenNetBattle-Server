@@ -202,6 +202,12 @@ function AsyncifiedTracker:resolve(value)
   end
 end
 
+function AsyncifiedTracker:destroy()
+  for _, resolve in ipairs(self.resolvers) do
+    resolve(nil)
+  end
+end
+
 -- asyncified shared
 
 local textbox_trackers = {}
@@ -210,7 +216,9 @@ local battle_trackers = {}
 Net:on("player_disconnect", function(event)
   local player_id = event.player_id
 
+  textbox_trackers[player_id]:destroy()
   textbox_trackers[player_id] = nil
+  battle_trackers[player_id]:destroy()
   battle_trackers[player_id] = nil
 end)
 
