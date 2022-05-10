@@ -277,7 +277,7 @@ Types are used to denote special tiles or objects understood by the client.
 
 Commented functions are in development and require changes to the client (specified below).
 
-- [Entry Functions](#entry-functions)
+- [Net Events](#net-events)
 - [Net API](#net-api)
   - [Area API](#area-api)
   - [Bot API](#bot-api)
@@ -287,43 +287,128 @@ Commented functions are in development and require changes to the client (specif
   - [Asset API](#asset-api)
   - [Update Synchronization API](#update-synchronization-api)
 - [Async API](#async-api)
+- [Asyncified Net API](#asyncified-net-api)
+- [Event Emitters](#event-emitters)
 
-### Entry Functions
+### Net Events
 
-```Lua
-function tick(delta_time)
-function handle_player_request(player_id, data) -- player requests connection to server (only transfers and kicks should occur here)
-function handle_player_connect(player_id) -- player connects to the server (good place to setup while the player is loading)
-function handle_player_join(player_id) -- player enters their first area after connecting
-function handle_player_transfer(player_id) -- player changes area
-function handle_custom_warp(player_id, object_id) -- player warped out by a "Custom Warp" or "Custom Server Warp"
-function handle_object_interaction(player_id, object_id, button)
-function handle_actor_interaction(player_id, actor_id, button) -- actor_id is a player or bot id
-function handle_tile_interaction(player_id, x, y, z, button)
-function handle_textbox_response(player_id, response) -- response is an index or a string
-function handle_board_open(player_id)
-function handle_board_close(player_id)
-function handle_post_selection(player_id, post_id)
-function handle_post_request(player_id) -- bbs post request for infinite scroll
-function handle_shop_close(player_id)
-function handle_shop_purchase(player_id, item_name)
-function handle_battle_results(player_id, stats) -- stats = { health: number, score: number, time: number, ran: bool, emotion: number, turns: number, enemies: { id: String, health: number }[] }
-function handle_server_message(ip, port, data)
-function handle_authorization(identity, host, port, data) -- a player on another server needs to be authenticated with this server
+```lua
+Net:on("tick", function(event)
+  -- { delta_time: number (seconds) }
+  print(event.delta_time)
+end)
 
--- For the following functions:
---  default action is not taken until after execution
+Net:on("authorization", function(event)
+  -- { player_id: string, host: string, port: number, data: string }
+  print(event.identity, event.host, event.port, event.data)
+end)
 
-function handle_player_disconnect(player_id)
-function handle_player_move(player_id, x, y, z)
+Net:on("player_request", function(event)
+  -- { player_id: string, data: string }
+  print(event.player_id, event.data)
+end)
 
--- For the following functions:
---  default action is not taken on the server until after execution. for the client, the action has already been taken
---  returning true will prevent the default action
+Net:on("player_connect", function(event)
+  -- { player_id: string }
+  print(event.player_id)
+end)
 
--- health, max_health, and element will be updated before this function
-function handle_player_avatar_change(player_id, details) -- details = { texture_path: string, animation_path: string, name: string, element: string, max_health: number }
-function handle_player_emote(player_id, emote)
+Net:on("player_join", function(event)
+  -- { player_id: string }
+  print(event.player_id)
+end)
+
+Net:on("player_area_transfer", function(event)
+  -- { player_id: string }
+  print(event.player_id)
+end)
+
+Net:on("player_disconnect", function(event)
+  -- the player is invalid after this function excecutes
+  -- { player_id: string }
+  print(event.player_id)
+end)
+
+Net:on("player_move", function(event)
+  -- Net.get_player_position(event.player_id) will report the old position
+  -- { player_id: string, x: number, y: number, z: number }
+  print(event.player_id, event.x, event.y, event.z)
+end)
+
+Net:on("player_avatar_change", function(event)
+  -- health, max_health, and element will be updated on the player before this function executes
+  -- { player_id: string, texture_path: string, animation_path: string, name: string, element: string, max_health: number, prevent_default: Function }
+  print(event.player_id, event)
+end)
+
+Net:on("player_emote", function(event)
+  -- { player_id: string, emote: number, prevent_default: Function }
+  print(event.player_id, event.emote)
+end)
+
+Net:on("custom_warp", function(event)
+  -- { player_id: string, object_id: number }
+  print(event.player_id, event.object_id)
+end)
+
+Net:on("object_interaction", function(event)
+  -- { player_id: string, object_id: number, button: number }
+  print(event.player_id, event.object_id, event.button)
+end)
+
+Net:on("actor_interaction", function(event)
+  -- { player_id: string, actor_id: string, button: number }
+  print(event.player_id, event.actor_id, event.button)
+end)
+
+Net:on("tile_interaction", function(event)
+  -- { player_id: string }
+  print(event.player_id, event.x, event.y, event.z, event.button)
+end)
+
+Net:on("textbox_response", function(event)
+  -- { player_id: string, response: number | string }
+  print(event.player_id, event.response)
+end)
+
+Net:on("board_open", function(event)
+  -- deprecated
+  print(event.player_id)
+end)
+
+Net:on("board_close", function(event)
+  -- { player_id: string }
+  print(event.player_id)
+end)
+
+Net:on("post_request", function(event)
+  -- { player_id: string }
+  print(event.player_id)
+end)
+
+Net:on("post_selection", function(event)
+  -- { player_id: string, post_id: string }
+  print(event.player_id, event.post_id)
+end)
+
+Net:on("shop_close", function(event)
+  -- { player_id: string }
+  print(event.player_id)
+end)
+
+Net:on("shop_purchase", function(event)
+  -- { player_id: string }
+  print(event.player_id)
+end)
+
+Net:on("battle_results", function(event)
+  -- { player_id: string, health: number, score: number, time: number, ran: bool, emotion: number, turns: number, enemies: { id: String, health: number }[] } }
+  print(event.player_id, event.health, event.time, event.ran, event.emotion, event.turns, event.enemies)
+end)
+
+Net:on("server_message", function(event)
+  -- { host: string, port: number, data: string }
+  print(event.host, event.port, event.data)
 ```
 
 ### Net API
@@ -590,6 +675,8 @@ Async.message_player(player_id, message, mug_texture_path?, mug_animation_path?)
 Async.question_player(player_id, question, mug_texture_path?, mug_animation_path?) -- promise, value = number?
 Async.quiz_player(player_id, option_a?, option_b?, option_c?, mug_texture_path?, mug_animation_path?) -- promise, value = number?
 Async.prompt_player(player_id, character_limit?, default_text?) -- promise, value = string?
+Net.initiate_encounter(player_id, package_path, data?) -- promise, value = { player_id: string, health: number, score: number, time: number, ran: bool, emotion: number, turns: number, enemies: { id: String, health: number }[] } }
+Net.initiate_pvp(player_1_id, player_2_id, field_script_path?) -- promise, value = { player_id: string, health: number, score: number, time: number, ran: bool, emotion: number, turns: number, enemies: { id: String, health: number }[] } }
 ```
 
 ### Event Emitters
@@ -616,7 +703,9 @@ emitter:destroy() -- allows async iterators to complete
 
 ## Building the Project
 
-This project is built with Rust, so after installing Cargo, you can compile and run the project with `cargo run`
+Windows requires for building lua [MSVC++](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2015-2017-2019-and-2022)
+
+This project is built with Rust, so after installing Cargo, you can compile and run the project with `cargo run`.
 
 For a standalone executable you can run `cargo build --release` and copy just the executable from `target/build`
 

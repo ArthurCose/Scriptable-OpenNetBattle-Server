@@ -1,22 +1,18 @@
-Async._tasks = {}
+local tasks = {}
 
-function _server_internal_tick(delta)
+Net:on("tick", function(event)
   local completed_indexes = {}
 
-  for i, task in ipairs(Async._tasks) do
-    if task(delta) then
+  for i, task in ipairs(tasks) do
+    if task(event.delta_time) then
       completed_indexes[#completed_indexes+1] = i
     end
   end
 
   for i = #completed_indexes, 1, -1 do
-    table.remove(Async._tasks, completed_indexes[i])
+    table.remove(tasks, completed_indexes[i])
   end
-
-  if tick then
-    tick(delta)
-  end
-end
+end)
 
 
 function Async.await(promise)
@@ -63,15 +59,13 @@ end
 
 function Async.promisify(co)
   local promise = Async.create_promise(function (resolve)
-    local value = nil
-
     function update()
       local output = table.pack(coroutine.resume(co))
       local ok = output[1]
 
       if not ok then
         -- value is an error
-        printerr("runtime error: " .. tostring(value))
+        printerr("runtime error: " .. tostring(output[2]))
         return true
       end
 
@@ -83,7 +77,7 @@ function Async.promisify(co)
       return false
     end
 
-    Async._tasks[#Async._tasks+1] = update
+    tasks[#tasks+1] = update
   end)
 
   return promise
@@ -139,7 +133,7 @@ function Async.sleep(duration)
       return false
     end
 
-    Async._tasks[#Async._tasks+1] = update
+    tasks[#tasks+1] = update
   end)
 
   return promise
@@ -156,27 +150,43 @@ function Async._promise_from_id(id)
       return false
     end
 
-    Async._tasks[#Async._tasks+1] = update
+    tasks[#tasks+1] = update
   end)
 
   return promise
 end
 
--- asyncified textboxes
+-- asyncified
 
-Async._textbox_resolvers = {}
-Async._next_textbox_promise = {}
+local AsyncifiedTracker = {}
 
-function _server_internal_textbox(player_id, response)
-  if handle_textbox_response then
-    handle_textbox_response(player_id, response)
-  end
+function AsyncifiedTracker.new()
+  local tracker = {
+    resolvers = {},
+    next_promise = {0},
+  }
 
-  local next_promise = Async._next_textbox_promise[player_id]
+  setmetatable(tracker, AsyncifiedTracker)
+  AsyncifiedTracker.__index = AsyncifiedTracker
+  return tracker
+end
+
+function AsyncifiedTracker:increment_count()
+  self.next_promise[#self.next_promise] = self.next_promise[#self.next_promise] + 1
+end
+
+function AsyncifiedTracker:create_promise()
+  return Async.create_promise(function(resolve)
+    self.resolvers[#self.resolvers + 1] = resolve
+    self.next_promise[#self.resolvers + 1] = 0
+  end)
+end
+
+function AsyncifiedTracker:resolve(value)
+  local next_promise = self.next_promise
 
   if next_promise[1] == 0 then
-    local resolvers = Async._textbox_resolvers[player_id]
-    local resolve = table.remove(resolvers, 1)
+    local resolve = table.remove(self.resolvers, 1)
 
     if resolve == nil then
       return
@@ -186,264 +196,170 @@ function _server_internal_textbox(player_id, response)
       table.remove(next_promise, 1)
     end
 
-    resolve(response)
+    resolve(value)
   else
     next_promise[1] = next_promise[1] - 1
   end
 end
 
-function _server_internal_disconnect(player_id)
-  Async._next_textbox_promise[player_id] = nil
-  Async._textbox_resolvers[player_id] = nil
+-- asyncified shared
 
-  if handle_player_disconnect then
-    handle_player_disconnect(player_id)
-  end
-end
+local textbox_trackers = {}
+local battle_trackers = {}
 
-function _server_internal_request(player_id, data)
-  Async._next_textbox_promise[player_id] = {0}
-  Async._textbox_resolvers[player_id] = {}
+Net:on("player_disconnect", function(event)
+  local player_id = event.player_id
 
-  if handle_player_request then
-    handle_player_request(player_id, data)
-  end
-end
+  textbox_trackers[player_id] = nil
+  battle_trackers[player_id] = nil
+end)
 
-local function create_textbox_api(function_name)
+Net:on("player_request", function(event)
+  local player_id = event.player_id
+
+  textbox_trackers[player_id] = AsyncifiedTracker.new()
+  battle_trackers[player_id] = AsyncifiedTracker.new()
+end)
+
+local function create_asyncified_api(function_name, trackers)
   local delegate_name = "Net._" .. function_name
 
   Async[function_name] = function (player_id, ...)
-    local resolvers = Async._textbox_resolvers[player_id]
+    local tracker = trackers[player_id]
 
-    if resolvers == nil then
+    if tracker == nil then
       -- player has disconnected or never existed
       return Async.create_promise(function(resolve) resolve(nil) end)
     end
 
     Net._delegate(delegate_name, player_id, ...)
 
-    return Async.create_promise(function(resolve)
-      local next_promise = Async._next_textbox_promise[player_id]
-
-      resolvers[#resolvers + 1] = resolve
-      next_promise[#resolvers + 1] = 0
-    end)
+    return tracker:create_promise()
   end
 
   Net[function_name] = function (player_id, ...)
-    local next_promise = Async._next_textbox_promise[player_id]
+    local tracker = trackers[player_id]
 
-    if next_promise == nil then
+    if tracker == nil then
       -- player has disconnected or never existed
       return
     end
 
-    next_promise[#next_promise] = next_promise[#next_promise] + 1
+    tracker:increment_count()
 
     Net._delegate(delegate_name, player_id, ...)
   end
 end
 
-create_textbox_api("message_player")
-create_textbox_api("question_player")
-create_textbox_api("quiz_player")
-create_textbox_api("prompt_player")
+-- asyncified textboxes
 
--- async iterators
+create_asyncified_api("message_player", textbox_trackers)
+create_asyncified_api("question_player", textbox_trackers)
+create_asyncified_api("quiz_player", textbox_trackers)
+create_asyncified_api("prompt_player", textbox_trackers)
 
-Net.EventEmitter = {}
+Net:on("textbox_response", function(event)
+  local player_id = event.player_id
 
-function Net.EventEmitter.new()
-  local emitter = {
-    _listeners = {},
-    _any_listeners = {},
-    _pending_removal = {},
-    _any_pending_removal = nil,
-    _destroy_listeners = {}
-  }
+  textbox_trackers[player_id]:resolve(event.response)
+end)
 
-  setmetatable(emitter, Net.EventEmitter)
-  Net.EventEmitter.__index = Net.EventEmitter
+-- asyncified battles
+
+create_asyncified_api("initiate_encounter", battle_trackers)
+create_asyncified_api("initiate_pvp", battle_trackers)
+
+Net:on("battle_results", function(event)
+  local player_id = event.player_id
+
+  battle_trackers[player_id]:resolve(event)
+end)
+
+-- shops
+
+local shop_emitters = {}
+
+Net:on("player_request", function(event)
+  shop_emitters[event.player_id] = {}
+end)
+
+Net:on("player_disconnect", function(event)
+  for _, emitter in ipairs(shop_emitters[event.player_id]) do
+    emitter:emit("close", event)
+    emitter:destroy()
+  end
+
+  shop_emitters[event.player_id] = nil
+end)
+
+function Net.open_shop(player_id, ...)
+  local emitters = shop_emitters[player_id]
+
+  if not emitters then
+    -- player must have disconnected
+    return
+  end
+
+  Net._delegate("Net._open_shop", player_id, ...)
+
+  local emitter = Net.EventEmitter.new()
+  emitters[#emitters+1] = emitter
   return emitter
 end
 
-function Net.EventEmitter:emit(name, ...)
-  local listeners = self._listeners[name]
+Net:on("shop_purchase", function(event)
+  shop_emitters[event.player_id][1]:emit("purchase", event)
+end)
 
-  -- clean up dead listeners
-  local pending_removal = self._pending_removal[name]
+Net:on("shop_close", function(event)
+  local emitter = table.remove(shop_emitters[event.player_id], 1)
+  emitter:emit("close", event)
+  emitter:destroy()
+end)
 
-  if pending_removal then
-    for _, dead_listener in ipairs(pending_removal) do
-      -- find and remove this listener
-      for i, listener in ipairs(listeners) do
-        if listener == dead_listener then
-          table.remove(listeners, i)
-          break
-        end
-      end
-    end
+-- bbs
 
-    self._pending_removal[name] = nil
+local bbs_emitters = {}
+
+Net:on("player_request", function(event)
+  bbs_emitters[event.player_id] = {}
+end)
+
+Net:on("player_disconnect", function(event)
+  for _, emitter in ipairs(bbs_emitters[event.player_id]) do
+    emitter:emit("close", event)
+    emitter:destroy()
   end
 
-  if self._any_pending_removal then
-    for _, dead_listener in ipairs(self._any_pending_removal) do
-      -- find and remove this listener
-      for i, listener in ipairs(self._any_listeners) do
-        if listener == dead_listener then
-          table.remove(self._any_listeners, i)
-          break
-        end
-      end
-    end
+  bbs_emitters[event.player_id] = nil
+end)
 
-    self._any_pending_removal = nil
+function Net.open_board(player_id, ...)
+  local emitters = bbs_emitters[player_id]
+
+  if not emitters then
+    -- player must have disconnected
+    return
   end
 
-  -- call listeners
-  if listeners then
-    for _, listener in ipairs(listeners) do
-      listener(...)
-    end
-  end
+  Net.close_bbs(player_id)
+  Net._delegate("Net._open_board", player_id, ...)
 
-  for _, listener in ipairs(self._any_listeners) do
-    listener(name, ...)
-  end
+  local emitter = Net.EventEmitter.new()
+  emitters[#emitters+1] = emitter
+  return emitter
 end
 
-function Net.EventEmitter:on(name, callback)
-  local listeners = self._listeners[name]
+Net:on("post_request", function(event)
+  bbs_emitters[event.player_id][1]:emit("request", event)
+end)
 
-  if listeners then
-    listeners[#listeners+1] = callback
-  else
-    self._listeners[name] = { callback }
-  end
-end
+Net:on("post_selection", function(event)
+  bbs_emitters[event.player_id][1]:emit("selection", event)
+end)
 
-function Net.EventEmitter:once(name, callback)
-  local cleanup
-
-  cleanup = function()
-    self:remove_listener(name, callback)
-    self:remove_listener(name, cleanup)
-  end
-
-  self:on(name, callback)
-  self:on(name, cleanup)
-end
-
-function Net.EventEmitter:on_any(callback)
-  local listeners = self._any_listeners
-
-  listeners[#listeners+1] = callback
-end
-
-function Net.EventEmitter:on_any_once(callback)
-  local cleanup
-
-  cleanup = function()
-    self:remove_on_any_listener(callback)
-    self:remove_on_any_listener(cleanup)
-  end
-
-  self:on_any(callback)
-  self:on_any(cleanup)
-end
-
-function Net.EventEmitter:remove_listener(event_name, callback)
-  local pending_removal = self._pending_removal[event_name]
-
-  if pending_removal then
-    pending_removal[#pending_removal+1] = callback
-  else
-    self._pending_removal[event_name] = {callback}
-  end
-end
-
-function Net.EventEmitter:remove_on_any_listener(callback)
-  local pending_removal = self._any_pending_removal
-
-  if pending_removal then
-    pending_removal[#pending_removal+1] = callback
-  else
-    self._any_pending_removal = {callback}
-  end
-end
-
-function Net.EventEmitter:async_iter(name)
-  local promise_queue = {}
-  local latest_resolve
-
-  promise_queue[#promise_queue+1] = Async.create_promise(function(resolve)
-    latest_resolve = resolve
-  end)
-
-  self:on(name, function(...)
-    local last_resolve = latest_resolve
-
-    promise_queue[#promise_queue+1] = Async.create_promise(function(resolve)
-      latest_resolve = resolve
-    end)
-
-    last_resolve(...)
-  end)
-
-  self._destroy_listeners[#self._destroy_listeners+1] = function()
-    latest_resolve(nil)
-  end
-
-  return function()
-    local promise = table.remove(promise_queue, 1)
-
-    if promise then
-      return promise
-    else
-      error("read past end, are you awaiting?")
-    end
-  end
-end
-
-function Net.EventEmitter:async_iter_all()
-  local promise_queue = {}
-  local latest_resolve
-
-  promise_queue[#promise_queue+1] = Async.create_promise(function(resolve)
-    latest_resolve = resolve
-  end)
-
-  self:on_any(function(...)
-    local last_resolve = latest_resolve
-
-    promise_queue[#promise_queue+1] = Async.create_promise(function(resolve)
-      latest_resolve = resolve
-    end)
-
-    last_resolve(...)
-  end)
-
-  self._destroy_listeners[#self._destroy_listeners+1] = function()
-    latest_resolve(nil)
-  end
-
-  return function()
-    local promise = table.remove(promise_queue, 1)
-
-    if promise then
-      return promise
-    else
-      error("read past end, are you awaiting?")
-    end
-  end
-end
-
-function Net.EventEmitter:destroy()
-  for _, listener in ipairs(self._destroy_listeners) do
-    listener()
-  end
-
-  self._destroy_listeners = nil
-end
+Net:on("board_close", function(event)
+  local emitter = table.remove(bbs_emitters[event.player_id], 1)
+  emitter:emit("close", event)
+  emitter:destroy()
+end)

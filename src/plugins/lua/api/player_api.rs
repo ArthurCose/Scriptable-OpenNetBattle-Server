@@ -543,7 +543,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
-  lua_api.add_dynamic_function("Net", "initiate_pvp", |api_ctx, lua_ctx, params| {
+  lua_api.add_dynamic_function("Net", "_initiate_pvp", |api_ctx, lua_ctx, params| {
     use multi_mut::HashMapMultiMut;
 
     let (player_1_id, player_2_id, _): (mlua::String, mlua::String, Option<mlua::String>) =
@@ -613,7 +613,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
-  lua_api.add_dynamic_function("Net", "initiate_encounter", |api_ctx, lua_ctx, params| {
+  lua_api.add_dynamic_function("Net", "_initiate_encounter", |api_ctx, lua_ctx, params| {
     let (player_id, package_id, data_value): (mlua::String, mlua::String, Option<mlua::Value>) =
       lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
