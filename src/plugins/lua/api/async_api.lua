@@ -160,8 +160,8 @@ end
 
 -- asyncified textboxes
 
-Async._textbox_resolvers = {}
-Async._next_textbox_promise = {}
+local textbox_resolvers = {}
+local next_textbox_promise = {}
 
 Net:on("textbox_response", function(event)
   local player_id = event.player_id
@@ -170,10 +170,10 @@ Net:on("textbox_response", function(event)
     handle_textbox_response(player_id, event.response)
   end
 
-  local next_promise = Async._next_textbox_promise[player_id]
+  local next_promise = next_textbox_promise[player_id]
 
   if next_promise[1] == 0 then
-    local resolvers = Async._textbox_resolvers[player_id]
+    local resolvers = textbox_resolvers[player_id]
     local resolve = table.remove(resolvers, 1)
 
     if resolve == nil then
@@ -193,22 +193,22 @@ end)
 Net:on("player_disconnect", function(event)
   local player_id = event.player_id
 
-  Async._next_textbox_promise[player_id] = nil
-  Async._textbox_resolvers[player_id] = nil
+  next_textbox_promise[player_id] = nil
+  textbox_resolvers[player_id] = nil
 end)
 
 Net:on("player_request", function(event)
   local player_id = event.player_id
 
-  Async._next_textbox_promise[player_id] = {0}
-  Async._textbox_resolvers[player_id] = {}
+  next_textbox_promise[player_id] = {0}
+  textbox_resolvers[player_id] = {}
 end)
 
 local function create_textbox_api(function_name)
   local delegate_name = "Net._" .. function_name
 
   Async[function_name] = function (player_id, ...)
-    local resolvers = Async._textbox_resolvers[player_id]
+    local resolvers = textbox_resolvers[player_id]
 
     if resolvers == nil then
       -- player has disconnected or never existed
@@ -218,7 +218,7 @@ local function create_textbox_api(function_name)
     Net._delegate(delegate_name, player_id, ...)
 
     return Async.create_promise(function(resolve)
-      local next_promise = Async._next_textbox_promise[player_id]
+      local next_promise = next_textbox_promise[player_id]
 
       resolvers[#resolvers + 1] = resolve
       next_promise[#resolvers + 1] = 0
@@ -226,7 +226,7 @@ local function create_textbox_api(function_name)
   end
 
   Net[function_name] = function (player_id, ...)
-    local next_promise = Async._next_textbox_promise[player_id]
+    local next_promise = next_textbox_promise[player_id]
 
     if next_promise == nil then
       -- player has disconnected or never existed
