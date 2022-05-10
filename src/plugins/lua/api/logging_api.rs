@@ -22,6 +22,14 @@ pub fn inject_static(lua_api: &mut LuaApi) {
     )?;
 
     globals.set(
+      "warn",
+      lua_ctx.create_function(|_lua_ctx, args: mlua::MultiValue| {
+        warn!("{}", format_args(args));
+        Ok(mlua::Value::Nil)
+      })?,
+    )?;
+
+    globals.set(
       "tostring",
       lua_ctx.create_function(|_lua_ctx, value: mlua::Value| Ok(tostring(value)))?,
     )?;

@@ -11,19 +11,6 @@ use std::collections::VecDeque;
 pub struct LuaPluginInterface {
   scripts: Vec<Lua>,
   all_scripts: Vec<usize>,
-  authorization_listeners: Vec<usize>,
-  player_connect_listeners: Vec<usize>,
-  player_join_listeners: Vec<usize>,
-  player_transfer_listeners: Vec<usize>,
-  player_move_listeners: Vec<usize>,
-  player_avatar_change_listeners: Vec<usize>,
-  player_emote_listeners: Vec<usize>,
-  custom_warp_listeners: Vec<usize>,
-  object_interaction_listeners: Vec<usize>,
-  actor_interaction_listeners: Vec<usize>,
-  tile_interaction_listeners: Vec<usize>,
-  battle_results_listeners: Vec<usize>,
-  server_message_listeners: Vec<usize>,
   widget_trackers: HashMap<String, WidgetTracker<usize>>,
   battle_trackers: HashMap<String, VecDeque<usize>>,
   promise_manager: JobPromiseManager,
@@ -35,19 +22,6 @@ impl LuaPluginInterface {
     LuaPluginInterface {
       scripts: Vec::new(),
       all_scripts: Vec::new(),
-      authorization_listeners: Vec::new(),
-      player_connect_listeners: Vec::new(),
-      player_join_listeners: Vec::new(),
-      player_transfer_listeners: Vec::new(),
-      player_move_listeners: Vec::new(),
-      player_avatar_change_listeners: Vec::new(),
-      player_emote_listeners: Vec::new(),
-      custom_warp_listeners: Vec::new(),
-      object_interaction_listeners: Vec::new(),
-      actor_interaction_listeners: Vec::new(),
-      tile_interaction_listeners: Vec::new(),
-      server_message_listeners: Vec::new(),
-      battle_results_listeners: Vec::new(),
       widget_trackers: HashMap::new(),
       battle_trackers: HashMap::new(),
       promise_manager: JobPromiseManager::new(),
@@ -89,6 +63,7 @@ impl LuaPluginInterface {
 
     let script_index = self.scripts.len();
     self.scripts.push(Lua::new());
+    self.all_scripts.push(script_index);
 
     let lua_ctx = self.scripts.last_mut().unwrap();
 
@@ -125,98 +100,10 @@ impl LuaPluginInterface {
       Ok(())
     })?;
 
-    self.all_scripts.push(script_index);
-
-    if globals
-      .get::<_, mlua::Function>("handle_authorization")
-      .is_ok()
-    {
-      self.authorization_listeners.push(script_index);
-    }
-
-    if globals
-      .get::<_, mlua::Function>("handle_player_connect")
-      .is_ok()
-    {
-      self.player_connect_listeners.push(script_index);
-    }
-
-    if globals
-      .get::<_, mlua::Function>("handle_player_join")
-      .is_ok()
-    {
-      self.player_join_listeners.push(script_index);
-    }
-
-    if globals
-      .get::<_, mlua::Function>("handle_player_transfer")
-      .is_ok()
-    {
-      self.player_transfer_listeners.push(script_index);
-    }
-
-    if globals
-      .get::<_, mlua::Function>("handle_player_move")
-      .is_ok()
-    {
-      self.player_move_listeners.push(script_index);
-    }
-
-    if globals
-      .get::<_, mlua::Function>("handle_player_avatar_change")
-      .is_ok()
-    {
-      self.player_avatar_change_listeners.push(script_index);
-    }
-
-    if globals
-      .get::<_, mlua::Function>("handle_player_emote")
-      .is_ok()
-    {
-      self.player_emote_listeners.push(script_index);
-    }
-
-    if globals
-      .get::<_, mlua::Function>("handle_custom_warp")
-      .is_ok()
-    {
-      self.custom_warp_listeners.push(script_index);
-    }
-
-    if globals
-      .get::<_, mlua::Function>("handle_object_interaction")
-      .is_ok()
-    {
-      self.object_interaction_listeners.push(script_index);
-    }
-
-    if globals
-      .get::<_, mlua::Function>("handle_actor_interaction")
-      .is_ok()
-    {
-      self.actor_interaction_listeners.push(script_index);
-    }
-
-    if globals
-      .get::<_, mlua::Function>("handle_tile_interaction")
-      .is_ok()
-    {
-      self.tile_interaction_listeners.push(script_index);
-    }
-
-    if globals
-      .get::<_, mlua::Function>("handle_battle_results")
-      .is_ok()
-    {
-      self.battle_results_listeners.push(script_index);
-    }
-
-    if globals
-      .get::<_, mlua::Function>("handle_server_message")
-      .is_ok()
-    {
-      self.server_message_listeners.push(script_index);
-    }
+    lua_ctx
+      .load(include_str!("api/deprecated_callbacks.lua"))
+      .set_name("internal: deprecated_callbacks.lua")?
+      .exec()?;
 
     Ok(())
   }
@@ -238,8 +125,12 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "_server_internal_tick", // async_api.lua
-      |_, callback| callback.call(delta_time),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("delta_time", delta_time)?;
+
+        callback.call(("tick", event))
+      },
     );
   }
 
@@ -253,16 +144,22 @@ impl PluginInterface for LuaPluginInterface {
   ) {
     handle_event(
       &mut self.scripts,
-      &self.authorization_listeners,
+      &self.all_scripts,
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_authorization",
       |lua_ctx, callback| {
         let data_string = lua_ctx.create_string(data)?;
-        callback.call((identity, host, port, data_string))
+
+        let event = lua_ctx.create_table()?;
+        event.set("identity", identity)?;
+        event.set("host", host)?;
+        event.set("port", port)?;
+        event.set("data", data_string)?;
+
+        callback.call(("authorization", event))
       },
     );
   }
@@ -284,50 +181,67 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "_server_internal_request", // async_api.lua
-      |_, callback| callback.call((player_id, data)),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+        event.set("data", data)?;
+
+        callback.call(("player_request", event))
+      },
     );
   }
 
   fn handle_player_connect(&mut self, net: &mut Net, player_id: &str) {
     handle_event(
       &mut self.scripts,
-      &self.player_connect_listeners,
+      &self.all_scripts,
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_player_connect",
-      |_, callback| callback.call(player_id),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+
+        callback.call(("player_connect", event))
+      },
     );
   }
 
   fn handle_player_join(&mut self, net: &mut Net, player_id: &str) {
     handle_event(
       &mut self.scripts,
-      &self.player_join_listeners,
+      &self.all_scripts,
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_player_join",
-      |_, callback| callback.call(player_id),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+
+        callback.call(("player_join", event))
+      },
     );
   }
 
   fn handle_player_transfer(&mut self, net: &mut Net, player_id: &str) {
     handle_event(
       &mut self.scripts,
-      &self.player_transfer_listeners,
+      &self.all_scripts,
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_player_transfer",
-      |_, callback| callback.call(player_id),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+
+        callback.call(("player_area_transfer", event))
+      },
     );
   }
 
@@ -340,8 +254,12 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "_server_internal_disconnect", // async_api.lua
-      |_, callback| callback.call(player_id),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+
+        callback.call(("player_disconnect", event))
+      },
     );
 
     self.widget_trackers.remove(player_id);
@@ -351,14 +269,21 @@ impl PluginInterface for LuaPluginInterface {
   fn handle_player_move(&mut self, net: &mut Net, player_id: &str, x: f32, y: f32, z: f32) {
     handle_event(
       &mut self.scripts,
-      &self.player_move_listeners,
+      &self.all_scripts,
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_player_move",
-      |_, callback| callback.call((player_id, x, y, z)),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+        event.set("x", x)?;
+        event.set("y", y)?;
+        event.set("z", z)?;
+
+        callback.call(("player_move", event))
+      },
     );
   }
 
@@ -372,72 +297,95 @@ impl PluginInterface for LuaPluginInterface {
     element: &str,
     max_health: u32,
   ) -> bool {
-    let mut prevent_default = false;
+    use std::cell::Cell;
+    use std::rc::Rc;
+
+    let prevent_default = Rc::new(Cell::new(false));
 
     handle_event(
       &mut self.scripts,
-      &self.player_avatar_change_listeners,
+      &self.all_scripts,
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_player_avatar_change",
       |lua_ctx, callback| {
-        let details_table = lua_ctx.create_table()?;
+        let prevent_default_reference = prevent_default.clone();
 
-        details_table.set("texture_path", texture_path)?;
-        details_table.set("animation_path", animation_path)?;
-        details_table.set("name", name)?;
-        details_table.set("element", element)?;
-        details_table.set("max_health", max_health)?;
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+        event.set("texture_path", texture_path)?;
+        event.set("animation_path", animation_path)?;
+        event.set("name", name)?;
+        event.set("element", element)?;
+        event.set("max_health", max_health)?;
+        event.set(
+          "prevent_default",
+          lua_ctx.create_function(move |_, _: ()| {
+            prevent_default_reference.clone().set(true);
+            Ok(())
+          })?,
+        )?;
 
-        let return_value: Option<bool> = callback.call((player_id, details_table))?;
-
-        prevent_default |= return_value.unwrap_or_default();
-
-        Ok(())
+        callback.call(("player_avatar_change", event))
       },
     );
 
-    prevent_default
+    prevent_default.get()
   }
 
   fn handle_player_emote(&mut self, net: &mut Net, player_id: &str, emote_id: u8) -> bool {
-    let mut prevent_default = false;
+    use std::cell::Cell;
+    use std::rc::Rc;
+
+    let prevent_default = Rc::new(Cell::new(false));
 
     handle_event(
       &mut self.scripts,
-      &self.player_emote_listeners,
+      &self.all_scripts,
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_player_emote",
-      |_, callback| {
-        let return_value: Option<bool> = callback.call((player_id, emote_id))?;
+      |lua_ctx, callback| {
+        let prevent_default_reference = prevent_default.clone();
 
-        prevent_default |= return_value.unwrap_or_default();
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+        event.set("emote", emote_id)?;
+        event.set(
+          "prevent_default",
+          lua_ctx.create_function(move |_, _: ()| {
+            prevent_default_reference.clone().set(true);
+            Ok(())
+          })?,
+        )?;
 
-        Ok(())
+        callback.call(("player_emote", event))
       },
     );
 
-    prevent_default
+    prevent_default.get()
   }
 
   fn handle_custom_warp(&mut self, net: &mut Net, player_id: &str, tile_object_id: u32) {
     handle_event(
       &mut self.scripts,
-      &self.custom_warp_listeners,
+      &self.all_scripts,
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_custom_warp",
-      |_, callback| callback.call((player_id, tile_object_id)),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+        event.set("object_id", tile_object_id)?;
+
+        callback.call(("custom_warp", event))
+      },
     );
   }
 
@@ -450,14 +398,20 @@ impl PluginInterface for LuaPluginInterface {
   ) {
     handle_event(
       &mut self.scripts,
-      &self.object_interaction_listeners,
+      &self.all_scripts,
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_object_interaction",
-      |_, callback| callback.call((player_id, tile_object_id, button)),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+        event.set("object_id", tile_object_id)?;
+        event.set("button", button)?;
+
+        callback.call(("object_interaction", event))
+      },
     );
   }
 
@@ -470,14 +424,20 @@ impl PluginInterface for LuaPluginInterface {
   ) {
     handle_event(
       &mut self.scripts,
-      &self.actor_interaction_listeners,
+      &self.all_scripts,
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_actor_interaction",
-      |_, callback| callback.call((player_id, actor_id, button)),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+        event.set("actor_id", actor_id)?;
+        event.set("button", button)?;
+
+        callback.call(("actor_interaction", event))
+      },
     );
   }
 
@@ -492,14 +452,22 @@ impl PluginInterface for LuaPluginInterface {
   ) {
     handle_event(
       &mut self.scripts,
-      &self.tile_interaction_listeners,
+      &self.all_scripts,
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_tile_interaction",
-      |_, callback| callback.call((player_id, x, y, z, button)),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+        event.set("x", x)?;
+        event.set("y", y)?;
+        event.set("z", z)?;
+        event.set("button", button)?;
+
+        callback.call(("tile_interaction", event))
+      },
     );
   }
 
@@ -521,8 +489,13 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "_server_internal_textbox",
-      |_, callback| callback.call((player_id, response)),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+        event.set("response", response)?;
+
+        callback.call(("textbox_response", event))
+      },
     );
   }
 
@@ -544,8 +517,13 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "_server_internal_textbox",
-      |_, callback| callback.call((player_id, response.clone())),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+        event.set("response", response.as_str())?;
+
+        callback.call(("textbox_response", event))
+      },
     );
   }
 
@@ -569,8 +547,12 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_board_open",
-      |_, callback| callback.call(player_id),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+
+        callback.call(("board_open", event))
+      },
     );
   }
 
@@ -592,8 +574,12 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_board_close",
-      |_, callback| callback.call(player_id),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+
+        callback.call(("board_close", event))
+      },
     );
   }
 
@@ -615,8 +601,12 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_post_request",
-      |_, callback| callback.call(player_id),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+
+        callback.call(("post_request", event))
+      },
     );
   }
 
@@ -638,8 +628,13 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_post_selection",
-      |_, callback| callback.call((player_id, post_id)),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+        event.set("post_id", post_id)?;
+
+        callback.call(("post_selection", event))
+      },
     );
   }
 
@@ -661,8 +656,12 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_shop_close",
-      |_, callback| callback.call(player_id),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+
+        callback.call(("shop_close", event))
+      },
     );
   }
 
@@ -684,8 +683,13 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_shop_purchase",
-      |_, callback| callback.call((player_id, item_name)),
+      |lua_ctx, callback| {
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+        event.set("item_name", item_name)?;
+
+        callback.call(("shop_purchase", event))
+      },
     );
   }
 
@@ -707,15 +711,15 @@ impl PluginInterface for LuaPluginInterface {
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_battle_results",
       |lua_ctx, callback| {
-        let table = lua_ctx.create_table()?;
-        table.set("health", battle_stats.health)?;
-        table.set("score", battle_stats.score)?;
-        table.set("time", battle_stats.time)?;
-        table.set("ran", battle_stats.ran)?;
-        table.set("emotion", battle_stats.emotion)?;
-        table.set("turns", battle_stats.turns)?;
+        let event = lua_ctx.create_table()?;
+        event.set("player_id", player_id)?;
+        event.set("health", battle_stats.health)?;
+        event.set("score", battle_stats.score)?;
+        event.set("time", battle_stats.time)?;
+        event.set("ran", battle_stats.ran)?;
+        event.set("emotion", battle_stats.emotion)?;
+        event.set("turns", battle_stats.turns)?;
 
         let mut enemy_tables = Vec::new();
         enemy_tables.reserve(battle_stats.enemies.len());
@@ -727,9 +731,9 @@ impl PluginInterface for LuaPluginInterface {
           enemy_tables.push(enemy_table);
         }
 
-        table.set("enemies", enemy_tables)?;
+        event.set("enemies", enemy_tables)?;
 
-        callback.call((player_id, table))
+        callback.call(("battle_results", event))
       },
     );
   }
@@ -742,19 +746,19 @@ impl PluginInterface for LuaPluginInterface {
   ) {
     handle_event(
       &mut self.scripts,
-      &self.server_message_listeners,
+      &self.all_scripts,
       &mut self.widget_trackers,
       &mut self.battle_trackers,
       &mut self.promise_manager,
       &mut self.lua_api,
       net,
-      "handle_server_message",
       |lua_ctx, callback| {
-        let lua_data_string = lua_ctx.create_string(data)?;
-        let ip_string = socket_address.ip().to_string();
-        let port = socket_address.port();
+        let event = lua_ctx.create_table()?;
+        event.set("host", socket_address.ip().to_string())?;
+        event.set("port", socket_address.port())?;
+        event.set("data", lua_ctx.create_string(data)?)?;
 
-        callback.call((ip_string, port, lua_data_string))
+        callback.call(("server_message", event))
       },
     );
   }
@@ -769,7 +773,6 @@ fn handle_event<F>(
   promise_manager: &mut JobPromiseManager,
   lua_api: &mut LuaApi,
   net: &mut Net,
-  event_fn_name: &str,
   fn_caller: F,
 ) where
   F: for<'lua> FnMut(&'lua mlua::Lua, mlua::Function<'lua>) -> mlua::Result<()>,
@@ -796,9 +799,12 @@ fn handle_event<F>(
 
       lua_api.inject_dynamic(lua_ctx, api_ctx, |lua_ctx| {
         let globals = lua_ctx.globals();
+        let net_table: mlua::Table = globals.get("Net")?;
 
-        if let Ok(func) = globals.get::<_, mlua::Function>(event_fn_name) {
-          if let Err(err) = fn_caller(lua_ctx, func) {
+        if let Ok(func) = net_table.get::<_, mlua::Function>("emit") {
+          let binded_func = func.bind(net_table)?;
+
+          if let Err(err) = fn_caller(lua_ctx, binded_func) {
             error!("{}", err);
           }
         }

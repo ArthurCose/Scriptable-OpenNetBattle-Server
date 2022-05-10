@@ -48,7 +48,13 @@ impl LuaApi {
       table_names: Vec::new(),
     };
 
-    lua_api.add_global_table("Net");
+    lua_api.add_static_injector(|lua_ctx| {
+      lua_ctx
+        .load(include_str!("event_emitter.lua"))
+        .set_name("internal: event_emitter.lua")?
+        .exec()
+    });
+
     area_api::inject_dynamic(&mut lua_api);
     asset_api::inject_dynamic(&mut lua_api);
     object_api::inject_dynamic(&mut lua_api);
