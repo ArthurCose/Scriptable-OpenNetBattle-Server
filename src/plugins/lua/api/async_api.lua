@@ -166,10 +166,6 @@ local next_textbox_promise = {}
 Net:on("textbox_response", function(event)
   local player_id = event.player_id
 
-  if handle_textbox_response then
-    handle_textbox_response(player_id, event.response)
-  end
-
   local next_promise = next_textbox_promise[player_id]
 
   if next_promise[1] == 0 then
