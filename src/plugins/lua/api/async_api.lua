@@ -156,19 +156,37 @@ function Async._promise_from_id(id)
   return promise
 end
 
--- asyncified textboxes
+-- asyncified
 
-local textbox_resolvers = {}
-local next_textbox_promise = {}
+local AsyncifiedTracker = {}
 
-Net:on("textbox_response", function(event)
-  local player_id = event.player_id
+function AsyncifiedTracker.new()
+  local tracker = {
+    resolvers = {},
+    next_promise = {0},
+  }
 
-  local next_promise = next_textbox_promise[player_id]
+  setmetatable(tracker, AsyncifiedTracker)
+  AsyncifiedTracker.__index = AsyncifiedTracker
+  return tracker
+end
+
+function AsyncifiedTracker:increment_count()
+  self.next_promise[#self.next_promise] = self.next_promise[#self.next_promise] + 1
+end
+
+function AsyncifiedTracker:create_promise()
+  return Async.create_promise(function(resolve)
+    self.resolvers[#self.resolvers + 1] = resolve
+    self.next_promise[#self.resolvers + 1] = 0
+  end)
+end
+
+function AsyncifiedTracker:resolve(value)
+  local next_promise = self.next_promise
 
   if next_promise[1] == 0 then
-    local resolvers = textbox_resolvers[player_id]
-    local resolve = table.remove(resolvers, 1)
+    local resolve = table.remove(self.resolvers, 1)
 
     if resolve == nil then
       return
@@ -178,65 +196,84 @@ Net:on("textbox_response", function(event)
       table.remove(next_promise, 1)
     end
 
-    resolve(event.response)
+    resolve(value)
   else
     next_promise[1] = next_promise[1] - 1
   end
-end)
+end
+
+-- asyncified shared
+
+local textbox_trackers = {}
+local battle_trackers = {}
 
 Net:on("player_disconnect", function(event)
   local player_id = event.player_id
 
-  next_textbox_promise[player_id] = nil
-  textbox_resolvers[player_id] = nil
+  textbox_trackers[player_id] = nil
+  battle_trackers[player_id] = nil
 end)
 
 Net:on("player_request", function(event)
   local player_id = event.player_id
 
-  next_textbox_promise[player_id] = {0}
-  textbox_resolvers[player_id] = {}
+  textbox_trackers[player_id] = AsyncifiedTracker.new()
+  battle_trackers[player_id] = AsyncifiedTracker.new()
 end)
 
-local function create_textbox_api(function_name)
+local function create_asyncified_api(function_name, trackers)
   local delegate_name = "Net._" .. function_name
 
   Async[function_name] = function (player_id, ...)
-    local resolvers = textbox_resolvers[player_id]
+    local tracker = trackers[player_id]
 
-    if resolvers == nil then
+    if tracker == nil then
       -- player has disconnected or never existed
       return Async.create_promise(function(resolve) resolve(nil) end)
     end
 
     Net._delegate(delegate_name, player_id, ...)
 
-    return Async.create_promise(function(resolve)
-      local next_promise = next_textbox_promise[player_id]
-
-      resolvers[#resolvers + 1] = resolve
-      next_promise[#resolvers + 1] = 0
-    end)
+    return tracker:create_promise()
   end
 
   Net[function_name] = function (player_id, ...)
-    local next_promise = next_textbox_promise[player_id]
+    local tracker = trackers[player_id]
 
-    if next_promise == nil then
+    if tracker == nil then
       -- player has disconnected or never existed
       return
     end
 
-    next_promise[#next_promise] = next_promise[#next_promise] + 1
+    tracker:increment_count()
 
     Net._delegate(delegate_name, player_id, ...)
   end
 end
 
-create_textbox_api("message_player")
-create_textbox_api("question_player")
-create_textbox_api("quiz_player")
-create_textbox_api("prompt_player")
+-- asyncified textboxes
+
+create_asyncified_api("message_player", textbox_trackers)
+create_asyncified_api("question_player", textbox_trackers)
+create_asyncified_api("quiz_player", textbox_trackers)
+create_asyncified_api("prompt_player", textbox_trackers)
+
+Net:on("textbox_response", function(event)
+  local player_id = event.player_id
+
+  textbox_trackers[player_id]:resolve(event.response)
+end)
+
+-- asyncified battles
+
+create_asyncified_api("initiate_encounter", battle_trackers)
+create_asyncified_api("initiate_pvp", battle_trackers)
+
+Net:on("battle_results", function(event)
+  local player_id = event.player_id
+
+  battle_trackers[player_id]:resolve(event)
+end)
 
 -- shops
 
