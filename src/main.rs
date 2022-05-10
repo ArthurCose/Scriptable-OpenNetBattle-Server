@@ -13,14 +13,13 @@ use std::net::IpAddr;
 fn main() {
   logger::init();
 
-  let matches = clap::App::new("OpenNetBattle Server")
+  let matches = clap::Command::new("OpenNetBattle Server")
     .arg(
-      clap::Arg::with_name("port")
-        .short("p")
+      clap::Arg::new("port")
+        .short('p')
         .long("port")
         .value_name("PORT")
         .default_value("8765")
-        .required(true)
         .takes_value(true)
         .validator(|value| {
           let error_message = "PORT must be > 0 and < 65535";
@@ -36,17 +35,17 @@ fn main() {
         }),
     )
     .arg(
-      clap::Arg::with_name("log_connections")
+      clap::Arg::new("log_connections")
         .long("log-connections")
         .help("Logs connects and disconnects"),
     )
     .arg(
-      clap::Arg::with_name("log_packets")
+      clap::Arg::new("log_packets")
         .long("log-packets")
         .help("Logs received packets (useful for debugging)"),
     )
     .arg(
-      clap::Arg::with_name("max_payload_size")
+      clap::Arg::new("max_payload_size")
         .long("max-payload-size")
         .help("Maximum data size a packet can carry, excluding UDP headers (reduce for lower packet drop rate)")
         .value_name("SIZE_IN_BYTES")
@@ -67,7 +66,7 @@ fn main() {
         }),
     )
     .arg(
-      clap::Arg::with_name("resend_budget")
+      clap::Arg::new("resend_budget")
         .long("resend-budget")
         .help("Budget of bytes each client has for the server to spend on resending packets")
         .value_name("SIZE_IN_BYTES")
@@ -86,7 +85,7 @@ fn main() {
         }),
     )
     .arg(
-      clap::Arg::with_name("receiving_drop_rate")
+      clap::Arg::new("receiving_drop_rate")
         .long("receiving-drop-rate")
         .help("Rate of received packets to randomly drop for simulating an unstable connection")
         .value_name("PERCENTAGE")
@@ -105,7 +104,7 @@ fn main() {
         }),
     )
     .arg(
-      clap::Arg::with_name("player_asset_limit")
+      clap::Arg::new("player_asset_limit")
         .long("player-asset-limit")
         .help("Sets the file size limit for avatar files (in KiB)")
         .value_name("SIZE_IN_KiB")
@@ -117,7 +116,7 @@ fn main() {
         }),
     )
     .arg(
-      clap::Arg::with_name("avatar_dimensions_limit")
+      clap::Arg::new("avatar_dimensions_limit")
         .long("avatar-dimensions-limit")
         .help("Sets the limit for dimensions of a single avatar frame")
         .value_name("SIDE_LENGTH")
@@ -129,7 +128,7 @@ fn main() {
         }),
     )
     .arg(
-      clap::Arg::with_name("custom_emotes_path")
+      clap::Arg::new("custom_emotes_path")
         .long("custom-emotes-path")
         .value_name("ASSET_PATH")
         .validator(|value| {
