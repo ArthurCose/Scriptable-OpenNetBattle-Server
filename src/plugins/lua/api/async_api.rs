@@ -90,7 +90,10 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let headers: Vec<(String, String)>;
 
     if let Some(options) = options {
-      method = options.get("method").ok().unwrap_or_default();
+      method = options
+        .get("method")
+        .ok()
+        .unwrap_or_else(|| String::from("GET"));
 
       body = options
         .get("body")
@@ -111,7 +114,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
         })
         .unwrap_or_default();
     } else {
-      method = String::from("get");
+      method = String::from("GET");
       body = None;
       headers = Vec::new();
     }
@@ -133,7 +136,10 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     let headers: Vec<(String, String)>;
 
     if let Some(options) = options {
-      method = options.get("method").ok().unwrap_or_default();
+      method = options
+        .get("method")
+        .ok()
+        .unwrap_or_else(|| String::from("GET"));
 
       body = options
         .get("body")
@@ -154,7 +160,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
         })
         .unwrap_or_default();
     } else {
-      method = String::from("get");
+      method = String::from("GET");
       body = None;
       headers = Vec::new();
     }

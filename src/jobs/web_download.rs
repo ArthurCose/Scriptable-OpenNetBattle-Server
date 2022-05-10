@@ -35,22 +35,18 @@ pub fn web_download(
   promise
 }
 
-// seems to break on mp4s
-// test file:
-// https://cdn.discordapp.com/attachments/820777515995234314/856179686211059712/2021-06-20_09-20-08.mp4
 async fn save_response(
   destination: String,
-  response: surf::Response,
+  response: isahc::Response<isahc::AsyncBody>,
 ) -> Result<(), Box<dyn std::error::Error>> {
   use async_std::fs::File;
   use async_std::io::BufWriter;
+  use futures::io::BufReader;
   use futures::{AsyncBufReadExt, AsyncWriteExt};
-
-  let mut response = response;
 
   let file = File::create(destination).await?;
 
-  let mut buf_reader = response.take_body().into_reader();
+  let mut buf_reader = BufReader::new(response.into_body());
   let mut buf_writer = BufWriter::new(file);
 
   let mut length = 1;
@@ -59,7 +55,7 @@ async fn save_response(
     let buffer = buf_reader.fill_buf().await?;
     length = buffer.len();
 
-    buf_writer.write(buffer).await?;
+    buf_writer.write_all(buffer).await?;
 
     buf_reader.consume_unpin(length);
   }
