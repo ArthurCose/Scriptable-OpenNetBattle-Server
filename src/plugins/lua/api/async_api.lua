@@ -59,15 +59,13 @@ end
 
 function Async.promisify(co)
   local promise = Async.create_promise(function (resolve)
-    local value = nil
-
     function update()
       local output = table.pack(coroutine.resume(co))
       local ok = output[1]
 
       if not ok then
         -- value is an error
-        printerr("runtime error: " .. tostring(value))
+        printerr("runtime error: " .. tostring(output[2]))
         return true
       end
 
@@ -240,3 +238,91 @@ create_textbox_api("question_player")
 create_textbox_api("quiz_player")
 create_textbox_api("prompt_player")
 
+-- shops
+
+local shop_emitters = {}
+
+Net:on("player_request", function(event)
+  shop_emitters[event.player_id] = {}
+end)
+
+Net:on("player_disconnect", function(event)
+  for _, emitter in ipairs(shop_emitters[event.player_id]) do
+    emitter:emit("close", event)
+    emitter:destroy()
+  end
+
+  shop_emitters[event.player_id] = nil
+end)
+
+function Net.open_shop(player_id, ...)
+  local emitters = shop_emitters[player_id]
+
+  if not emitters then
+    -- player must have disconnected
+    return
+  end
+
+  Net._delegate("Net._open_shop", player_id, ...)
+
+  local emitter = Net.EventEmitter.new()
+  emitters[#emitters+1] = emitter
+  return emitter
+end
+
+Net:on("shop_purchase", function(event)
+  shop_emitters[event.player_id][1]:emit("purchase", event)
+end)
+
+Net:on("shop_close", function(event)
+  local emitter = table.remove(shop_emitters[event.player_id], 1)
+  emitter:emit("close", event)
+  emitter:destroy()
+end)
+
+-- bbs
+
+local bbs_emitters = {}
+
+Net:on("player_request", function(event)
+  bbs_emitters[event.player_id] = {}
+end)
+
+Net:on("player_disconnect", function(event)
+  for _, emitter in ipairs(bbs_emitters[event.player_id]) do
+    emitter:emit("close", event)
+    emitter:destroy()
+  end
+
+  bbs_emitters[event.player_id] = nil
+end)
+
+function Net.open_board(player_id, ...)
+  local emitters = bbs_emitters[player_id]
+
+  if not emitters then
+    -- player must have disconnected
+    return
+  end
+
+  Net.close_bbs(player_id)
+  Net._delegate("Net._open_board", player_id, ...)
+
+  local emitter = Net.EventEmitter.new()
+  emitters[#emitters+1] = emitter
+  return emitter
+end
+
+Net:on("post_request", function(event)
+  bbs_emitters[event.player_id][1]:emit("request", event)
+end)
+
+Net:on("post_selection", function(event)
+  bbs_emitters[event.player_id][1]:emit("selection", event)
+end)
+
+Net:on("board_close", function(event)
+  local emitter = table.remove(bbs_emitters[event.player_id], 1)
+  emitter:emit("close", event)
+  emitter:destroy()
+end)

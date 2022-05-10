@@ -140,7 +140,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
-  lua_api.add_dynamic_function("Net", "open_board", |api_ctx, lua_ctx, params| {
+  lua_api.add_dynamic_function("Net", "_open_board", |api_ctx, lua_ctx, params| {
     use crate::net::BbsPost;
 
     let (player_id, name, color_table, post_tables): (
@@ -284,7 +284,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     lua_ctx.pack_multi(())
   });
 
-  lua_api.add_dynamic_function("Net", "open_shop", |api_ctx, lua_ctx, params| {
+  lua_api.add_dynamic_function("Net", "_open_shop", |api_ctx, lua_ctx, params| {
     use crate::net::ShopItem;
 
     let (player_id, item_tables, mug_texture_path, mug_animation_path): (

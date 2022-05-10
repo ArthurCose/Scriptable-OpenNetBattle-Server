@@ -55,6 +55,8 @@ impl LuaApi {
         .exec()
     });
 
+    logging_api::inject_static(&mut lua_api);
+
     area_api::inject_dynamic(&mut lua_api);
     asset_api::inject_dynamic(&mut lua_api);
     object_api::inject_dynamic(&mut lua_api);
@@ -65,8 +67,6 @@ impl LuaApi {
 
     async_api::inject_static(&mut lua_api);
     async_api::inject_dynamic(&mut lua_api);
-
-    logging_api::inject_static(&mut lua_api);
 
     lua_api
   }
