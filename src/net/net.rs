@@ -803,6 +803,7 @@ impl Net {
     name: &str,
     color: (u8, u8, u8),
     posts: Vec<BbsPost>,
+    open_instantly: bool,
   ) {
     use super::bbs_post::calc_size;
     use crate::helpers::iterators::IteratorHelper;
@@ -827,6 +828,7 @@ impl Net {
           name,
           color,
           posts: &[],
+          open_instantly,
         },
       );
     }
@@ -843,6 +845,7 @@ impl Net {
       if borrowed_state.0 == 0 {
         packet_size += 2 + name.len();
         packet_size += 3; // color
+        packet_size += 1; // openInstantly
       } else {
         packet_size += 1; // hasReference
 
@@ -880,6 +883,7 @@ impl Net {
           name,
           color,
           posts: chunk.as_slice(),
+          open_instantly,
         }
       } else {
         ServerPacket::AppendPosts {

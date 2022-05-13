@@ -143,11 +143,12 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Net", "_open_board", |api_ctx, lua_ctx, params| {
     use crate::net::BbsPost;
 
-    let (player_id, name, color_table, post_tables): (
+    let (player_id, name, color_table, post_tables, open_instantly): (
       mlua::String,
       mlua::String,
       mlua::Table,
       Vec<mlua::Table>,
+      Option<bool>,
     ) = lua_ctx.unpack_multi(params)?;
     let player_id_str = player_id.to_str()?;
 
@@ -182,7 +183,13 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
         });
       }
 
-      net.open_board(player_id_str, name.to_str()?, color, posts);
+      net.open_board(
+        player_id_str,
+        name.to_str()?,
+        color,
+        posts,
+        open_instantly.unwrap_or_default(),
+      );
     }
 
     lua_ctx.pack_multi(())

@@ -232,6 +232,7 @@ pub enum ServerPacket<'a> {
     name: &'a str,
     color: (u8, u8, u8),
     posts: &'a [BbsPost],
+    open_instantly: bool,
   },
   PrependPosts {
     reference: Option<&'a str>,
@@ -618,12 +619,18 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
         _ => buf.push(0),
       }
     }
-    ServerPacket::OpenBoard { name, color, posts } => {
+    ServerPacket::OpenBoard {
+      name,
+      color,
+      posts,
+      open_instantly,
+    } => {
       write_u16(buf, ServerPacketId::OpenBoard as u16);
       write_string_u16(buf, name);
       buf.push(color.0);
       buf.push(color.1);
       buf.push(color.2);
+      write_bool(buf, open_instantly);
 
       write_u16(buf, posts.len() as u16);
 

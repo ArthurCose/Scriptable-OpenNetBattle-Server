@@ -593,7 +593,7 @@ Net.prompt_player(player_id, character_limit?, default_text?)
 
 -- color = { r: 0-255, g: 0-255, b: 0-255 }, posts = { id: string, read: bool?, title: string?, author: string? }[]
 -- returns EventEmitter, re-emits post_selection, post_request, board_close
-Net.open_board(player_id, board_name, color, posts)
+Net.open_board(player_id, board_name, color, posts, open_instantly?)
 Net.prepend_posts(player_id, posts, post_id?) -- unstable, issues arise when multiple scripts create boards at the same time
 Net.append_posts(player_id, posts, post_id?) -- unstable, issues arise when multiple scripts create boards at the same time
 Net.remove_post(player_id, post_id) -- unstable, issues arise when multiple scripts create boards at the same time
