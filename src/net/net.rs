@@ -536,9 +536,13 @@ impl Net {
 
   pub fn enable_camera_controls(&mut self, id: &str, dist_x: f32, dist_y: f32) {
     self.packet_orchestrator.borrow_mut().send_by_id(
-      id, 
-      Reliability::ReliableOrdered, 
-      ServerPacket::EnableCameraControls { dist_x: dist_x, dist_y: dist_y })
+      id,
+      Reliability::ReliableOrdered,
+      ServerPacket::EnableCameraControls {
+        dist_x: dist_x,
+        dist_y: dist_y,
+      },
+    )
   }
 
   pub fn unlock_player_camera(&mut self, id: &str) {
@@ -552,16 +556,16 @@ impl Net {
   pub fn enable_camera_zoom(&mut self, id: &str) {
     self.packet_orchestrator.borrow_mut().send_by_id(
       id,
-      Reliability::ReliableOrdered, 
-      ServerPacket::EnableCameraZoom
+      Reliability::ReliableOrdered,
+      ServerPacket::EnableCameraZoom,
     );
   }
 
   pub fn disable_camera_zoom(&mut self, id: &str) {
     self.packet_orchestrator.borrow_mut().send_by_id(
       id,
-      Reliability::ReliableOrdered, 
-      ServerPacket::DisableCameraZoom
+      Reliability::ReliableOrdered,
+      ServerPacket::DisableCameraZoom,
     );
   }
 
@@ -811,7 +815,6 @@ impl Net {
 
     let mut packet_orchestrator = self.packet_orchestrator.borrow_mut();
 
-    let start_depth = client.widget_tracker.get_board_count() as u8;
     client.widget_tracker.track_board(self.active_plugin);
 
     if posts.is_empty() {
@@ -821,7 +824,6 @@ impl Net {
         client.socket_address,
         Reliability::ReliableOrdered,
         ServerPacket::OpenBoard {
-          current_depth: start_depth,
           name,
           color,
           posts: &[],
@@ -842,7 +844,7 @@ impl Net {
         packet_size += 2 + name.len();
         packet_size += 3; // color
       } else {
-        packet_size += 2; // currentDepth + hasReference
+        packet_size += 1; // hasReference
 
         if let Some(last_id) = borrowed_state.1.as_ref() {
           packet_size += 2 + last_id.len(); // reference
@@ -864,7 +866,6 @@ impl Net {
       .pack_chunks_lossy(calc_chunk_limit, calc_post_size);
 
     let mut last_id = None;
-    let current_depth = client.widget_tracker.get_board_count() as u8;
 
     use crate::packets::build_packet;
 
@@ -876,14 +877,12 @@ impl Net {
 
       let packet = if i == 0 {
         ServerPacket::OpenBoard {
-          current_depth: start_depth,
           name,
           color,
           posts: chunk.as_slice(),
         }
       } else {
         ServerPacket::AppendPosts {
-          current_depth,
           reference: ref_id.as_deref(),
           posts: chunk.as_slice(),
         }
@@ -919,7 +918,7 @@ impl Net {
     let calc_chunk_limit = |_| {
       // reliability + id + type
       let mut packet_size = 1 + 8 + 2;
-      packet_size += 2; // currentDepth + hasReference
+      packet_size += 1; // hasReference
 
       if let Some(last_id) = last_id.borrow().as_ref() {
         packet_size += 2 + last_id.len(); // reference
@@ -938,7 +937,6 @@ impl Net {
       .pack_chunks_lossy(calc_chunk_limit, calc_post_size);
 
     let mut last_id = reference;
-    let current_depth = client.widget_tracker.get_board_count() as u8;
 
     use crate::packets::build_packet;
 
@@ -950,13 +948,11 @@ impl Net {
 
       let packet = if i == 0 {
         ServerPacket::PrependPosts {
-          current_depth,
           reference: ref_id.as_deref(),
           posts: chunk.as_slice(),
         }
       } else {
         ServerPacket::AppendPosts {
-          current_depth,
           reference: ref_id.as_deref(),
           posts: chunk.as_slice(),
         }
@@ -992,7 +988,7 @@ impl Net {
     let calc_chunk_limit = |_| {
       // reliability + id + type
       let mut packet_size = 1 + 8 + 2;
-      packet_size += 2; // currentDepth + hasReference
+      packet_size += 2; // hasReference
 
       if let Some(last_id) = last_id.borrow().as_ref() {
         packet_size += 2 + last_id.len(); // reference
@@ -1011,7 +1007,6 @@ impl Net {
       .pack_chunks_lossy(calc_chunk_limit, calc_post_size);
 
     let mut last_id = reference;
-    let current_depth = client.widget_tracker.get_board_count() as u8;
 
     use crate::packets::build_packet;
 
@@ -1022,7 +1017,6 @@ impl Net {
       std::mem::swap(&mut ref_id, &mut last_id); // avoiding clone
 
       let packet = ServerPacket::AppendPosts {
-        current_depth,
         reference: ref_id.as_deref(),
         posts: chunk.as_slice(),
       };
@@ -1044,10 +1038,7 @@ impl Net {
       self.packet_orchestrator.borrow_mut().send(
         client.socket_address,
         Reliability::ReliableOrdered,
-        ServerPacket::RemovePost {
-          current_depth: client.widget_tracker.get_board_count() as u8,
-          id: post_id,
-        },
+        ServerPacket::RemovePost { id: post_id },
       );
     }
   }

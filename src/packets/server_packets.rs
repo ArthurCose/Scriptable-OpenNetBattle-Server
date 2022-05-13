@@ -193,7 +193,7 @@ pub enum ServerPacket<'a> {
   },
   EnableCameraControls {
     dist_x: f32,
-    dist_y: f32
+    dist_y: f32,
   },
   UnlockCamera,
   EnableCameraZoom,
@@ -229,23 +229,19 @@ pub enum ServerPacket<'a> {
     default_text: Option<&'a str>,
   },
   OpenBoard {
-    current_depth: u8,
     name: &'a str,
     color: (u8, u8, u8),
     posts: &'a [BbsPost],
   },
   PrependPosts {
-    current_depth: u8,
     reference: Option<&'a str>,
     posts: &'a [BbsPost],
   },
   AppendPosts {
-    current_depth: u8,
     reference: Option<&'a str>,
     posts: &'a [BbsPost],
   },
   RemovePost {
-    current_depth: u8,
     id: &'a str,
   },
   PostSelectionAck,
@@ -622,14 +618,8 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
         _ => buf.push(0),
       }
     }
-    ServerPacket::OpenBoard {
-      current_depth,
-      name,
-      color,
-      posts,
-    } => {
+    ServerPacket::OpenBoard { name, color, posts } => {
       write_u16(buf, ServerPacketId::OpenBoard as u16);
-      buf.push(current_depth);
       write_string_u16(buf, name);
       buf.push(color.0);
       buf.push(color.1);
@@ -644,13 +634,8 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
         write_string_u16(buf, &post.author);
       }
     }
-    ServerPacket::PrependPosts {
-      current_depth,
-      reference,
-      posts,
-    } => {
+    ServerPacket::PrependPosts { reference, posts } => {
       write_u16(buf, ServerPacketId::PrependPosts as u16);
-      buf.push(current_depth);
       write_bool(buf, reference.is_some());
 
       if reference.is_some() {
@@ -666,13 +651,8 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
         write_string_u16(buf, &post.author);
       }
     }
-    ServerPacket::AppendPosts {
-      current_depth,
-      reference,
-      posts,
-    } => {
+    ServerPacket::AppendPosts { reference, posts } => {
       write_u16(buf, ServerPacketId::AppendPosts as u16);
-      buf.push(current_depth);
       write_bool(buf, reference.is_some());
 
       if reference.is_some() {
@@ -688,9 +668,8 @@ pub fn build_packet(packet: ServerPacket) -> Vec<u8> {
         write_string_u16(buf, &post.author);
       }
     }
-    ServerPacket::RemovePost { current_depth, id } => {
+    ServerPacket::RemovePost { id } => {
       write_u16(buf, ServerPacketId::RemovePost as u16);
-      buf.push(current_depth);
       write_string_u16(buf, id);
     }
     ServerPacket::PostSelectionAck => {

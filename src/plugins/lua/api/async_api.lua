@@ -350,7 +350,6 @@ function Net.open_board(player_id, ...)
     return
   end
 
-  Net.close_bbs(player_id)
   Net._delegate("Net._open_board", player_id, ...)
 
   local emitter = Net.EventEmitter.new()
