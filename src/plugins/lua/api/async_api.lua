@@ -293,7 +293,7 @@ end)
 
 Net:on("player_disconnect", function(event)
   for _, emitter in ipairs(shop_emitters[event.player_id]) do
-    emitter:emit("close", event)
+    emitter:emit("shop_close", event)
     emitter:destroy()
   end
 
@@ -316,12 +316,12 @@ function Net.open_shop(player_id, ...)
 end
 
 Net:on("shop_purchase", function(event)
-  shop_emitters[event.player_id][1]:emit("purchase", event)
+  shop_emitters[event.player_id][1]:emit("shop_purchase", event)
 end)
 
 Net:on("shop_close", function(event)
   local emitter = table.remove(shop_emitters[event.player_id], 1)
-  emitter:emit("close", event)
+  emitter:emit("shop_close", event)
   emitter:destroy()
 end)
 
@@ -335,7 +335,7 @@ end)
 
 Net:on("player_disconnect", function(event)
   for _, emitter in ipairs(bbs_emitters[event.player_id]) do
-    emitter:emit("close", event)
+    emitter:emit("board_close", event)
     emitter:destroy()
   end
 
@@ -358,15 +358,15 @@ function Net.open_board(player_id, ...)
 end
 
 Net:on("post_request", function(event)
-  bbs_emitters[event.player_id][1]:emit("request", event)
+  bbs_emitters[event.player_id][1]:emit("post_request", event)
 end)
 
 Net:on("post_selection", function(event)
-  bbs_emitters[event.player_id][1]:emit("selection", event)
+  bbs_emitters[event.player_id][1]:emit("post_selection", event)
 end)
 
 Net:on("board_close", function(event)
   local emitter = table.remove(bbs_emitters[event.player_id], 1)
-  emitter:emit("close", event)
+  emitter:emit("board_close", event)
   emitter:destroy()
 end)
