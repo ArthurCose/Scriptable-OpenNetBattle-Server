@@ -397,8 +397,8 @@ Net:on("shop_close", function(event)
 end)
 
 Net:on("shop_purchase", function(event)
-  -- { player_id: string }
-  print(event.player_id)
+  -- { player_id: string, item_name: string }
+  print(event.player_id, event.item_name)
 end)
 
 Net:on("battle_results", function(event)
