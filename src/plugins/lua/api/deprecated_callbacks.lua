@@ -96,7 +96,7 @@ backwards_compat("shop_close", "handle_shop_close", function(event)
 end)
 
 backwards_compat("shop_purchase", "handle_shop_purchase", function(event)
-  handle_shop_purchase(event.player_id)
+  handle_shop_purchase(event.player_id, event.item_name)
 end)
 
 backwards_compat("battle_results", "handle_battle_results", function(event)
