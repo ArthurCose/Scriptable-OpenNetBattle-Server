@@ -97,11 +97,35 @@ Map:
 - Foreground Vel Y: float
 - Foreground Parallax: float
 
-### Types
+Tiles:
+
+- Shadow: string
+  - "Always"
+  - "Never"
+  - Unset - Automatic
+
+### Object and Tile Types
 
 Types are used to denote special tiles or objects understood by the client.
 
-Home Warp:
+- Warps
+  - [Home Warp](#home-warp)
+  - [Position Warp](#position-warp)
+  - [Server Warp](#server-warp)
+  - [Custom Server Warp](#custom-server-warp)
+  - [Custom Warp](#custom-warp)
+- Movement
+  - [Stairs](#stairs)
+  - [Conveyor](#conveyor)
+  - [Ice](#ice)
+  - [Treadmill](#treadmill)
+- Plain Markers
+  - [Board](#board)
+  - [Shop](#shop)
+  - [Arrow](#arrow)
+  - [Invisible](#invisible)
+
+#### Home Warp
 
 - Tile Objects only
 - Visible in minimap
@@ -148,18 +172,46 @@ Server Warp:
     - Custom data to pass to the other server
     - Can be read through handle_player_request on the other server
     - Try to keep it short! Long data strings may get ignored
+  - Direction: string
+    - Left
+    - Right
+    - Up
+    - Down
+    - Up Left
+    - Up Right
+    - Down Left
+    - Down Right
 
 Custom Server Warp:
 
 - Tile Objects only
 - Visible in minimap
 - Players will be warped out if colliding with the warp, the result of the warp can be resolved in handle_custom_warp
+- Custom Properties:
+  - Direction: string
+    - Left
+    - Right
+    - Up
+    - Down
+    - Up Left
+    - Up Right
+    - Down Left
+    - Down Right
 
 Custom Warp:
 
 - Tile Objects only
 - Visible in minimap
 - Players will be warped out if colliding with the warp, the result of the warp can be resolved in handle_custom_warp
+  - Direction: string
+    - Left
+    - Right
+    - Up
+    - Down
+    - Up Left
+    - Up Right
+    - Down Left
+    - Down Right
 
 Board:
 
@@ -233,6 +285,11 @@ Arrow:
     - Up Right
     - Down Left
     - Down Right
+
+#### Invisible
+
+- Tiles only
+- Hides the tile from players, great for invisible pathways
 
 ## Lua API
 
