@@ -670,8 +670,8 @@ Async.message_player(player_id, message, mug_texture_path?, mug_animation_path?)
 Async.question_player(player_id, question, mug_texture_path?, mug_animation_path?) -- promise, value = number?
 Async.quiz_player(player_id, option_a?, option_b?, option_c?, mug_texture_path?, mug_animation_path?) -- promise, value = number?
 Async.prompt_player(player_id, character_limit?, default_text?) -- promise, value = string?
-Net.initiate_encounter(player_id, package_path, data?) -- promise, value = { player_id: string, health: number, score: number, time: number, ran: bool, emotion: number, turns: number, enemies: { id: String, health: number }[] } }
-Net.initiate_pvp(player_1_id, player_2_id, field_script_path?) -- promise, value = { player_id: string, health: number, score: number, time: number, ran: bool, emotion: number, turns: number, enemies: { id: String, health: number }[] } }
+Async.initiate_encounter(player_id, package_path, data?) -- promise, value = { player_id: string, health: number, score: number, time: number, ran: bool, emotion: number, turns: number, enemies: { id: String, health: number }[] } }
+Async.initiate_pvp(player_1_id, player_2_id, field_script_path?) -- promise, value = { player_id: string, health: number, score: number, time: number, ran: bool, emotion: number, turns: number, enemies: { id: String, health: number }[] } }
 ```
 
 ### Event Emitters
