@@ -1,13 +1,14 @@
 use super::super::bytes::write_u64;
 use super::super::server_packets::*;
 use super::reliability::Reliability;
-use crate::threads::clock_thread::TICK_RATE;
 use log::*;
 use std::net::UdpSocket;
+use std::time::{Duration, Instant};
 
 struct BackedUpPacket {
   pub id: u64,
   pub creation_time: std::time::Instant,
+  pub send_time: std::time::Instant,
   pub data: Vec<u8>,
 }
 
@@ -19,6 +20,7 @@ pub struct PacketShipper {
   next_reliable_ordered: u64,
   backed_up_reliable: Vec<BackedUpPacket>,
   backed_up_reliable_ordered: Vec<BackedUpPacket>,
+  retry_delay: Duration,
 }
 
 impl PacketShipper {
@@ -31,6 +33,7 @@ impl PacketShipper {
       next_reliable_ordered: 0,
       backed_up_reliable: Vec::new(),
       backed_up_reliable_ordered: Vec::new(),
+      retry_delay: Duration::from_secs(1),
     }
   }
 
@@ -63,9 +66,12 @@ impl PacketShipper {
 
         self.send_with_silenced_errors(socket, &data);
 
+        let creation_time = Instant::now();
+
         self.backed_up_reliable.push(BackedUpPacket {
           id: self.next_reliable,
-          creation_time: std::time::Instant::now(),
+          creation_time,
+          send_time: creation_time,
           data,
         });
 
@@ -79,9 +85,12 @@ impl PacketShipper {
 
         self.send_with_silenced_errors(socket, &data);
 
+        let creation_time = Instant::now();
+
         self.backed_up_reliable_ordered.push(BackedUpPacket {
           id: self.next_reliable_ordered,
-          creation_time: std::time::Instant::now(),
+          creation_time,
+          send_time: creation_time,
           data,
         });
 
@@ -91,8 +100,6 @@ impl PacketShipper {
   }
 
   pub fn resend_backed_up_packets(&self, socket: &UdpSocket) {
-    let retry_delay = std::time::Duration::from_secs_f64(1.0 / TICK_RATE);
-
     let mut remaining_budget = self.resend_budget as isize;
 
     use itertools::Itertools;
@@ -100,12 +107,12 @@ impl PacketShipper {
     let reliable_iter = self
       .backed_up_reliable
       .iter()
-      .take_while(|backed_up_packet| backed_up_packet.creation_time.elapsed() >= retry_delay);
+      .take_while(|backed_up_packet| backed_up_packet.send_time.elapsed() >= self.retry_delay);
 
     let reliable_ordered_iter = self
       .backed_up_reliable_ordered
       .iter()
-      .take_while(|backed_up_packet| backed_up_packet.creation_time.elapsed() >= retry_delay);
+      .take_while(|backed_up_packet| backed_up_packet.send_time.elapsed() >= self.retry_delay);
 
     for backed_up_packet in reliable_iter.interleave(reliable_ordered_iter) {
       if remaining_budget < 0 {
@@ -124,29 +131,38 @@ impl PacketShipper {
   }
 
   pub fn acknowledged(&mut self, reliability: Reliability, id: u64) {
-    match reliability {
+    let acknowledged_packet = match reliability {
       Reliability::Unreliable | Reliability::UnreliableSequenced => {
-        debug!("Client is acknowledging unreliable packets?")
+        debug!("Client is acknowledging unreliable packets?");
+        None
       }
       Reliability::Reliable => self.acknowledged_reliable(id),
       Reliability::ReliableOrdered => self.acknowledged_reliable_ordered(id),
+    };
+
+    if let Some(packet) = acknowledged_packet {
+      let ack_speed = Instant::now() - packet.creation_time;
+
+      if ack_speed < self.retry_delay {
+        self.retry_delay = ack_speed;
+      }
     }
   }
 
-  fn acknowledged_reliable(&mut self, id: u64) {
+  fn acknowledged_reliable(&mut self, id: u64) -> Option<BackedUpPacket> {
     self
       .backed_up_reliable
       .iter()
       .position(|backed_up| backed_up.id == id)
-      .map(|position| self.backed_up_reliable.remove(position));
+      .map(|position| self.backed_up_reliable.remove(position))
   }
 
-  fn acknowledged_reliable_ordered(&mut self, id: u64) {
+  fn acknowledged_reliable_ordered(&mut self, id: u64) -> Option<BackedUpPacket> {
     self
       .backed_up_reliable_ordered
       .iter()
       .position(|backed_up| backed_up.id == id)
-      .map(|position| self.backed_up_reliable_ordered.remove(position));
+      .map(|position| self.backed_up_reliable_ordered.remove(position))
   }
 
   fn send_with_silenced_errors(&self, socket: &UdpSocket, buf: &[u8]) {
