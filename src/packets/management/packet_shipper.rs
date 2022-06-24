@@ -99,25 +99,29 @@ impl PacketShipper {
     }
   }
 
-  pub fn resend_backed_up_packets(&self, socket: &UdpSocket) {
+  pub fn resend_backed_up_packets(&mut self, socket: &UdpSocket) {
     let mut remaining_budget = self.resend_budget as isize;
 
     use itertools::Itertools;
 
     let reliable_iter = self
       .backed_up_reliable
-      .iter()
+      .iter_mut()
       .take_while(|backed_up_packet| backed_up_packet.send_time.elapsed() >= self.retry_delay);
 
     let reliable_ordered_iter = self
       .backed_up_reliable_ordered
-      .iter()
+      .iter_mut()
       .take_while(|backed_up_packet| backed_up_packet.send_time.elapsed() >= self.retry_delay);
+
+    let current_time = Instant::now();
 
     for backed_up_packet in reliable_iter.interleave(reliable_ordered_iter) {
       if remaining_budget < 0 {
         break;
       }
+
+      backed_up_packet.send_time = current_time;
 
       let buf = &backed_up_packet.data;
 
