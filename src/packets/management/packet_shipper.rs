@@ -68,9 +68,9 @@ impl PacketShipper {
 
         let creation_time = Instant::now();
         let send_time = if self.send_with_silenced_errors(socket, &data) {
-          creation_time - self.retry_delay
-        } else {
           creation_time
+        } else {
+          creation_time - self.retry_delay
         };
 
         self.backed_up_reliable.push(BackedUpPacket {
@@ -90,9 +90,9 @@ impl PacketShipper {
 
         let creation_time = Instant::now();
         let send_time = if self.send_with_silenced_errors(socket, &data) {
-          creation_time - self.retry_delay
-        } else {
           creation_time
+        } else {
+          creation_time - self.retry_delay
         };
 
         self.backed_up_reliable_ordered.push(BackedUpPacket {
