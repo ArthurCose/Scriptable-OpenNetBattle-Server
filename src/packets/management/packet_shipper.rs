@@ -153,10 +153,10 @@ impl PacketShipper {
     };
 
     if let Some(packet) = acknowledged_packet {
-      let ack_speed = packet.creation_time.elapsed();
+      let half_ack_speed = packet.creation_time.elapsed() / 2;
 
-      if ack_speed < self.retry_delay {
-        self.retry_delay = ack_speed;
+      if half_ack_speed < self.retry_delay {
+        self.retry_delay = half_ack_speed;
       }
     }
   }
