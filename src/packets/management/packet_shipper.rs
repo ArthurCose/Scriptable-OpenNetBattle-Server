@@ -14,7 +14,8 @@ struct BackedUpPacket {
 
 pub struct PacketShipper {
   socket_address: std::net::SocketAddr,
-  resend_budget: usize,
+  resend_budget: isize,
+  remaining_budget: isize,
   next_unreliable_sequenced: u64,
   next_reliable: u64,
   next_reliable_ordered: u64,
@@ -27,7 +28,8 @@ impl PacketShipper {
   pub fn new(socket_address: std::net::SocketAddr, resend_budget: usize) -> PacketShipper {
     PacketShipper {
       socket_address,
-      resend_budget,
+      resend_budget: resend_budget as isize,
+      remaining_budget: resend_budget as isize,
       next_unreliable_sequenced: 0,
       next_reliable: 0,
       next_reliable_ordered: 0,
@@ -64,14 +66,17 @@ impl PacketShipper {
         write_u64(&mut data, self.next_reliable);
         data.extend(bytes);
 
-        self.send_with_silenced_errors(socket, &data);
-
         let creation_time = Instant::now();
+        let send_time = if self.send_with_silenced_errors(socket, &data) {
+          creation_time - self.retry_delay
+        } else {
+          creation_time
+        };
 
         self.backed_up_reliable.push(BackedUpPacket {
           id: self.next_reliable,
           creation_time,
-          send_time: creation_time,
+          send_time,
           data,
         });
 
@@ -83,14 +88,17 @@ impl PacketShipper {
         write_u64(&mut data, self.next_reliable_ordered);
         data.extend(bytes);
 
-        self.send_with_silenced_errors(socket, &data);
-
         let creation_time = Instant::now();
+        let send_time = if self.send_with_silenced_errors(socket, &data) {
+          creation_time - self.retry_delay
+        } else {
+          creation_time
+        };
 
         self.backed_up_reliable_ordered.push(BackedUpPacket {
           id: self.next_reliable_ordered,
           creation_time,
-          send_time: creation_time,
+          send_time,
           data,
         });
 
@@ -100,8 +108,6 @@ impl PacketShipper {
   }
 
   pub fn resend_backed_up_packets(&mut self, socket: &UdpSocket) {
-    let mut remaining_budget = self.resend_budget as isize;
-
     use itertools::Itertools;
 
     let reliable_iter = self
@@ -117,7 +123,7 @@ impl PacketShipper {
     let current_time = Instant::now();
 
     for backed_up_packet in reliable_iter.interleave(reliable_ordered_iter) {
-      if remaining_budget < 0 {
+      if self.remaining_budget < 0 {
         break;
       }
 
@@ -130,8 +136,10 @@ impl PacketShipper {
         break;
       }
 
-      remaining_budget -= buf.len() as isize;
+      self.remaining_budget -= buf.len() as isize;
     }
+
+    self.remaining_budget = self.resend_budget;
   }
 
   pub fn acknowledged(&mut self, reliability: Reliability, id: u64) {
@@ -145,7 +153,7 @@ impl PacketShipper {
     };
 
     if let Some(packet) = acknowledged_packet {
-      let ack_speed = Instant::now() - packet.creation_time;
+      let ack_speed = packet.creation_time.elapsed();
 
       if ack_speed < self.retry_delay {
         self.retry_delay = ack_speed;
@@ -169,9 +177,16 @@ impl PacketShipper {
       .map(|position| self.backed_up_reliable_ordered.remove(position))
   }
 
-  fn send_with_silenced_errors(&self, socket: &UdpSocket, buf: &[u8]) {
+  fn send_with_silenced_errors(&mut self, socket: &UdpSocket, buf: &[u8]) -> bool {
     // packet shipper does not guarantee packets being received, but can retry
     // packet sorter will handle kicking
-    let _ = socket.send_to(buf, self.socket_address);
+
+    if self.remaining_budget < 0 {
+      return false;
+    }
+
+    self.remaining_budget -= buf.len() as isize;
+
+    socket.send_to(buf, self.socket_address).is_ok()
   }
 }
