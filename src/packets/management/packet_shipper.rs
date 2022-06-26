@@ -110,6 +110,8 @@ impl PacketShipper {
   pub fn resend_backed_up_packets(&mut self, socket: &UdpSocket) {
     use itertools::Itertools;
 
+    self.remaining_budget = self.resend_budget;
+
     let reliable_iter = self
       .backed_up_reliable
       .iter_mut()
@@ -138,8 +140,6 @@ impl PacketShipper {
 
       self.remaining_budget -= buf.len() as isize;
     }
-
-    self.remaining_budget = self.resend_budget;
   }
 
   pub fn acknowledged(&mut self, reliability: Reliability, id: u64) {
