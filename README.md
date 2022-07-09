@@ -543,7 +543,7 @@ Net.is_player(player_id)
 Net.get_player_area(player_id) -- area_id
 Net.get_player_ip(player_id) -- address
 Net.get_player_name(player_id) -- name
-Net.set_player_name(player_id)
+Net.set_player_name(player_id, name)
 Net.get_player_direction(player_id)
 Net.get_player_position(player_id) -- { x, y, z }
 Net.get_player_mugshot(player_id) -- { texture_path, animation_path }
