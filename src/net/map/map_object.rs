@@ -45,7 +45,10 @@ pub enum MapObjectData {
 impl MapObject {
   pub fn from(element: &minidom::Element, layer: usize, scale_x: f32, scale_y: f32) -> MapObject {
     let name = element.attr("name").unwrap_or_default().to_string();
-    let object_type = element.attr("type").unwrap_or_default().to_string();
+    let object_type = element
+      .attr("class")
+      .unwrap_or_else(|| element.attr("type").unwrap_or_default())
+      .to_string();
     let visible: bool = element.attr("visible").unwrap_or_default() != "0";
     let id: u32 = unwrap_and_parse_or_default(element.attr("id"));
     let gid: u32 = unwrap_and_parse_or_default(element.attr("gid"));
