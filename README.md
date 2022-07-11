@@ -414,6 +414,7 @@ end)
 Net:on("server_message", function(event)
   -- { host: string, port: number, data: string }
   print(event.host, event.port, event.data)
+end)
 ```
 
 ### Net API
