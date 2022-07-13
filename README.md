@@ -304,26 +304,33 @@ Net:on("tick", function(event)
 end)
 
 Net:on("authorization", function(event)
-  -- { player_id: string, host: string, port: number, data: string }
+  -- a player on another server needs to be authenticated with this server
+  -- the host and port for the other server is provided with the event for custom response / implementation
+  -- do NOT share identity with other servers, use data for a temporary link between identities without sharing the identity
+  -- { identity: string, host: string, port: number, data: string }
   print(event.identity, event.host, event.port, event.data)
 end)
 
 Net:on("player_request", function(event)
+  -- player requests connection to server (only transfers and kicks should occur here)
   -- { player_id: string, data: string }
   print(event.player_id, event.data)
 end)
 
 Net:on("player_connect", function(event)
+  -- player connects to the server (good place to setup while the player is loading)
   -- { player_id: string }
   print(event.player_id)
 end)
 
 Net:on("player_join", function(event)
+  -- player enters their first area after connecting
   -- { player_id: string }
   print(event.player_id)
 end)
 
 Net:on("player_area_transfer", function(event)
+  -- player changes area
   -- { player_id: string }
   print(event.player_id)
 end)
@@ -341,6 +348,7 @@ Net:on("player_move", function(event)
 end)
 
 Net:on("player_avatar_change", function(event)
+  -- may change in a future update from avatar swapping removal in v2.5
   -- health, max_health, and element will be updated on the player before this function executes
   -- { player_id: string, texture_path: string, animation_path: string, name: string, element: string, max_health: number, prevent_default: Function }
   print(event.player_id, event)
@@ -352,6 +360,7 @@ Net:on("player_emote", function(event)
 end)
 
 Net:on("custom_warp", function(event)
+  -- player warped out by a "Custom Warp" or "Custom Server Warp"
   -- { player_id: string, object_id: number }
   print(event.player_id, event.object_id)
 end)
@@ -363,11 +372,12 @@ end)
 
 Net:on("actor_interaction", function(event)
   -- { player_id: string, actor_id: string, button: number }
+  -- actor_id is a player or bot id
   print(event.player_id, event.actor_id, event.button)
 end)
 
 Net:on("tile_interaction", function(event)
-  -- { player_id: string }
+  -- { player_id: string, x: number, y: number, z: number, button: number }
   print(event.player_id, event.x, event.y, event.z, event.button)
 end)
 
@@ -387,6 +397,7 @@ Net:on("board_close", function(event)
 end)
 
 Net:on("post_request", function(event)
+  -- board post request for infinite scroll (UI has exhausted posts)
   -- { player_id: string }
   print(event.player_id)
 end)
