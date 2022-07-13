@@ -148,7 +148,7 @@ fn main() {
     log_connections: matches.is_present("log_connections"),
     log_packets: matches.is_present("log_packets"),
     max_payload_size: unwrap_and_parse_or_default(matches.value_of("max_payload_size")),
-    resend_budget: matches.value_of("port").unwrap().parse().unwrap(),
+    resend_budget: matches.value_of("resend_budget").unwrap().parse().unwrap(),
     receiving_drop_rate: matches
       .value_of("receiving_drop_rate")
       .unwrap()

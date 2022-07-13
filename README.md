@@ -120,6 +120,13 @@ Map:
 - Foreground Vel Y: float
 - Foreground Parallax: float
 
+Tiles:
+
+- Shadow: string
+  - "Always"
+  - "Never"
+  - Unset - Automatic
+
 ### Object and Tile Types
 
 Types are used to denote special tiles or objects understood by the client.
@@ -139,6 +146,7 @@ Types are used to denote special tiles or objects understood by the client.
   - [Board](#board)
   - [Shop](#shop)
   - [Arrow](#arrow)
+  - [Invisible](#invisible)
 
 #### Home Warp
 
@@ -187,18 +195,46 @@ Types are used to denote special tiles or objects understood by the client.
     - Custom data to pass to the other server
     - Can be read through handle_player_request on the other server
     - Try to keep it short! Long data strings may get ignored
+  - Direction: string
+    - Left
+    - Right
+    - Up
+    - Down
+    - Up Left
+    - Up Right
+    - Down Left
+    - Down Right
 
 #### Custom Server Warp
 
 - Tile Objects only
 - Visible in minimap
 - Players will be warped out if colliding with the warp, the result of the warp can be resolved in handle_custom_warp
+- Custom Properties:
+  - Direction: string
+    - Left
+    - Right
+    - Up
+    - Down
+    - Up Left
+    - Up Right
+    - Down Left
+    - Down Right
 
 #### Custom Warp
 
 - Tile Objects only
 - Visible in minimap
 - Players will be warped out if colliding with the warp, the result of the warp can be resolved in handle_custom_warp
+  - Direction: string
+    - Left
+    - Right
+    - Up
+    - Down
+    - Up Left
+    - Up Right
+    - Down Left
+    - Down Right
 
 #### Stairs
 
@@ -273,6 +309,11 @@ Types are used to denote special tiles or objects understood by the client.
     - Down Left
     - Down Right
 
+#### Invisible
+
+- Tiles only
+- Hides the tile from players, great for invisible pathways
+
 ## Lua API
 
 Commented functions are in development and require changes to the client (specified below).
@@ -299,26 +340,33 @@ Net:on("tick", function(event)
 end)
 
 Net:on("authorization", function(event)
-  -- { player_id: string, host: string, port: number, data: string }
+  -- a player on another server needs to be authenticated with this server
+  -- the host and port for the other server is provided with the event for custom response / implementation
+  -- do NOT share identity with other servers, use data for a temporary link between identities without sharing the identity
+  -- { identity: string, host: string, port: number, data: string }
   print(event.identity, event.host, event.port, event.data)
 end)
 
 Net:on("player_request", function(event)
+  -- player requests connection to server (only transfers and kicks should occur here)
   -- { player_id: string, data: string }
   print(event.player_id, event.data)
 end)
 
 Net:on("player_connect", function(event)
+  -- player connects to the server (good place to setup while the player is loading)
   -- { player_id: string }
   print(event.player_id)
 end)
 
 Net:on("player_join", function(event)
+  -- player enters their first area after connecting
   -- { player_id: string }
   print(event.player_id)
 end)
 
 Net:on("player_area_transfer", function(event)
+  -- player changes area
   -- { player_id: string }
   print(event.player_id)
 end)
@@ -336,6 +384,7 @@ Net:on("player_move", function(event)
 end)
 
 Net:on("player_avatar_change", function(event)
+  -- may change in a future update from avatar swapping removal in v2.5
   -- health, max_health, and element will be updated on the player before this function executes
   -- { player_id: string, texture_path: string, animation_path: string, name: string, element: string, max_health: number, prevent_default: Function }
   print(event.player_id, event)
@@ -347,6 +396,7 @@ Net:on("player_emote", function(event)
 end)
 
 Net:on("custom_warp", function(event)
+  -- player warped out by a "Custom Warp" or "Custom Server Warp"
   -- { player_id: string, object_id: number }
   print(event.player_id, event.object_id)
 end)
@@ -358,11 +408,12 @@ end)
 
 Net:on("actor_interaction", function(event)
   -- { player_id: string, actor_id: string, button: number }
+  -- actor_id is a player or bot id
   print(event.player_id, event.actor_id, event.button)
 end)
 
 Net:on("tile_interaction", function(event)
-  -- { player_id: string }
+  -- { player_id: string, x: number, y: number, z: number, button: number }
   print(event.player_id, event.x, event.y, event.z, event.button)
 end)
 
@@ -382,6 +433,7 @@ Net:on("board_close", function(event)
 end)
 
 Net:on("post_request", function(event)
+  -- board post request for infinite scroll (UI has exhausted posts)
   -- { player_id: string }
   print(event.player_id)
 end)
@@ -409,6 +461,7 @@ end)
 Net:on("server_message", function(event)
   -- { host: string, port: number, data: string }
   print(event.host, event.port, event.data)
+end)
 ```
 
 ### Net API
@@ -538,7 +591,7 @@ Net.is_player(player_id)
 Net.get_player_area(player_id) -- area_id
 Net.get_player_ip(player_id) -- address
 Net.get_player_name(player_id) -- name
-Net.set_player_name(player_id)
+Net.set_player_name(player_id, name)
 Net.get_player_direction(player_id)
 Net.get_player_position(player_id) -- { x, y, z }
 Net.get_player_mugshot(player_id) -- { texture_path, animation_path }
@@ -681,8 +734,8 @@ Async.message_player(player_id, message, mug_texture_path?, mug_animation_path?)
 Async.question_player(player_id, question, mug_texture_path?, mug_animation_path?) -- promise, value = number?
 Async.quiz_player(player_id, option_a?, option_b?, option_c?, mug_texture_path?, mug_animation_path?) -- promise, value = number?
 Async.prompt_player(player_id, character_limit?, default_text?) -- promise, value = string?
-Net.initiate_encounter(player_id, package_path, data?) -- promise, value = { player_id: string, health: number, score: number, time: number, ran: bool, emotion: number, turns: number, enemies: { id: String, health: number }[] } }
-Net.initiate_pvp(player_1_id, player_2_id, field_script_path?) -- promise, value = { player_id: string, health: number, score: number, time: number, ran: bool, emotion: number, turns: number, enemies: { id: String, health: number }[] } }
+Async.initiate_encounter(player_id, package_path, data?) -- promise, value = { player_id: string, health: number, score: number, time: number, ran: bool, emotion: number, turns: number, enemies: { id: String, health: number }[] } }
+Async.initiate_pvp(player_1_id, player_2_id, field_script_path?) -- promise, value = { player_id: string, health: number, score: number, time: number, ran: bool, emotion: number, turns: number, enemies: { id: String, health: number }[] } }
 ```
 
 ### Event Emitters
