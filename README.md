@@ -127,9 +127,9 @@ Tiles:
   - "Never"
   - Unset - Automatic
 
-### Object and Tile Types
+### Object and Tile Classes
 
-Types are used to denote special tiles or objects understood by the client.
+Classes are used to denote special tiles or objects understood by the client.
 
 - Warps
   - [Home Warp](#home-warp)
@@ -517,12 +517,13 @@ Net.play_sound(area_id, path)
 
 ```lua
 Net.list_objects(area_id) -- object_id[]
-Net.get_object_by_id(area_id, object_id) -- { id, name, type, visible, x, y, z, width, height, rotation, data, custom_properties }?
-Net.get_object_by_name(area_id, name) -- { id, name, type, visible, x, y, z, width, height, rotation, data, custom_properties }?
+Net.get_object_by_id(area_id, object_id) -- { id, name, class, type, visible, x, y, z, width, height, rotation, data, custom_properties }?
+Net.get_object_by_name(area_id, name) -- { id, name, class, visible, x, y, z, width, height, rotation, data, custom_properties }?
 Net.create_object(area_id, { name?, type?, visible?, x?, y?, z?, width?, height?, rotation?, data, custom_properties? }) -- object_id
 Net.remove_object(area_id, object_id)
 Net.set_object_name(area_id, object_id, name)
-Net.set_object_type(area_id, object_id, type)
+Net.set_object_class(area_id, object_id, class)
+Net.set_object_type(area_id, object_id, type) -- deprecated
 Net.set_object_custom_property(area_id, object_id, name, value)
 Net.resize_object(area_id, object_id, width, height)
 Net.set_object_rotation(area_id, object_id, rotation)
