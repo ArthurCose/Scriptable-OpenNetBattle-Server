@@ -1,6 +1,7 @@
 use super::lua_errors::create_area_error;
 use super::LuaApi;
 use crate::net::map::{MapObject, MapObjectData, MapObjectSpecification, Tile};
+use log::*;
 
 pub fn inject_dynamic(lua_api: &mut LuaApi) {
   lua_api.add_dynamic_function("Net", "list_objects", |api_ctx, lua_ctx, params| {
@@ -68,7 +69,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     use std::collections::HashMap;
 
     let name: Option<String> = table.get("name")?;
-    let object_type: Option<String> = table.get("object_type")?;
+    let class: Option<String> = table.get("class")?;
     let visible: Option<bool> = table.get("visible")?;
     let x: Option<f32> = table.get("x")?;
     let y: Option<f32> = table.get("y")?;
@@ -85,7 +86,7 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
 
     let id = map.create_object(MapObjectSpecification {
       name: name.unwrap_or_default(),
-      object_type: object_type.unwrap_or_default(),
+      class: class.unwrap_or_default(),
       visible: visible.unwrap_or(true),
       x: x.unwrap_or_default(),
       y: y.unwrap_or_default(),
@@ -134,8 +135,8 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     }
   });
 
-  lua_api.add_dynamic_function("Net", "set_object_type", |api_ctx, lua_ctx, params| {
-    let (area_id, id, object_type): (mlua::String, u32, String) = lua_ctx.unpack_multi(params)?;
+  lua_api.add_dynamic_function("Net", "set_object_class", |api_ctx, lua_ctx, params| {
+    let (area_id, id, class): (mlua::String, u32, String) = lua_ctx.unpack_multi(params)?;
     let area_id_str = area_id.to_str()?;
 
     let mut net = api_ctx.net_ref.borrow_mut();
@@ -143,7 +144,26 @@ pub fn inject_dynamic(lua_api: &mut LuaApi) {
     if let Some(area) = net.get_area_mut(area_id_str) {
       let map = area.get_map_mut();
 
-      map.set_object_type(id, object_type);
+      map.set_object_class(id, class);
+
+      lua_ctx.pack_multi(())
+    } else {
+      Err(create_area_error(area_id_str))
+    }
+  });
+
+  lua_api.add_dynamic_function("Net", "set_object_type", |api_ctx, lua_ctx, params| {
+    warn!("Net.set_object_type() is deprecated, use Net.set_object_class()");
+
+    let (area_id, id, class): (mlua::String, u32, String) = lua_ctx.unpack_multi(params)?;
+    let area_id_str = area_id.to_str()?;
+
+    let mut net = api_ctx.net_ref.borrow_mut();
+
+    if let Some(area) = net.get_area_mut(area_id_str) {
+      let map = area.get_map_mut();
+
+      map.set_object_class(id, class);
 
       lua_ctx.pack_multi(())
     } else {
@@ -330,7 +350,8 @@ fn map_optional_object_to_table<'lua>(
 
   table.set("id", object.id).ok()?;
   table.set("name", object.name.as_str()).ok()?;
-  table.set("type", object.object_type.as_str()).ok()?;
+  table.set("type", object.class.as_str()).ok()?; // todo: remove after deprecation ends
+  table.set("class", object.class.as_str()).ok()?;
   table.set("visible", object.visible).ok()?;
   table.set("x", object.x).ok()?;
   table.set("y", object.y).ok()?;

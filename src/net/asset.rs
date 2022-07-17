@@ -149,8 +149,12 @@ impl Asset {
   }
 
   fn resolve_tile_dependencies(&mut self, tile_element: &minidom::Element) {
-    let tile_type = if let Some(tile_type) = tile_element.attr("type") {
-      tile_type
+    let tile_class_option = tile_element
+      .attr("class")
+      .or_else(|| tile_element.attr("type"));
+
+    let tile_class = if let Some(tile_class) = tile_class_option {
+      tile_class
     } else {
       return;
     };
@@ -165,7 +169,7 @@ impl Asset {
 
     for property_element in properties_element.children() {
       #[allow(clippy::single_match)]
-      match (tile_type, property_element.attr("name")) {
+      match (tile_class, property_element.attr("name")) {
         ("Conveyor" | "Ice", Some("Sound Effect")) => {
           let value = property_element.attr("value").unwrap_or_default();
 

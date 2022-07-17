@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 pub struct MapObjectSpecification {
   pub name: String,
-  pub object_type: String,
+  pub class: String,
   pub visible: bool,
   pub x: f32,
   pub y: f32,
@@ -20,7 +20,7 @@ pub struct MapObjectSpecification {
 pub struct MapObject {
   pub id: u32,
   pub name: String,
-  pub object_type: String,
+  pub class: String,
   pub visible: bool,
   pub x: f32,
   pub y: f32,
@@ -45,9 +45,10 @@ pub enum MapObjectData {
 impl MapObject {
   pub fn from(element: &minidom::Element, layer: usize, scale_x: f32, scale_y: f32) -> MapObject {
     let name = element.attr("name").unwrap_or_default().to_string();
-    let object_type = element
+    let class = element
       .attr("class")
-      .unwrap_or_else(|| element.attr("type").unwrap_or_default())
+      .or_else(|| element.attr("type"))
+      .unwrap_or_default()
       .to_string();
     let visible: bool = element.attr("visible").unwrap_or_default() != "0";
     let id: u32 = unwrap_and_parse_or_default(element.attr("id"));
@@ -111,7 +112,7 @@ impl MapObject {
     MapObject {
       id,
       name,
-      object_type,
+      class,
       visible,
       x,
       y,
@@ -133,8 +134,9 @@ impl MapObject {
       String::default()
     };
 
-    let type_string = if !self.object_type.is_empty() {
-      format!(" type=\"{}\"", self.object_type)
+    let class_string = if !self.class.is_empty() {
+      // todo: update to class when the client properly supports it
+      format!(" type=\"{}\"", self.class)
     } else {
       String::default()
     };
@@ -187,7 +189,7 @@ impl MapObject {
       ",
       self.id,
       name_string,
-      type_string,
+      class_string,
       gid_string,
       self.x / scale_x,
       self.y / scale_y,
